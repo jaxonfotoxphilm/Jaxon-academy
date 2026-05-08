@@ -3,7 +3,7 @@ import pdfList from '../data/pdf-list.json';
 import { SoundManager } from '../utils/SoundManager';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export const Library: React.FC = () => {
+export const Library: React.FC<{ onLaunchPdf: (url: string) => void }> = ({ onLaunchPdf }) => {
     const [activeCategory, setActiveCategory] = useState<string>("Grade Specific");
     const categories = Object.keys(pdfList) as Array<keyof typeof pdfList>;
 
@@ -14,9 +14,7 @@ export const Library: React.FC = () => {
 
     const handlePdfSelect = (pdf: { id: string, name: string, path: string }) => {
         SoundManager.playClick();
-        // Since we are basing off the curriculum folder, clicking the PDF simply opens it!
-        // We will open it in a new tab natively.
-        window.open(pdf.path, '_blank', 'noopener,noreferrer');
+        onLaunchPdf(pdf.path);
     };
 
     const getIconForCategory = (cat: string) => {

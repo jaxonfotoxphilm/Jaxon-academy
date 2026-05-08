@@ -19,10 +19,11 @@ import { SatPlacementTest } from './components/SatPlacementTest';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'menu' | 'dashboard' | 'lesson' | 'exams' | 'exam-runner' | 'library' | 'tutor' | 'adventure' | 'sat-placement' | 'sat-practice'>('menu');
+  const [currentView, setCurrentView] = useState<'menu' | 'dashboard' | 'lesson' | 'exams' | 'exam-runner' | 'library' | 'tutor' | 'adventure' | 'sat-placement' | 'sat-practice' | 'pdf-viewer'>('menu');
   const [selectedGradeId, setSelectedGradeId] = useState<string>(curriculumData.grades[0].id);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [selectedExam, setSelectedExam] = useState<string | null>(null);
+  const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null);
   const [showBackpack, setShowBackpack] = useState(false);
   const [activeAssignments, setActiveAssignments] = useState<any[]>([]);
   
@@ -241,7 +242,8 @@ export default function App() {
                             setSelectedExam(subject.examId);
                             navigate('exam-runner');
                         } else {
-                            window.open(subject.subjectId, '_blank', 'noopener,noreferrer');
+                            setSelectedPdfUrl(subject.subjectId);
+                            setCurrentView('pdf-viewer');
                         }
                       }}>
                     <div className={`flex items-center justify-center w-16 h-16 rounded-2xl border border-white/10 ${subject.type === 'exam' ? 'bg-gradient-to-br from-rose-900/80 to-rose-950 text-rose-300' : 'bg-gradient-to-br from-slate-800/80 to-slate-900'} text-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] transition-all duration-500 shrink-0 z-10 group-hover:scale-110 group-hover:rotate-3 group-hover:border-white/30 ml-0 md:ml-2 backdrop-blur-xl`}>
@@ -292,7 +294,37 @@ export default function App() {
             className="pt-24 px-8 pb-12 w-full min-h-screen relative z-40 bg-[#040714]"
           >
             {currentView === 'dashboard' && currentUser === 'Principal' && <ParentDashboard />}
-            {currentView === 'library' && <Library />}
+            {currentView === 'library' && (
+                <Library 
+                    onLaunchPdf={(url) => {
+                        setSelectedPdfUrl(url);
+                        setCurrentView('pdf-viewer');
+                    }} 
+                />
+            )}
+            {currentView === 'pdf-viewer' && selectedPdfUrl && (
+                <div className="w-full h-[85vh] bg-slate-900 rounded-2xl overflow-hidden relative border border-slate-700 shadow-2xl flex flex-col">
+                    <div className="flex justify-between items-center bg-slate-950 p-4 shrink-0">
+                        <h2 className="text-white font-bold tracking-widest uppercase text-sm">Curriculum Viewer</h2>
+                        <button 
+                            onClick={() => {
+                                SoundManager.playClick();
+                                setCurrentView('menu');
+                            }}
+                            className="bg-rose-900/50 hover:bg-rose-900 text-rose-300 hover:text-white px-4 py-2 rounded-lg font-bold transition-all text-sm border border-rose-500/30"
+                        >
+                            Close Viewer
+                        </button>
+                    </div>
+                    <div className="flex-1 w-full bg-slate-800">
+                        <iframe 
+                            src={selectedPdfUrl} 
+                            className="w-full h-full border-none"
+                            title="PDF Viewer"
+                        />
+                    </div>
+                </div>
+            )}
             {currentView === 'exams' && (
                 <ConcentratedStudy 
                     onLaunchExam={(examId) => {
