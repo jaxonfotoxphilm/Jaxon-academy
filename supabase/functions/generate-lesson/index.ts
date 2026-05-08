@@ -30,7 +30,13 @@ Deno.serve(async (req) => {
     }
 
     const genAI = new GoogleGenerativeAI(API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ 
+        model: "gemini-2.5-flash",
+        generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.7,
+        }
+    });
 
     const prompt = `
 You are Professor Grace, an elite, highly personalized AI tutor and a certified Nebraska State Master Teacher.
@@ -38,16 +44,15 @@ You are building a rigorous curriculum for a student named ${studentName || 'my 
 You run a comprehensive school from Pre-K to 12th grade. You know this student personally and care deeply about their success.
 Topic: ${subject}
 
-Your task is to generate exactly 20 sequential story nodes that teach this topic using a highly rigorous, comprehensive school framework. This is a massive module. You must provide exactly 20 nodes.
+Your task is to generate exactly 10 sequential story nodes that teach this topic using a highly rigorous, comprehensive school framework. This is a complete module. You must provide exactly 10 nodes.
 
-CRITICAL INSTRUCTIONS (SCHOOL MODULE FRAMEWORK - 20 PAGES):
+CRITICAL INSTRUCTIONS (SCHOOL MODULE FRAMEWORK - 10 PAGES):
 - **Node 1 (The Hook):** Introduce the topic with a highly engaging, real-world analogy. You MUST address the student by their name (${studentName || 'my friend'}) in this node. Occassionally mention how proud their Dad (Darius) or Momma (Frankee) would be, or relate the topic to their brothers and sisters!
-- **Node 2, 4, 7, 10, 15 (Instruction & Deep Dive):** MUST include a highly specific \`youtubeSearchQuery\` to embed an educational video.
-- **Node 5, 8, 11 (Guided Practice):** Walk through complex examples with the student step-by-step.
-- **Node 12 to 14 (Cognitive Drills):** Three sequential, rigorous quizzes (isQuiz: true) to test mid-lesson retention.
-- **Node 16 to 17 (Advanced Application):** Apply the knowledge to a difficult, real-world scenario.
-- **Node 18 (Synthesis):** Bring all the concepts together and explain why it matters.
-- **Node 19 & 20 (Mastery Assessment):** Two final, highly rigorous NSCAS-aligned quizzes (isQuiz: true) to prove mastery.
+- **Node 2, 4, 7 (Instruction & Deep Dive):** MUST include a highly specific \`youtubeSearchQuery\` to embed an educational video.
+- **Node 3, 5 (Guided Practice):** Walk through complex examples with the student step-by-step.
+- **Node 6, 8 (Cognitive Drills):** Two rigorous quizzes (isQuiz: true) to test mid-lesson retention.
+- **Node 9 (Synthesis):** Bring all the concepts together and explain why it matters.
+- **Node 10 (Mastery Assessment):** One final, highly rigorous NSCAS-aligned quiz (isQuiz: true) to prove mastery.
 
 NEBRASKA ALIGNMENT & RIGOR:
 - You MUST strictly align all content, facts, and pedagogical approaches with the official Nebraska Department of Education Academic Standards (NDE).
@@ -77,9 +82,24 @@ Output ONLY valid JSON. The root must be an array of objects.
     let text = result.response.text();
     
     // Clean up markdown formatting if Gemini wrapped it in ```json
-    text = text.replace(/```json\n?|```\n?/g, '');
+    text = text.replace(/```json\n?|```\n?/g, '').trim();
     let parsedNodes = JSON.parse(text);
-    if (parsedNodes.nodes) parsedNodes = parsedNodes.nodes; // Extract if Gemini wrapped it in an object
+    // If Gemini wrapped the array in an object, extract it
+    if (!Array.isArray(parsedNodes)) {
+        if (parsedNodes.nodes && Array.isArray(parsedNodes.nodes)) {
+            parsedNodes = parsedNodes.nodes;
+        } else if (parsedNodes.items && Array.isArray(parsedNodes.items)) {
+            parsedNodes = parsedNodes.items;
+        } else {
+            // Attempt to find the first array in the object values
+            const possibleArray = Object.values(parsedNodes).find(val => Array.isArray(val));
+            if (possibleArray) {
+                parsedNodes = possibleArray;
+            } else {
+                throw new Error("Failed to parse an array from Gemini response.");
+            }
+        }
+    }
 
     return new Response(JSON.stringify({ nodes: parsedNodes }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

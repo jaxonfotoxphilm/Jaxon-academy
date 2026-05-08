@@ -159,11 +159,15 @@ export default function App() {
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
             <video 
                 src="https://videos.pexels.com/video-files/3129671/3129671-hd_1920_1080_30fps.mp4" 
-                className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-screen"
+                className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-screen"
                 autoPlay loop muted playsInline
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#040714]/40 to-[#040714]/80"></div>
-            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20 mix-blend-overlay"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-[#040614]/95 via-[#0a102e]/85 to-[#040614]/95 backdrop-blur-[2px]"></div>
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 mix-blend-overlay"></div>
+            
+            {/* Ambient glowing orbs */}
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] mix-blend-screen"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-[120px] mix-blend-screen"></div>
         </div>
 
         <div className="flex-1 overflow-auto relative h-full z-10">
@@ -208,12 +212,7 @@ export default function App() {
                   { title: "Science", desc: "The Water Cycle & Weather", icon: "🔬", color: "from-emerald-600 to-teal-600", border: "border-emerald-500/30", type: "lesson", subjectId: "dynamic:Water Cycle" },
                   { title: "Assessment", desc: "Nebraska Statehood Mastery Test", icon: "📝", color: "from-rose-600 to-red-600", border: "border-rose-500/30", type: "exam", examId: "dynamic:Nebraska Statehood" }
                 ]).map((subject, idx) => (
-                  <div key={idx} className="relative flex items-center group">
-                    <div className={`flex items-center justify-center w-16 h-16 rounded-2xl border-4 border-[#040714] ${subject.type === 'exam' ? 'bg-rose-900 text-rose-300' : 'bg-slate-800'} text-3xl shadow-xl transition-transform shrink-0 z-10 group-hover:scale-110 ml-0 md:ml-2`}>
-                      {subject.icon}
-                    </div>
-                    
-                    <div 
+                  <div key={idx} className="relative flex items-center group cursor-pointer"
                       onClick={() => {
                         SoundManager.playClick();
                         if (subject.type === 'exam' && subject.examId) {
@@ -222,17 +221,25 @@ export default function App() {
                         } else {
                             launchLesson(`dynamic:${subject.title} ${subject.desc}`);
                         }
-                      }}
-                      className="flex-1 ml-4 md:ml-8 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 group-hover:border-white/20 transition-all hover:bg-white/10"
+                      }}>
+                    <div className={`flex items-center justify-center w-16 h-16 rounded-2xl border border-white/10 ${subject.type === 'exam' ? 'bg-gradient-to-br from-rose-900/80 to-rose-950 text-rose-300' : 'bg-gradient-to-br from-slate-800/80 to-slate-900'} text-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] transition-all duration-500 shrink-0 z-10 group-hover:scale-110 group-hover:rotate-3 group-hover:border-white/30 ml-0 md:ml-2 backdrop-blur-xl`}>
+                      {subject.icon}
+                    </div>
+                    
+                    <div 
+                      className="flex-1 ml-4 md:ml-8 bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-3xl p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] flex flex-col md:flex-row md:items-center justify-between gap-4 group-hover:border-white/30 transition-all duration-500 hover:bg-white/[0.08] hover:-translate-y-1 relative overflow-hidden"
                     >
-                      <div className={`absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b ${subject.color}`}></div>
-                      <div className="flex justify-between items-start">
+                      {/* Premium internal glow */}
+                      <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-r ${subject.color}`}></div>
+                      <div className={`absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b ${subject.color}`}></div>
+                      
+                      <div className="flex justify-between items-start w-full relative z-10">
                         <div>
-                          <h4 className="text-xl font-extrabold text-white mb-1 group-hover:text-blue-400 transition-colors">{subject.title}</h4>
-                          <p className="text-slate-300 font-medium text-sm">{subject.desc}</p>
+                          <h4 className="text-xl font-extrabold text-white mb-1 group-hover:text-blue-300 transition-colors tracking-tight">{subject.title}</h4>
+                          <p className="text-slate-400 font-medium text-sm group-hover:text-slate-300 transition-colors">{subject.desc}</p>
                         </div>
-                        <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center group-hover:bg-white transition-colors shadow-inner">
-                          <span className="text-white group-hover:text-black text-xl font-black">▶</span>
+                        <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-white transition-all duration-500 shadow-inner group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]">
+                          <span className="text-white group-hover:text-black text-xl font-black ml-1 transition-colors duration-500">▶</span>
                         </div>
                       </div>
                     </div>
