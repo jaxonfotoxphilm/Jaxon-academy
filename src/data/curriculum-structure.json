@@ -7,7 +7,7 @@
         {
           "id": "subj-grade-PK-phonics & word study",
           "name": "Phonics & Word Study",
-          "icon": "🅰️",
+          "icon": "\ud83c\udd70\ufe0f",
           "color": "from-fuchsia-600 to-purple-600",
           "lessons": [
             {
@@ -1035,7 +1035,7 @@
         {
           "id": "subj-grade-PK-reading comprehension",
           "name": "Reading Comprehension",
-          "icon": "📖",
+          "icon": "\ud83d\udcd6",
           "color": "from-blue-500 to-indigo-600",
           "lessons": [
             {
@@ -2063,7 +2063,7 @@
         {
           "id": "subj-grade-PK-manuscript penmanship",
           "name": "Manuscript Penmanship",
-          "icon": "✍️",
+          "icon": "\u270d\ufe0f",
           "color": "from-orange-400 to-red-500",
           "lessons": [
             {
@@ -3091,7 +3091,7 @@
         {
           "id": "subj-grade-PK-arithmetic fundamentals",
           "name": "Arithmetic Fundamentals",
-          "icon": "➗",
+          "icon": "\u2797",
           "color": "from-emerald-600 to-teal-700",
           "lessons": [
             {
@@ -4119,7 +4119,7 @@
         {
           "id": "subj-grade-PK-god's world (science)",
           "name": "God's World (Science)",
-          "icon": "🌱",
+          "icon": "\ud83c\udf31",
           "color": "from-green-500 to-emerald-600",
           "lessons": [
             {
@@ -5147,7 +5147,7 @@
         {
           "id": "subj-grade-PK-community history",
           "name": "Community History",
-          "icon": "🏘️",
+          "icon": "\ud83c\udfd8\ufe0f",
           "color": "from-amber-600 to-orange-600",
           "lessons": [
             {
@@ -6175,7 +6175,7 @@
         {
           "id": "subj-grade-PK-health & safety",
           "name": "Health & Safety",
-          "icon": "🍎",
+          "icon": "\ud83c\udf4e",
           "color": "from-red-500 to-rose-600",
           "lessons": [
             {
@@ -7203,7 +7203,7 @@
         {
           "id": "subj-grade-PK-art & colors",
           "name": "Art & Colors",
-          "icon": "🎨",
+          "icon": "\ud83c\udfa8",
           "color": "from-pink-500 to-rose-500",
           "lessons": [
             {
@@ -8231,7 +8231,7 @@
         {
           "id": "subj-grade-PK-bible stories",
           "name": "Bible Stories",
-          "icon": "📜",
+          "icon": "\ud83d\udcdc",
           "color": "from-yellow-500 to-amber-600",
           "lessons": [
             {
@@ -9265,7 +9265,7 @@
         {
           "id": "subj-grade-K-phonics & word study",
           "name": "Phonics & Word Study",
-          "icon": "🅰️",
+          "icon": "\ud83c\udd70\ufe0f",
           "color": "from-fuchsia-600 to-purple-600",
           "lessons": [
             {
@@ -10293,7 +10293,7 @@
         {
           "id": "subj-grade-K-reading comprehension",
           "name": "Reading Comprehension",
-          "icon": "📖",
+          "icon": "\ud83d\udcd6",
           "color": "from-blue-500 to-indigo-600",
           "lessons": [
             {
@@ -11321,7 +11321,7 @@
         {
           "id": "subj-grade-K-manuscript penmanship",
           "name": "Manuscript Penmanship",
-          "icon": "✍️",
+          "icon": "\u270d\ufe0f",
           "color": "from-orange-400 to-red-500",
           "lessons": [
             {
@@ -12349,7 +12349,7 @@
         {
           "id": "subj-grade-K-arithmetic fundamentals",
           "name": "Arithmetic Fundamentals",
-          "icon": "➗",
+          "icon": "\u2797",
           "color": "from-emerald-600 to-teal-700",
           "lessons": [
             {
@@ -13377,7 +13377,7 @@
         {
           "id": "subj-grade-K-god's world (science)",
           "name": "God's World (Science)",
-          "icon": "🌱",
+          "icon": "\ud83c\udf31",
           "color": "from-green-500 to-emerald-600",
           "lessons": [
             {
@@ -14400,12 +14400,49 @@
               "title": "Lesson 170: Exploring Five Senses (Part 5)",
               "dynamicQuery": "dynamic:God's World (Science) Five Senses"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: Plants and Plant Growth",
+              "chapters": [
+                "What Plants Need",
+                "Seeds to Plants"
+              ]
+            },
+            {
+              "unit": "Unit 2: Animals and Their Needs",
+              "chapters": [
+                "Animals Need Food",
+                "Habitats"
+              ]
+            },
+            {
+              "unit": "Unit 3: The Human Body",
+              "chapters": [
+                "The Five Senses",
+                "Taking Care of Your Body"
+              ]
+            },
+            {
+              "unit": "Unit 4: Introduction to Magnetism",
+              "chapters": [
+                "Magnets and Metals",
+                "Attract and Repel"
+              ]
+            },
+            {
+              "unit": "Unit 5: Seasons and Weather",
+              "chapters": [
+                "The Four Seasons",
+                "Daily Weather"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-K-community history",
           "name": "Community History",
-          "icon": "🏘️",
+          "icon": "\ud83c\udfd8\ufe0f",
           "color": "from-amber-600 to-orange-600",
           "lessons": [
             {
@@ -15428,12 +15465,56 @@
               "title": "Lesson 170: Exploring Transportation (Part 5)",
               "dynamicQuery": "dynamic:Community History Transportation"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: Spatial Sense",
+              "chapters": [
+                "Maps and Globes",
+                "Left and Right"
+              ]
+            },
+            {
+              "unit": "Unit 2: Overview of the Seven Continents",
+              "chapters": [
+                "Continents and Oceans"
+              ]
+            },
+            {
+              "unit": "Unit 3: Native American Peoples",
+              "chapters": [
+                "Early Americans",
+                "Wampanoag",
+                "Lenape"
+              ]
+            },
+            {
+              "unit": "Unit 4: European Exploration",
+              "chapters": [
+                "Columbus",
+                "The Pilgrims"
+              ]
+            },
+            {
+              "unit": "Unit 5: Early American History",
+              "chapters": [
+                "The Fourth of July",
+                "Washington and Jefferson"
+              ]
+            },
+            {
+              "unit": "Unit 6: Presidents and American Symbols",
+              "chapters": [
+                "Mount Rushmore",
+                "The American Flag"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-K-health & safety",
           "name": "Health & Safety",
-          "icon": "🍎",
+          "icon": "\ud83c\udf4e",
           "color": "from-red-500 to-rose-600",
           "lessons": [
             {
@@ -16461,7 +16542,7 @@
         {
           "id": "subj-grade-K-art & colors",
           "name": "Art & Colors",
-          "icon": "🎨",
+          "icon": "\ud83c\udfa8",
           "color": "from-pink-500 to-rose-500",
           "lessons": [
             {
@@ -17489,7 +17570,7 @@
         {
           "id": "subj-grade-K-bible stories",
           "name": "Bible Stories",
-          "icon": "📜",
+          "icon": "\ud83d\udcdc",
           "color": "from-yellow-500 to-amber-600",
           "lessons": [
             {
@@ -18523,7 +18604,7 @@
         {
           "id": "subj-grade-1-phonics & word study",
           "name": "Phonics & Word Study",
-          "icon": "🅰️",
+          "icon": "\ud83c\udd70\ufe0f",
           "color": "from-fuchsia-600 to-purple-600",
           "lessons": [
             {
@@ -19551,7 +19632,7 @@
         {
           "id": "subj-grade-1-reading comprehension",
           "name": "Reading Comprehension",
-          "icon": "📖",
+          "icon": "\ud83d\udcd6",
           "color": "from-blue-500 to-indigo-600",
           "lessons": [
             {
@@ -20579,7 +20660,7 @@
         {
           "id": "subj-grade-1-manuscript penmanship",
           "name": "Manuscript Penmanship",
-          "icon": "✍️",
+          "icon": "\u270d\ufe0f",
           "color": "from-orange-400 to-red-500",
           "lessons": [
             {
@@ -21607,7 +21688,7 @@
         {
           "id": "subj-grade-1-arithmetic fundamentals",
           "name": "Arithmetic Fundamentals",
-          "icon": "➗",
+          "icon": "\u2797",
           "color": "from-emerald-600 to-teal-700",
           "lessons": [
             {
@@ -22635,7 +22716,7 @@
         {
           "id": "subj-grade-1-god's world (science)",
           "name": "God's World (Science)",
-          "icon": "🌱",
+          "icon": "\ud83c\udf31",
           "color": "from-green-500 to-emerald-600",
           "lessons": [
             {
@@ -23658,12 +23739,70 @@
               "title": "Lesson 170: Exploring Five Senses (Part 5)",
               "dynamicQuery": "dynamic:God's World (Science) Five Senses"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: Sun, Moon, and Stars",
+              "chapters": [
+                "Patterns in the Sky",
+                "The Sun's Movement",
+                "Moon Phases",
+                "Constellations"
+              ]
+            },
+            {
+              "unit": "Unit 2: Plant and Animal Survival",
+              "chapters": [
+                "Basic Needs",
+                "Environments",
+                "Adaptations"
+              ]
+            },
+            {
+              "unit": "Unit 3: Exploring Light and Sound",
+              "chapters": [
+                "Properties of Light",
+                "Properties of Sound",
+                "How Light and Sound Travel"
+              ]
+            },
+            {
+              "unit": "Unit 4: Simple Machines",
+              "chapters": [
+                "What is a Machine?",
+                "Levers and Pulleys",
+                "Wheels and Axles"
+              ]
+            },
+            {
+              "unit": "Unit 5: Human Body Systems",
+              "chapters": [
+                "The Skeletal System",
+                "The Muscular System",
+                "The Digestive System"
+              ]
+            },
+            {
+              "unit": "Unit 6: Helpful Computers",
+              "chapters": [
+                "What is a Computer?",
+                "How Computers Help Us"
+              ]
+            },
+            {
+              "unit": "Unit 7: Science for Everyone",
+              "chapters": [
+                "Making Observations",
+                "Asking Questions",
+                "Collecting Data"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-1-community history",
           "name": "Community History",
-          "icon": "🏘️",
+          "icon": "\ud83c\udfd8\ufe0f",
           "color": "from-amber-600 to-orange-600",
           "lessons": [
             {
@@ -24686,12 +24825,92 @@
               "title": "Lesson 170: Exploring Transportation (Part 5)",
               "dynamicQuery": "dynamic:Community History Transportation"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: Continents, Countries, and Maps",
+              "chapters": [
+                "Reading Maps",
+                "The Seven Continents",
+                "The Four Oceans"
+              ]
+            },
+            {
+              "unit": "Unit 2: Mesopotamia",
+              "chapters": [
+                "The Cradle of Civilization",
+                "Tigris and Euphrates",
+                "Early Writing"
+              ]
+            },
+            {
+              "unit": "Unit 3: Ancient Egypt",
+              "chapters": [
+                "The Nile River",
+                "Pharaohs and Pyramids",
+                "Egyptian Culture"
+              ]
+            },
+            {
+              "unit": "Unit 4: Three World Religions",
+              "chapters": [
+                "Judaism",
+                "Christianity",
+                "Islam"
+              ]
+            },
+            {
+              "unit": "Unit 5: Early Civilizations of the Americas",
+              "chapters": [
+                "Maya, Aztec, and Inca",
+                "Early Indigenous Cultures"
+              ]
+            },
+            {
+              "unit": "Unit 6: The Culture of Mexico",
+              "chapters": [
+                "Geography of Mexico",
+                "Mexican Traditions and Holidays"
+              ]
+            },
+            {
+              "unit": "Unit 7: Early Explorers and Settlers",
+              "chapters": [
+                "Voyages to the Americas",
+                "Roanoke and Jamestown",
+                "Massachusetts Bay"
+              ]
+            },
+            {
+              "unit": "Unit 8: From Colonies to Independence",
+              "chapters": [
+                "The Thirteen Colonies",
+                "The American Revolution",
+                "A New Nation"
+              ]
+            },
+            {
+              "unit": "Unit 9: Exploring the West",
+              "chapters": [
+                "Westward Expansion",
+                "Lewis and Clark",
+                "Sacagawea"
+              ]
+            },
+            {
+              "unit": "Unit 10: Lessons in Civics",
+              "chapters": [
+                "Rules and Community",
+                "Good Citizenship",
+                "American Symbols"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-1-health & safety",
           "name": "Health & Safety",
-          "icon": "🍎",
+          "icon": "\ud83c\udf4e",
           "color": "from-red-500 to-rose-600",
           "lessons": [
             {
@@ -25719,7 +25938,7 @@
         {
           "id": "subj-grade-1-art & colors",
           "name": "Art & Colors",
-          "icon": "🎨",
+          "icon": "\ud83c\udfa8",
           "color": "from-pink-500 to-rose-500",
           "lessons": [
             {
@@ -26747,7 +26966,7 @@
         {
           "id": "subj-grade-1-bible stories",
           "name": "Bible Stories",
-          "icon": "📜",
+          "icon": "\ud83d\udcdc",
           "color": "from-yellow-500 to-amber-600",
           "lessons": [
             {
@@ -27781,7 +28000,7 @@
         {
           "id": "subj-grade-2-phonics & word study",
           "name": "Phonics & Word Study",
-          "icon": "🅰️",
+          "icon": "\ud83c\udd70\ufe0f",
           "color": "from-fuchsia-600 to-purple-600",
           "lessons": [
             {
@@ -28809,7 +29028,7 @@
         {
           "id": "subj-grade-2-reading comprehension",
           "name": "Reading Comprehension",
-          "icon": "📖",
+          "icon": "\ud83d\udcd6",
           "color": "from-blue-500 to-indigo-600",
           "lessons": [
             {
@@ -29837,7 +30056,7 @@
         {
           "id": "subj-grade-2-manuscript penmanship",
           "name": "Manuscript Penmanship",
-          "icon": "✍️",
+          "icon": "\u270d\ufe0f",
           "color": "from-orange-400 to-red-500",
           "lessons": [
             {
@@ -30865,7 +31084,7 @@
         {
           "id": "subj-grade-2-arithmetic fundamentals",
           "name": "Arithmetic Fundamentals",
-          "icon": "➗",
+          "icon": "\u2797",
           "color": "from-emerald-600 to-teal-700",
           "lessons": [
             {
@@ -31893,7 +32112,7 @@
         {
           "id": "subj-grade-2-god's world (science)",
           "name": "God's World (Science)",
-          "icon": "🌱",
+          "icon": "\ud83c\udf31",
           "color": "from-green-500 to-emerald-600",
           "lessons": [
             {
@@ -32916,12 +33135,50 @@
               "title": "Lesson 170: Exploring Five Senses (Part 5)",
               "dynamicQuery": "dynamic:God's World (Science) Five Senses"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: Cycles in Nature",
+              "chapters": [
+                "Seasonal Cycles",
+                "Life Cycles"
+              ]
+            },
+            {
+              "unit": "Unit 2: Insects",
+              "chapters": [
+                "Insect Characteristics",
+                "Social Insects"
+              ]
+            },
+            {
+              "unit": "Unit 3: The Human Body",
+              "chapters": [
+                "Digestive System",
+                "Healthy Diet"
+              ]
+            },
+            {
+              "unit": "Unit 4: Magnetism",
+              "chapters": [
+                "Magnetic Fields",
+                "Poles"
+              ]
+            },
+            {
+              "unit": "Unit 5: Simple Machines",
+              "chapters": [
+                "Levers",
+                "Pulleys",
+                "Gears"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-2-community history",
           "name": "Community History",
-          "icon": "🏘️",
+          "icon": "\ud83c\udfd8\ufe0f",
           "color": "from-amber-600 to-orange-600",
           "lessons": [
             {
@@ -33944,12 +34201,61 @@
               "title": "Lesson 170: Exploring Transportation (Part 5)",
               "dynamicQuery": "dynamic:Community History Transportation"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: Ancient India",
+              "chapters": [
+                "Indus River Valley",
+                "Hinduism and Buddhism"
+              ]
+            },
+            {
+              "unit": "Unit 2: Ancient China",
+              "chapters": [
+                "Yellow River",
+                "Great Wall of China",
+                "Confucius"
+              ]
+            },
+            {
+              "unit": "Unit 3: Ancient Greece",
+              "chapters": [
+                "Sparta and Athens",
+                "Olympics",
+                "Greek Myths"
+              ]
+            },
+            {
+              "unit": "Unit 4: The Making of the Constitution",
+              "chapters": [
+                "Constitutional Convention",
+                "James Madison"
+              ]
+            },
+            {
+              "unit": "Unit 5: The War of 1812",
+              "chapters": [
+                "Causes of the War",
+                "Star-Spangled Banner"
+              ]
+            },
+            {
+              "unit": "Unit 6: Civil Rights",
+              "chapters": [
+                "Susan B. Anthony",
+                "Eleanor Roosevelt",
+                "Jackie Robinson",
+                "Rosa Parks",
+                "Martin Luther King Jr."
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-2-health & safety",
           "name": "Health & Safety",
-          "icon": "🍎",
+          "icon": "\ud83c\udf4e",
           "color": "from-red-500 to-rose-600",
           "lessons": [
             {
@@ -34977,7 +35283,7 @@
         {
           "id": "subj-grade-2-art & colors",
           "name": "Art & Colors",
-          "icon": "🎨",
+          "icon": "\ud83c\udfa8",
           "color": "from-pink-500 to-rose-500",
           "lessons": [
             {
@@ -36005,7 +36311,7 @@
         {
           "id": "subj-grade-2-bible stories",
           "name": "Bible Stories",
-          "icon": "📜",
+          "icon": "\ud83d\udcdc",
           "color": "from-yellow-500 to-amber-600",
           "lessons": [
             {
@@ -37039,7 +37345,7 @@
         {
           "id": "subj-grade-3-language arts",
           "name": "Language Arts",
-          "icon": "📝",
+          "icon": "\ud83d\udcdd",
           "color": "from-fuchsia-600 to-purple-600",
           "lessons": [
             {
@@ -38067,7 +38373,7 @@
         {
           "id": "subj-grade-3-spelling & poetry",
           "name": "Spelling & Poetry",
-          "icon": "🗣️",
+          "icon": "\ud83d\udde3\ufe0f",
           "color": "from-indigo-500 to-violet-600",
           "lessons": [
             {
@@ -39095,7 +39401,7 @@
         {
           "id": "subj-grade-3-cursive penmanship",
           "name": "Cursive Penmanship",
-          "icon": "✒️",
+          "icon": "\u2712\ufe0f",
           "color": "from-orange-500 to-red-600",
           "lessons": [
             {
@@ -40123,7 +40429,7 @@
         {
           "id": "subj-grade-3-arithmetic & logic",
           "name": "Arithmetic & Logic",
-          "icon": "➗",
+          "icon": "\u2797",
           "color": "from-emerald-600 to-teal-700",
           "lessons": [
             {
@@ -41151,7 +41457,7 @@
         {
           "id": "subj-grade-3-science & biology",
           "name": "Science & Biology",
-          "icon": "🔬",
+          "icon": "\ud83d\udd2c",
           "color": "from-green-600 to-emerald-700",
           "lessons": [
             {
@@ -42174,12 +42480,44 @@
               "title": "Lesson 170: Exploring Energy (Part 5)",
               "dynamicQuery": "dynamic:Science & Biology Energy"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: Classification of Animals",
+              "chapters": [
+                "Vertebrates",
+                "Invertebrates"
+              ]
+            },
+            {
+              "unit": "Unit 2: The Human Body",
+              "chapters": [
+                "Skeletal System",
+                "Muscular System",
+                "Nervous System"
+              ]
+            },
+            {
+              "unit": "Unit 3: Light and Vision",
+              "chapters": [
+                "Properties of Light",
+                "The Human Eye"
+              ]
+            },
+            {
+              "unit": "Unit 4: Astronomy",
+              "chapters": [
+                "The Solar System",
+                "Planets",
+                "Gravity"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-3-american history",
           "name": "American History",
-          "icon": "🦅",
+          "icon": "\ud83e\udd85",
           "color": "from-red-600 to-rose-700",
           "lessons": [
             {
@@ -43202,12 +43540,59 @@
               "title": "Lesson 170: Exploring Industrial Revolution (Part 5)",
               "dynamicQuery": "dynamic:American History Industrial Revolution"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: World Geography",
+              "chapters": [
+                "Rivers of the World",
+                "Continents Review"
+              ]
+            },
+            {
+              "unit": "Unit 2: Ancient Rome",
+              "chapters": [
+                "The Republic",
+                "Julius Caesar",
+                "The Empire"
+              ]
+            },
+            {
+              "unit": "Unit 3: The Vikings",
+              "chapters": [
+                "Norsemen",
+                "Eric the Red",
+                "Leif Erikson"
+              ]
+            },
+            {
+              "unit": "Unit 4: Earliest Americans",
+              "chapters": [
+                "Crossing the Land Bridge",
+                "Inuit and Anasazi"
+              ]
+            },
+            {
+              "unit": "Unit 5: Early Exploration of North America",
+              "chapters": [
+                "Spanish Explorers",
+                "French Explorers"
+              ]
+            },
+            {
+              "unit": "Unit 6: The Thirteen Colonies",
+              "chapters": [
+                "New England",
+                "Middle Colonies",
+                "Southern Colonies"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-3-world geography",
           "name": "World Geography",
-          "icon": "🌍",
+          "icon": "\ud83c\udf0d",
           "color": "from-cyan-500 to-blue-600",
           "lessons": [
             {
@@ -44235,7 +44620,7 @@
         {
           "id": "subj-grade-3-health & human body",
           "name": "Health & Human Body",
-          "icon": "🏃",
+          "icon": "\ud83c\udfc3",
           "color": "from-rose-400 to-red-500",
           "lessons": [
             {
@@ -45263,7 +45648,7 @@
         {
           "id": "subj-grade-3-journey through scripture",
           "name": "Journey Through Scripture",
-          "icon": "📜",
+          "icon": "\ud83d\udcdc",
           "color": "from-amber-600 to-orange-700",
           "lessons": [
             {
@@ -46297,7 +46682,7 @@
         {
           "id": "subj-grade-4-language arts",
           "name": "Language Arts",
-          "icon": "📝",
+          "icon": "\ud83d\udcdd",
           "color": "from-fuchsia-600 to-purple-600",
           "lessons": [
             {
@@ -47325,7 +47710,7 @@
         {
           "id": "subj-grade-4-spelling & poetry",
           "name": "Spelling & Poetry",
-          "icon": "🗣️",
+          "icon": "\ud83d\udde3\ufe0f",
           "color": "from-indigo-500 to-violet-600",
           "lessons": [
             {
@@ -48353,7 +48738,7 @@
         {
           "id": "subj-grade-4-cursive penmanship",
           "name": "Cursive Penmanship",
-          "icon": "✒️",
+          "icon": "\u2712\ufe0f",
           "color": "from-orange-500 to-red-600",
           "lessons": [
             {
@@ -49381,7 +49766,7 @@
         {
           "id": "subj-grade-4-arithmetic & logic",
           "name": "Arithmetic & Logic",
-          "icon": "➗",
+          "icon": "\u2797",
           "color": "from-emerald-600 to-teal-700",
           "lessons": [
             {
@@ -50409,7 +50794,7 @@
         {
           "id": "subj-grade-4-science & biology",
           "name": "Science & Biology",
-          "icon": "🔬",
+          "icon": "\ud83d\udd2c",
           "color": "from-green-600 to-emerald-700",
           "lessons": [
             {
@@ -51432,12 +51817,45 @@
               "title": "Lesson 170: Exploring Energy (Part 5)",
               "dynamicQuery": "dynamic:Science & Biology Energy"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: Human Body",
+              "chapters": [
+                "Circulatory System",
+                "Respiratory System"
+              ]
+            },
+            {
+              "unit": "Unit 2: Chemistry",
+              "chapters": [
+                "Atoms and Molecules",
+                "Elements",
+                "Solutions"
+              ]
+            },
+            {
+              "unit": "Unit 3: Electricity",
+              "chapters": [
+                "Static Electricity",
+                "Current Electricity",
+                "Circuits"
+              ]
+            },
+            {
+              "unit": "Unit 4: Geology",
+              "chapters": [
+                "Earth's Layers",
+                "Volcanoes",
+                "Earthquakes"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-4-american history",
           "name": "American History",
-          "icon": "🦅",
+          "icon": "\ud83e\udd85",
           "color": "from-red-600 to-rose-700",
           "lessons": [
             {
@@ -52460,12 +52878,60 @@
               "title": "Lesson 170: Exploring Industrial Revolution (Part 5)",
               "dynamicQuery": "dynamic:American History Industrial Revolution"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: Europe in the Middle Ages",
+              "chapters": [
+                "Feudalism",
+                "Knights and Castles",
+                "Magna Carta"
+              ]
+            },
+            {
+              "unit": "Unit 2: Islamic Empires",
+              "chapters": [
+                "Rise of Islam",
+                "Islamic Scholars"
+              ]
+            },
+            {
+              "unit": "Unit 3: Early African Kingdoms",
+              "chapters": [
+                "Mali",
+                "Songhai"
+              ]
+            },
+            {
+              "unit": "Unit 4: The American Revolution",
+              "chapters": [
+                "Causes of the Revolution",
+                "Declaration of Independence",
+                "Key Battles"
+              ]
+            },
+            {
+              "unit": "Unit 5: Making a Constitutional Government",
+              "chapters": [
+                "Articles of Confederation",
+                "The Constitution",
+                "Bill of Rights"
+              ]
+            },
+            {
+              "unit": "Unit 6: Early Presidents",
+              "chapters": [
+                "Washington",
+                "Adams",
+                "Jefferson"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-4-world geography",
           "name": "World Geography",
-          "icon": "🌍",
+          "icon": "\ud83c\udf0d",
           "color": "from-cyan-500 to-blue-600",
           "lessons": [
             {
@@ -53493,7 +53959,7 @@
         {
           "id": "subj-grade-4-health & human body",
           "name": "Health & Human Body",
-          "icon": "🏃",
+          "icon": "\ud83c\udfc3",
           "color": "from-rose-400 to-red-500",
           "lessons": [
             {
@@ -54521,7 +54987,7 @@
         {
           "id": "subj-grade-4-journey through scripture",
           "name": "Journey Through Scripture",
-          "icon": "📜",
+          "icon": "\ud83d\udcdc",
           "color": "from-amber-600 to-orange-700",
           "lessons": [
             {
@@ -55555,7 +56021,7 @@
         {
           "id": "subj-grade-5-language arts",
           "name": "Language Arts",
-          "icon": "📝",
+          "icon": "\ud83d\udcdd",
           "color": "from-fuchsia-600 to-purple-600",
           "lessons": [
             {
@@ -56583,7 +57049,7 @@
         {
           "id": "subj-grade-5-spelling & poetry",
           "name": "Spelling & Poetry",
-          "icon": "🗣️",
+          "icon": "\ud83d\udde3\ufe0f",
           "color": "from-indigo-500 to-violet-600",
           "lessons": [
             {
@@ -57611,7 +58077,7 @@
         {
           "id": "subj-grade-5-cursive penmanship",
           "name": "Cursive Penmanship",
-          "icon": "✒️",
+          "icon": "\u2712\ufe0f",
           "color": "from-orange-500 to-red-600",
           "lessons": [
             {
@@ -58639,7 +59105,7 @@
         {
           "id": "subj-grade-5-arithmetic & logic",
           "name": "Arithmetic & Logic",
-          "icon": "➗",
+          "icon": "\u2797",
           "color": "from-emerald-600 to-teal-700",
           "lessons": [
             {
@@ -59667,7 +60133,7 @@
         {
           "id": "subj-grade-5-science & biology",
           "name": "Science & Biology",
-          "icon": "🔬",
+          "icon": "\ud83d\udd2c",
           "color": "from-green-600 to-emerald-700",
           "lessons": [
             {
@@ -60690,12 +61156,42 @@
               "title": "Lesson 170: Exploring Energy (Part 5)",
               "dynamicQuery": "dynamic:Science & Biology Energy"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: Classification",
+              "chapters": [
+                "Taxonomy",
+                "Kingdoms of Life"
+              ]
+            },
+            {
+              "unit": "Unit 2: Cells",
+              "chapters": [
+                "Plant Cells",
+                "Animal Cells"
+              ]
+            },
+            {
+              "unit": "Unit 3: Plant Structures",
+              "chapters": [
+                "Photosynthesis",
+                "Reproduction"
+              ]
+            },
+            {
+              "unit": "Unit 4: Human Body",
+              "chapters": [
+                "Endocrine System",
+                "Reproductive System"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-5-american history",
           "name": "American History",
-          "icon": "🦅",
+          "icon": "\ud83e\udd85",
           "color": "from-red-600 to-rose-700",
           "lessons": [
             {
@@ -61718,12 +62214,69 @@
               "title": "Lesson 170: Exploring Industrial Revolution (Part 5)",
               "dynamicQuery": "dynamic:American History Industrial Revolution"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: Meso-American Civilizations",
+              "chapters": [
+                "Maya",
+                "Aztec",
+                "Inca"
+              ]
+            },
+            {
+              "unit": "Unit 2: European Exploration",
+              "chapters": [
+                "Age of Discovery",
+                "Magellan",
+                "Drake"
+              ]
+            },
+            {
+              "unit": "Unit 3: The Renaissance",
+              "chapters": [
+                "Da Vinci",
+                "Michelangelo",
+                "Shakespeare"
+              ]
+            },
+            {
+              "unit": "Unit 4: The Reformation",
+              "chapters": [
+                "Martin Luther",
+                "Gutenberg"
+              ]
+            },
+            {
+              "unit": "Unit 5: England from Golden Age to Revolution",
+              "chapters": [
+                "Elizabeth I",
+                "English Civil War"
+              ]
+            },
+            {
+              "unit": "Unit 6: Westward Expansion",
+              "chapters": [
+                "Oregon Trail",
+                "Gold Rush",
+                "Native American Conflicts"
+              ]
+            },
+            {
+              "unit": "Unit 7: The Civil War",
+              "chapters": [
+                "Slavery in America",
+                "Abraham Lincoln",
+                "Major Battles",
+                "Reconstruction"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-5-world geography",
           "name": "World Geography",
-          "icon": "🌍",
+          "icon": "\ud83c\udf0d",
           "color": "from-cyan-500 to-blue-600",
           "lessons": [
             {
@@ -62751,7 +63304,7 @@
         {
           "id": "subj-grade-5-health & human body",
           "name": "Health & Human Body",
-          "icon": "🏃",
+          "icon": "\ud83c\udfc3",
           "color": "from-rose-400 to-red-500",
           "lessons": [
             {
@@ -63779,7 +64332,7 @@
         {
           "id": "subj-grade-5-journey through scripture",
           "name": "Journey Through Scripture",
-          "icon": "📜",
+          "icon": "\ud83d\udcdc",
           "color": "from-amber-600 to-orange-700",
           "lessons": [
             {
@@ -64813,7 +65366,7 @@
         {
           "id": "subj-grade-6-grammar & composition",
           "name": "Grammar & Composition",
-          "icon": "✍️",
+          "icon": "\u270d\ufe0f",
           "color": "from-purple-600 to-indigo-700",
           "lessons": [
             {
@@ -65841,7 +66394,7 @@
         {
           "id": "subj-grade-6-world literature",
           "name": "World Literature",
-          "icon": "📚",
+          "icon": "\ud83d\udcda",
           "color": "from-blue-600 to-indigo-600",
           "lessons": [
             {
@@ -66869,7 +67422,7 @@
         {
           "id": "subj-grade-6-vocabulary & spelling",
           "name": "Vocabulary & Spelling",
-          "icon": "📖",
+          "icon": "\ud83d\udcd6",
           "color": "from-violet-500 to-purple-600",
           "lessons": [
             {
@@ -67897,7 +68450,7 @@
         {
           "id": "subj-grade-6-pre-algebra / algebra 1",
           "name": "Pre-Algebra / Algebra 1",
-          "icon": "📐",
+          "icon": "\ud83d\udcd0",
           "color": "from-teal-600 to-cyan-700",
           "lessons": [
             {
@@ -68925,7 +69478,7 @@
         {
           "id": "subj-grade-6-earth & space science",
           "name": "Earth & Space Science",
-          "icon": "🪐",
+          "icon": "\ud83e\ude90",
           "color": "from-indigo-600 to-blue-700",
           "lessons": [
             {
@@ -69948,12 +70501,36 @@
               "title": "Lesson 170: Exploring Environmental Science (Part 5)",
               "dynamicQuery": "dynamic:Earth & Space Science Environmental Science"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: Plate Tectonics",
+              "chapters": [
+                "Continental Drift",
+                "Earthquakes"
+              ]
+            },
+            {
+              "unit": "Unit 2: Oceans",
+              "chapters": [
+                "Ocean Currents",
+                "Marine Biology"
+              ]
+            },
+            {
+              "unit": "Unit 3: Astronomy",
+              "chapters": [
+                "Stars",
+                "Galaxies",
+                "The Universe"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-6-life science",
           "name": "Life Science",
-          "icon": "🧬",
+          "icon": "\ud83e\uddec",
           "color": "from-emerald-500 to-green-600",
           "lessons": [
             {
@@ -70976,12 +71553,36 @@
               "title": "Lesson 170: Exploring Ecology (Part 5)",
               "dynamicQuery": "dynamic:Life Science Ecology"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: Plate Tectonics",
+              "chapters": [
+                "Continental Drift",
+                "Earthquakes"
+              ]
+            },
+            {
+              "unit": "Unit 2: Oceans",
+              "chapters": [
+                "Ocean Currents",
+                "Marine Biology"
+              ]
+            },
+            {
+              "unit": "Unit 3: Astronomy",
+              "chapters": [
+                "Stars",
+                "Galaxies",
+                "The Universe"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-6-world history",
           "name": "World History",
-          "icon": "🏛️",
+          "icon": "\ud83c\udfdb\ufe0f",
           "color": "from-amber-600 to-red-700",
           "lessons": [
             {
@@ -72004,12 +72605,65 @@
               "title": "Lesson 170: Exploring Modern Era (Part 5)",
               "dynamicQuery": "dynamic:World History Modern Era"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: World Geography",
+              "chapters": [
+                "Deserts",
+                "Oceans"
+              ]
+            },
+            {
+              "unit": "Unit 2: Ancient Greece & Rome",
+              "chapters": [
+                "Greek Philosophy",
+                "Roman Law"
+              ]
+            },
+            {
+              "unit": "Unit 3: The Enlightenment",
+              "chapters": [
+                "Locke",
+                "Montesquieu",
+                "Voltaire"
+              ]
+            },
+            {
+              "unit": "Unit 4: The French Revolution",
+              "chapters": [
+                "Causes",
+                "Reign of Terror",
+                "Napoleon"
+              ]
+            },
+            {
+              "unit": "Unit 5: Industrial Revolution",
+              "chapters": [
+                "Capitalism vs Socialism",
+                "Factories"
+              ]
+            },
+            {
+              "unit": "Unit 6: Latin American Independence",
+              "chapters": [
+                "Simon Bolivar",
+                "Haitian Revolution"
+              ]
+            },
+            {
+              "unit": "Unit 7: Immigration and Citizenship",
+              "chapters": [
+                "Ellis Island",
+                "Becoming an American"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-6-civics & government",
           "name": "Civics & Government",
-          "icon": "⚖️",
+          "icon": "\u2696\ufe0f",
           "color": "from-slate-600 to-slate-800",
           "lessons": [
             {
@@ -73037,7 +73691,7 @@
         {
           "id": "subj-grade-6-life of christ & acts",
           "name": "Life of Christ & Acts",
-          "icon": "✝️",
+          "icon": "\u271d\ufe0f",
           "color": "from-yellow-600 to-amber-700",
           "lessons": [
             {
@@ -74071,7 +74725,7 @@
         {
           "id": "subj-grade-7-grammar & composition",
           "name": "Grammar & Composition",
-          "icon": "✍️",
+          "icon": "\u270d\ufe0f",
           "color": "from-purple-600 to-indigo-700",
           "lessons": [
             {
@@ -75099,7 +75753,7 @@
         {
           "id": "subj-grade-7-world literature",
           "name": "World Literature",
-          "icon": "📚",
+          "icon": "\ud83d\udcda",
           "color": "from-blue-600 to-indigo-600",
           "lessons": [
             {
@@ -76127,7 +76781,7 @@
         {
           "id": "subj-grade-7-vocabulary & spelling",
           "name": "Vocabulary & Spelling",
-          "icon": "📖",
+          "icon": "\ud83d\udcd6",
           "color": "from-violet-500 to-purple-600",
           "lessons": [
             {
@@ -77155,7 +77809,7 @@
         {
           "id": "subj-grade-7-pre-algebra / algebra 1",
           "name": "Pre-Algebra / Algebra 1",
-          "icon": "📐",
+          "icon": "\ud83d\udcd0",
           "color": "from-teal-600 to-cyan-700",
           "lessons": [
             {
@@ -78183,7 +78837,7 @@
         {
           "id": "subj-grade-7-earth & space science",
           "name": "Earth & Space Science",
-          "icon": "🪐",
+          "icon": "\ud83e\ude90",
           "color": "from-indigo-600 to-blue-700",
           "lessons": [
             {
@@ -79206,12 +79860,36 @@
               "title": "Lesson 170: Exploring Environmental Science (Part 5)",
               "dynamicQuery": "dynamic:Earth & Space Science Environmental Science"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: Atomic Structure",
+              "chapters": [
+                "Periodic Table",
+                "Chemical Bonds"
+              ]
+            },
+            {
+              "unit": "Unit 2: Cell Division",
+              "chapters": [
+                "Mitosis",
+                "Meiosis"
+              ]
+            },
+            {
+              "unit": "Unit 3: Genetics",
+              "chapters": [
+                "Mendel",
+                "DNA",
+                "Inheritance"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-7-life science",
           "name": "Life Science",
-          "icon": "🧬",
+          "icon": "\ud83e\uddec",
           "color": "from-emerald-500 to-green-600",
           "lessons": [
             {
@@ -80234,12 +80912,36 @@
               "title": "Lesson 170: Exploring Ecology (Part 5)",
               "dynamicQuery": "dynamic:Life Science Ecology"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: Atomic Structure",
+              "chapters": [
+                "Periodic Table",
+                "Chemical Bonds"
+              ]
+            },
+            {
+              "unit": "Unit 2: Cell Division",
+              "chapters": [
+                "Mitosis",
+                "Meiosis"
+              ]
+            },
+            {
+              "unit": "Unit 3: Genetics",
+              "chapters": [
+                "Mendel",
+                "DNA",
+                "Inheritance"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-7-world history",
           "name": "World History",
-          "icon": "🏛️",
+          "icon": "\ud83c\udfdb\ufe0f",
           "color": "from-amber-600 to-red-700",
           "lessons": [
             {
@@ -81262,12 +81964,54 @@
               "title": "Lesson 170: Exploring Modern Era (Part 5)",
               "dynamicQuery": "dynamic:World History Modern Era"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: America Becomes a World Power",
+              "chapters": [
+                "Spanish-American War",
+                "Panama Canal"
+              ]
+            },
+            {
+              "unit": "Unit 2: World War I",
+              "chapters": [
+                "Causes",
+                "Trench Warfare",
+                "Treaty of Versailles"
+              ]
+            },
+            {
+              "unit": "Unit 3: Russian Revolution",
+              "chapters": [
+                "Czars",
+                "Lenin",
+                "Bolsheviks"
+              ]
+            },
+            {
+              "unit": "Unit 4: America in the 1920s and 30s",
+              "chapters": [
+                "Roaring Twenties",
+                "Great Depression",
+                "New Deal"
+              ]
+            },
+            {
+              "unit": "Unit 5: World War II",
+              "chapters": [
+                "Rise of Totalitarianism",
+                "Major Battles",
+                "The Holocaust",
+                "Atomic Bomb"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-7-civics & government",
           "name": "Civics & Government",
-          "icon": "⚖️",
+          "icon": "\u2696\ufe0f",
           "color": "from-slate-600 to-slate-800",
           "lessons": [
             {
@@ -82295,7 +83039,7 @@
         {
           "id": "subj-grade-7-life of christ & acts",
           "name": "Life of Christ & Acts",
-          "icon": "✝️",
+          "icon": "\u271d\ufe0f",
           "color": "from-yellow-600 to-amber-700",
           "lessons": [
             {
@@ -83329,7 +84073,7 @@
         {
           "id": "subj-grade-8-grammar & composition",
           "name": "Grammar & Composition",
-          "icon": "✍️",
+          "icon": "\u270d\ufe0f",
           "color": "from-purple-600 to-indigo-700",
           "lessons": [
             {
@@ -84357,7 +85101,7 @@
         {
           "id": "subj-grade-8-world literature",
           "name": "World Literature",
-          "icon": "📚",
+          "icon": "\ud83d\udcda",
           "color": "from-blue-600 to-indigo-600",
           "lessons": [
             {
@@ -85385,7 +86129,7 @@
         {
           "id": "subj-grade-8-vocabulary & spelling",
           "name": "Vocabulary & Spelling",
-          "icon": "📖",
+          "icon": "\ud83d\udcd6",
           "color": "from-violet-500 to-purple-600",
           "lessons": [
             {
@@ -86413,7 +87157,7 @@
         {
           "id": "subj-grade-8-pre-algebra / algebra 1",
           "name": "Pre-Algebra / Algebra 1",
-          "icon": "📐",
+          "icon": "\ud83d\udcd0",
           "color": "from-teal-600 to-cyan-700",
           "lessons": [
             {
@@ -87441,7 +88185,7 @@
         {
           "id": "subj-grade-8-earth & space science",
           "name": "Earth & Space Science",
-          "icon": "🪐",
+          "icon": "\ud83e\ude90",
           "color": "from-indigo-600 to-blue-700",
           "lessons": [
             {
@@ -88464,12 +89208,36 @@
               "title": "Lesson 170: Exploring Environmental Science (Part 5)",
               "dynamicQuery": "dynamic:Earth & Space Science Environmental Science"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: Physics",
+              "chapters": [
+                "Motion",
+                "Forces",
+                "Newton's Laws"
+              ]
+            },
+            {
+              "unit": "Unit 2: Energy",
+              "chapters": [
+                "Kinetic and Potential",
+                "Conservation of Energy"
+              ]
+            },
+            {
+              "unit": "Unit 3: Sound and Light",
+              "chapters": [
+                "Wave Properties",
+                "Electromagnetic Spectrum"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-8-life science",
           "name": "Life Science",
-          "icon": "🧬",
+          "icon": "\ud83e\uddec",
           "color": "from-emerald-500 to-green-600",
           "lessons": [
             {
@@ -89492,12 +90260,36 @@
               "title": "Lesson 170: Exploring Ecology (Part 5)",
               "dynamicQuery": "dynamic:Life Science Ecology"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: Physics",
+              "chapters": [
+                "Motion",
+                "Forces",
+                "Newton's Laws"
+              ]
+            },
+            {
+              "unit": "Unit 2: Energy",
+              "chapters": [
+                "Kinetic and Potential",
+                "Conservation of Energy"
+              ]
+            },
+            {
+              "unit": "Unit 3: Sound and Light",
+              "chapters": [
+                "Wave Properties",
+                "Electromagnetic Spectrum"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-8-world history",
           "name": "World History",
-          "icon": "🏛️",
+          "icon": "\ud83c\udfdb\ufe0f",
           "color": "from-amber-600 to-red-700",
           "lessons": [
             {
@@ -90520,12 +91312,54 @@
               "title": "Lesson 170: Exploring Modern Era (Part 5)",
               "dynamicQuery": "dynamic:World History Modern Era"
             }
+          ],
+          "textbookStructure": [
+            {
+              "unit": "Unit 1: The Cold War",
+              "chapters": [
+                "Iron Curtain",
+                "Korean War",
+                "Vietnam War"
+              ]
+            },
+            {
+              "unit": "Unit 2: The Civil Rights Movement",
+              "chapters": [
+                "Brown v. Board",
+                "MLK Jr",
+                "Malcolm X",
+                "Voting Rights Act"
+              ]
+            },
+            {
+              "unit": "Unit 3: The Middle East",
+              "chapters": [
+                "Creation of Israel",
+                "Oil Politics",
+                "Modern Conflicts"
+              ]
+            },
+            {
+              "unit": "Unit 4: The End of the Cold War",
+              "chapters": [
+                "Fall of the Berlin Wall",
+                "Collapse of the Soviet Union"
+              ]
+            },
+            {
+              "unit": "Unit 5: Modern America",
+              "chapters": [
+                "Space Race",
+                "Information Age",
+                "Contemporary Issues"
+              ]
+            }
           ]
         },
         {
           "id": "subj-grade-8-civics & government",
           "name": "Civics & Government",
-          "icon": "⚖️",
+          "icon": "\u2696\ufe0f",
           "color": "from-slate-600 to-slate-800",
           "lessons": [
             {
@@ -91553,7 +92387,7 @@
         {
           "id": "subj-grade-8-life of christ & acts",
           "name": "Life of Christ & Acts",
-          "icon": "✝️",
+          "icon": "\u271d\ufe0f",
           "color": "from-yellow-600 to-amber-700",
           "lessons": [
             {
@@ -92587,7 +93421,7 @@
         {
           "id": "subj-grade-9-advanced literature",
           "name": "Advanced Literature",
-          "icon": "✒️",
+          "icon": "\u2712\ufe0f",
           "color": "from-indigo-700 to-violet-800",
           "lessons": [
             {
@@ -93615,7 +94449,7 @@
         {
           "id": "subj-grade-9-composition & rhetoric",
           "name": "Composition & Rhetoric",
-          "icon": "📝",
+          "icon": "\ud83d\udcdd",
           "color": "from-purple-700 to-fuchsia-800",
           "lessons": [
             {
@@ -94643,7 +95477,7 @@
         {
           "id": "subj-grade-9-algebra ii / geometry",
           "name": "Algebra II / Geometry",
-          "icon": "∑",
+          "icon": "\u2211",
           "color": "from-cyan-700 to-blue-800",
           "lessons": [
             {
@@ -95671,7 +96505,7 @@
         {
           "id": "subj-grade-9-pre-calculus / calculus",
           "name": "Pre-Calculus / Calculus",
-          "icon": "∫",
+          "icon": "\u222b",
           "color": "from-blue-700 to-indigo-900",
           "lessons": [
             {
@@ -96699,7 +97533,7 @@
         {
           "id": "subj-grade-9-chemistry",
           "name": "Chemistry",
-          "icon": "🧪",
+          "icon": "\ud83e\uddea",
           "color": "from-emerald-700 to-green-800",
           "lessons": [
             {
@@ -97727,7 +98561,7 @@
         {
           "id": "subj-grade-9-physics",
           "name": "Physics",
-          "icon": "⚡",
+          "icon": "\u26a1",
           "color": "from-yellow-500 to-amber-600",
           "lessons": [
             {
@@ -98755,7 +99589,7 @@
         {
           "id": "subj-grade-9-economics",
           "name": "Economics",
-          "icon": "📈",
+          "icon": "\ud83d\udcc8",
           "color": "from-green-600 to-emerald-800",
           "lessons": [
             {
@@ -99783,7 +100617,7 @@
         {
           "id": "subj-grade-9-us history & gov",
           "name": "US History & Gov",
-          "icon": "🦅",
+          "icon": "\ud83e\udd85",
           "color": "from-red-700 to-rose-800",
           "lessons": [
             {
@@ -100811,7 +101645,7 @@
         {
           "id": "subj-grade-9-foreign language",
           "name": "Foreign Language",
-          "icon": "🗣️",
+          "icon": "\ud83d\udde3\ufe0f",
           "color": "from-pink-600 to-rose-700",
           "lessons": [
             {
@@ -101839,7 +102673,7 @@
         {
           "id": "subj-grade-9-advanced apologetics",
           "name": "Advanced Apologetics",
-          "icon": "🛡️",
+          "icon": "\ud83d\udee1\ufe0f",
           "color": "from-amber-700 to-orange-800",
           "lessons": [
             {
@@ -102873,7 +103707,7 @@
         {
           "id": "subj-grade-10-advanced literature",
           "name": "Advanced Literature",
-          "icon": "✒️",
+          "icon": "\u2712\ufe0f",
           "color": "from-indigo-700 to-violet-800",
           "lessons": [
             {
@@ -103901,7 +104735,7 @@
         {
           "id": "subj-grade-10-composition & rhetoric",
           "name": "Composition & Rhetoric",
-          "icon": "📝",
+          "icon": "\ud83d\udcdd",
           "color": "from-purple-700 to-fuchsia-800",
           "lessons": [
             {
@@ -104929,7 +105763,7 @@
         {
           "id": "subj-grade-10-algebra ii / geometry",
           "name": "Algebra II / Geometry",
-          "icon": "∑",
+          "icon": "\u2211",
           "color": "from-cyan-700 to-blue-800",
           "lessons": [
             {
@@ -105957,7 +106791,7 @@
         {
           "id": "subj-grade-10-pre-calculus / calculus",
           "name": "Pre-Calculus / Calculus",
-          "icon": "∫",
+          "icon": "\u222b",
           "color": "from-blue-700 to-indigo-900",
           "lessons": [
             {
@@ -106985,7 +107819,7 @@
         {
           "id": "subj-grade-10-chemistry",
           "name": "Chemistry",
-          "icon": "🧪",
+          "icon": "\ud83e\uddea",
           "color": "from-emerald-700 to-green-800",
           "lessons": [
             {
@@ -108013,7 +108847,7 @@
         {
           "id": "subj-grade-10-physics",
           "name": "Physics",
-          "icon": "⚡",
+          "icon": "\u26a1",
           "color": "from-yellow-500 to-amber-600",
           "lessons": [
             {
@@ -109041,7 +109875,7 @@
         {
           "id": "subj-grade-10-economics",
           "name": "Economics",
-          "icon": "📈",
+          "icon": "\ud83d\udcc8",
           "color": "from-green-600 to-emerald-800",
           "lessons": [
             {
@@ -110069,7 +110903,7 @@
         {
           "id": "subj-grade-10-us history & gov",
           "name": "US History & Gov",
-          "icon": "🦅",
+          "icon": "\ud83e\udd85",
           "color": "from-red-700 to-rose-800",
           "lessons": [
             {
@@ -111097,7 +111931,7 @@
         {
           "id": "subj-grade-10-foreign language",
           "name": "Foreign Language",
-          "icon": "🗣️",
+          "icon": "\ud83d\udde3\ufe0f",
           "color": "from-pink-600 to-rose-700",
           "lessons": [
             {
@@ -112125,7 +112959,7 @@
         {
           "id": "subj-grade-10-advanced apologetics",
           "name": "Advanced Apologetics",
-          "icon": "🛡️",
+          "icon": "\ud83d\udee1\ufe0f",
           "color": "from-amber-700 to-orange-800",
           "lessons": [
             {
@@ -113159,7 +113993,7 @@
         {
           "id": "subj-grade-11-advanced literature",
           "name": "Advanced Literature",
-          "icon": "✒️",
+          "icon": "\u2712\ufe0f",
           "color": "from-indigo-700 to-violet-800",
           "lessons": [
             {
@@ -114187,7 +115021,7 @@
         {
           "id": "subj-grade-11-composition & rhetoric",
           "name": "Composition & Rhetoric",
-          "icon": "📝",
+          "icon": "\ud83d\udcdd",
           "color": "from-purple-700 to-fuchsia-800",
           "lessons": [
             {
@@ -115215,7 +116049,7 @@
         {
           "id": "subj-grade-11-algebra ii / geometry",
           "name": "Algebra II / Geometry",
-          "icon": "∑",
+          "icon": "\u2211",
           "color": "from-cyan-700 to-blue-800",
           "lessons": [
             {
@@ -116243,7 +117077,7 @@
         {
           "id": "subj-grade-11-pre-calculus / calculus",
           "name": "Pre-Calculus / Calculus",
-          "icon": "∫",
+          "icon": "\u222b",
           "color": "from-blue-700 to-indigo-900",
           "lessons": [
             {
@@ -117271,7 +118105,7 @@
         {
           "id": "subj-grade-11-chemistry",
           "name": "Chemistry",
-          "icon": "🧪",
+          "icon": "\ud83e\uddea",
           "color": "from-emerald-700 to-green-800",
           "lessons": [
             {
@@ -118299,7 +119133,7 @@
         {
           "id": "subj-grade-11-physics",
           "name": "Physics",
-          "icon": "⚡",
+          "icon": "\u26a1",
           "color": "from-yellow-500 to-amber-600",
           "lessons": [
             {
@@ -119327,7 +120161,7 @@
         {
           "id": "subj-grade-11-economics",
           "name": "Economics",
-          "icon": "📈",
+          "icon": "\ud83d\udcc8",
           "color": "from-green-600 to-emerald-800",
           "lessons": [
             {
@@ -120355,7 +121189,7 @@
         {
           "id": "subj-grade-11-us history & gov",
           "name": "US History & Gov",
-          "icon": "🦅",
+          "icon": "\ud83e\udd85",
           "color": "from-red-700 to-rose-800",
           "lessons": [
             {
@@ -121383,7 +122217,7 @@
         {
           "id": "subj-grade-11-foreign language",
           "name": "Foreign Language",
-          "icon": "🗣️",
+          "icon": "\ud83d\udde3\ufe0f",
           "color": "from-pink-600 to-rose-700",
           "lessons": [
             {
@@ -122411,7 +123245,7 @@
         {
           "id": "subj-grade-11-advanced apologetics",
           "name": "Advanced Apologetics",
-          "icon": "🛡️",
+          "icon": "\ud83d\udee1\ufe0f",
           "color": "from-amber-700 to-orange-800",
           "lessons": [
             {
@@ -123445,7 +124279,7 @@
         {
           "id": "subj-grade-12-advanced literature",
           "name": "Advanced Literature",
-          "icon": "✒️",
+          "icon": "\u2712\ufe0f",
           "color": "from-indigo-700 to-violet-800",
           "lessons": [
             {
@@ -124473,7 +125307,7 @@
         {
           "id": "subj-grade-12-composition & rhetoric",
           "name": "Composition & Rhetoric",
-          "icon": "📝",
+          "icon": "\ud83d\udcdd",
           "color": "from-purple-700 to-fuchsia-800",
           "lessons": [
             {
@@ -125501,7 +126335,7 @@
         {
           "id": "subj-grade-12-algebra ii / geometry",
           "name": "Algebra II / Geometry",
-          "icon": "∑",
+          "icon": "\u2211",
           "color": "from-cyan-700 to-blue-800",
           "lessons": [
             {
@@ -126529,7 +127363,7 @@
         {
           "id": "subj-grade-12-pre-calculus / calculus",
           "name": "Pre-Calculus / Calculus",
-          "icon": "∫",
+          "icon": "\u222b",
           "color": "from-blue-700 to-indigo-900",
           "lessons": [
             {
@@ -127557,7 +128391,7 @@
         {
           "id": "subj-grade-12-chemistry",
           "name": "Chemistry",
-          "icon": "🧪",
+          "icon": "\ud83e\uddea",
           "color": "from-emerald-700 to-green-800",
           "lessons": [
             {
@@ -128585,7 +129419,7 @@
         {
           "id": "subj-grade-12-physics",
           "name": "Physics",
-          "icon": "⚡",
+          "icon": "\u26a1",
           "color": "from-yellow-500 to-amber-600",
           "lessons": [
             {
@@ -129613,7 +130447,7 @@
         {
           "id": "subj-grade-12-economics",
           "name": "Economics",
-          "icon": "📈",
+          "icon": "\ud83d\udcc8",
           "color": "from-green-600 to-emerald-800",
           "lessons": [
             {
@@ -130641,7 +131475,7 @@
         {
           "id": "subj-grade-12-us history & gov",
           "name": "US History & Gov",
-          "icon": "🦅",
+          "icon": "\ud83e\udd85",
           "color": "from-red-700 to-rose-800",
           "lessons": [
             {
@@ -131669,7 +132503,7 @@
         {
           "id": "subj-grade-12-foreign language",
           "name": "Foreign Language",
-          "icon": "🗣️",
+          "icon": "\ud83d\udde3\ufe0f",
           "color": "from-pink-600 to-rose-700",
           "lessons": [
             {
@@ -132697,7 +133531,7 @@
         {
           "id": "subj-grade-12-advanced apologetics",
           "name": "Advanced Apologetics",
-          "icon": "🛡️",
+          "icon": "\ud83d\udee1\ufe0f",
           "color": "from-amber-700 to-orange-800",
           "lessons": [
             {

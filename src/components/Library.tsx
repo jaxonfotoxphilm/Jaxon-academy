@@ -3,6 +3,7 @@ import curriculumData from '../data/curriculum-structure.json';
 import { SoundManager } from '../utils/SoundManager';
 import { supabase } from '../supabaseClient';
 import ReactMarkdown from 'react-markdown';
+import { motion } from 'framer-motion';
 
 // removed CoursePathway interface
 
@@ -35,7 +36,7 @@ export const Library: React.FC<{ lockedGradeId?: string | null; currentUser?: st
         : activeGrade?.subjects.find(s => s.id === selectedSubjectId);
 
     // Dynamic curriculum modules for the pathway
-    const textbookStructure = [
+    const textbookStructure: { unit: string, chapters: string[] }[] = (activeSubject as any)?.textbookStructure || [
         {
             unit: "Unit 1: Foundations",
             chapters: [
@@ -109,37 +110,46 @@ export const Library: React.FC<{ lockedGradeId?: string | null; currentUser?: st
 
                 {/* Grade Level Selection */}
                 <h3 className="font-bold text-slate-600 uppercase tracking-widest text-[10px] mb-3">Academic Level</h3>
-                <div className="flex flex-col gap-1 mb-8">
+                <motion.div 
+                    className="flex flex-col gap-1 mb-8"
+                    initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
+                >
                     {curriculumData.grades
                         .filter(g => currentUser === 'Principal' || !lockedGradeId || g.id === lockedGradeId)
                         .map(g => (
-                        <button
+                        <motion.button
+                            variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}
                             key={g.id}
                             onClick={() => handleGradeSelect(g.id)}
                             onMouseEnter={() => SoundManager.playHover()}
                             className={`text-left px-4 py-3 rounded-lg font-bold text-sm transition-all ${selectedGradeId === g.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
                         >
                             {g.label}
-                        </button>
+                        </motion.button>
                     ))}
-                </div>
+                </motion.div>
 
                 {/* Subject Selection */}
                 {activeGrade && (
                     <div className="animate-in fade-in duration-300">
                         <h3 className="font-bold text-slate-600 uppercase tracking-widest text-[10px] mb-3">Core Subjects</h3>
-                        <div className="flex flex-col gap-1" data-trigger={renderTrigger}>
+                        <motion.div 
+                            className="flex flex-col gap-1" 
+                            data-trigger={renderTrigger}
+                            initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
+                        >
                             {activeGrade.subjects.filter(s => localStorage.getItem(`adopted-${s.name}`) !== 'false').map(s => (
-                                <button
+                                <motion.button
+                                    variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}
                                     key={s.id}
                                     onClick={() => handleSubjectSelect(s.id)}
                                     onMouseEnter={() => SoundManager.playHover()}
                                     className={`text-left px-4 py-3 rounded-lg font-bold text-sm transition-all flex items-center gap-3 ${selectedSubjectId === s.id ? 'bg-slate-800 text-white border border-slate-700' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900/50'}`}
                                 >
                                     <span>{s.icon}</span> {s.name}
-                                </button>
+                                </motion.button>
                             ))}
-                        </div>
+                        </motion.div>
 
                         {/* STATE LEGISLATURE MANDATE */}
                         <div className="mt-6 pt-6 border-t border-slate-800">
@@ -169,25 +179,41 @@ export const Library: React.FC<{ lockedGradeId?: string | null; currentUser?: st
                 ) : !activeModule ? (
                     /* Learning Pathway UI */
                     <div className="p-10 md:p-16 max-w-5xl mx-auto animate-in slide-in-from-bottom-8 duration-500">
-                        <div className="mb-12 border-b border-slate-800 pb-8">
-                            <div className="flex items-center gap-4 mb-4">
+                        <div className="mb-12 border-b border-slate-800 pb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                            <div className="flex items-center gap-4">
                                 <span className="text-5xl drop-shadow-lg">{activeSubject?.icon}</span>
                                 <div>
                                     <h1 className="text-4xl font-black text-white">{activeSubject?.name}</h1>
                                     <p className="text-blue-400 font-bold tracking-wider uppercase text-sm mt-2">{activeGrade?.label} Coursework</p>
                                 </div>
                             </div>
-                            <p className="text-slate-400 text-lg leading-relaxed">Official McGraw-Hill Education Digital Textbook Structure aligned with Nebraska State Standards for {activeGrade?.label} {activeSubject?.name}.</p>
+                            
+                            {/* Official Curriculum Materials Link */}
+                            <a 
+                                href="https://www.coreknowledge.org/curriculum/download-curriculum/" 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="bg-slate-800/50 hover:bg-slate-800 border border-slate-700 p-4 rounded-xl flex items-center gap-4 transition-all hover:scale-105 group"
+                            >
+                                <div className="bg-red-500/20 text-red-400 p-3 rounded-lg group-hover:bg-red-500 group-hover:text-white transition-colors text-xl">
+                                    📄
+                                </div>
+                                <div>
+                                    <h4 className="text-white font-bold text-sm">Official PDF Readers</h4>
+                                    <p className="text-slate-400 text-xs mt-1">Download Core Knowledge Textbooks</p>
+                                </div>
+                            </a>
                         </div>
+                        <p className="text-slate-400 text-lg leading-relaxed mb-12">Official Digital Textbook Structure aligned with Core Knowledge Sequence for {activeGrade?.label} {activeSubject?.name}.</p>
 
-                        {textbookStructure.map((unit, uIdx) => (
+                        {textbookStructure.map((unit: { unit: string, chapters: string[] }, uIdx: number) => (
                             <div key={uIdx} className="mb-12">
                                 <h2 className="text-xl font-extrabold text-white mb-6 flex items-center gap-3 border-b border-slate-800 pb-2">
                                     <span className="text-blue-500">📚</span> 
                                     {unit.unit}
                                 </h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {unit.chapters.map((chapter, cIdx) => (
+                                    {unit.chapters.map((chapter: string, cIdx: number) => (
                                         <div key={cIdx} 
                                              className="p-6 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-lg hover:shadow-blue-900/40 hover:border-white/20 hover:bg-white/10 transition-all cursor-pointer flex flex-col justify-between h-full"
                                              onClick={() => handleModuleSelect(chapter)}

@@ -2,9 +2,10 @@ import React from 'react';
 
 interface LessonVisualizerProps {
     visualType?: string;
+    youtubeSearchQuery?: string;
 }
 
-export const LessonVisualizer: React.FC<LessonVisualizerProps> = ({ visualType }) => {
+export const LessonVisualizer: React.FC<LessonVisualizerProps> = ({ visualType, youtubeSearchQuery }) => {
     if (!visualType) return null;
 
     const renderVisual = () => {
@@ -99,7 +100,17 @@ export const LessonVisualizer: React.FC<LessonVisualizerProps> = ({ visualType }
     return (
         <div className="absolute inset-0 w-full h-full flex items-center justify-center p-8 pointer-events-none overflow-hidden">
             <div className="absolute inset-0 z-0">
-                {isVideoType ? (
+                {youtubeSearchQuery ? (
+                    <div className="w-full h-full opacity-60">
+                        <iframe 
+                            className="w-full h-full pointer-events-auto"
+                            src={`https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(youtubeSearchQuery)}&autoplay=1&mute=1&controls=0`}
+                            title="YouTube Contextual Video"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                        ></iframe>
+                    </div>
+                ) : isVideoType ? (
                     <video 
                         key={visualType}
                         src={getVideoUrl()} 

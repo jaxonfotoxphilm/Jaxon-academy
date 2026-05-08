@@ -56,6 +56,7 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
     const [hasEnv3D, setHasEnv3D] = useState(false);
     const [hasProp3D, setHasProp3D] = useState(false);
     const [mathInputValue, setMathInputValue] = useState('');
+    const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
 
 
     useEffect(() => {
@@ -94,6 +95,7 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
         if (isComplete) return;
         
         const playDynamicAudio = async (text: string, voiceType: string) => {
+            // First try the premium cloud TTS, if it fails immediately fallback to local storytelling voice
             try {
                 const { data, error } = await supabase.functions.invoke('generate-tts', { body: { text } });
                 if (error || !data || !data.audioContent) throw new Error("TTS Fallback");
@@ -103,9 +105,11 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                 audio.addEventListener('pause', () => setIsTalking(false));
                 audio.play();
             } catch(e) {
+                console.warn("Cloud TTS failed or unavailable, using high-quality local browser TTS.");
                 setIsTalking(true);
                 SoundManager.playCharacterVoice(text, voiceType as any);
-                setTimeout(() => setIsTalking(false), text.length * 50);
+                // Rough estimate for lip sync timing
+                setTimeout(() => setIsTalking(false), text.length * 60);
             }
         };
 
@@ -172,6 +176,41 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
             await speakText(fallbackMsg);
         }
         setIsAsking(false);
+    };
+
+    const handlePopQuiz = async () => {
+        if (!currentNode) return;
+        setIsLoadingQuiz(true);
+        SoundManager.playClick();
+        try {
+            const { data, error } = await supabase.functions.invoke('generate-lesson', {
+                body: { 
+                    subject: `Pop Quiz on: ${currentNode.text.substring(0, 100)}`, 
+                    gradeLevel: gradeLevel, 
+                    studentName: studentName 
+                }
+            });
+            if (error || !data || !data.nodes) throw new Error("Failed to generate pop quiz");
+            
+            const quizNodes = data.nodes;
+            if (quizNodes && quizNodes.length > 0) {
+                const newNodeId = quizNodes[0].id;
+                const lastQuizNode = quizNodes[quizNodes.length - 1];
+                lastQuizNode.nextNodeId = currentNode.nextNodeId || (storyNodes[currentNodeIndex + 1]?.id) || 'end';
+
+                const newStoryNodes = [...storyNodes];
+                newStoryNodes[currentNodeIndex] = { ...currentNode, nextNodeId: newNodeId };
+                newStoryNodes.splice(currentNodeIndex + 1, 0, ...quizNodes);
+                setStoryNodes(newStoryNodes);
+                
+                setTimeout(() => handleNext(), 100);
+                SoundManager.playCharacterVoice("Let's see what you remember. Pop quiz time!", "professor");
+            }
+        } catch(e) {
+            console.error(e);
+            alert("Professor Grace is too busy grading papers to make a quiz right now!");
+        }
+        setIsLoadingQuiz(false);
     };
 
     const handleListen = () => {
@@ -503,7 +542,7 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                         />
                     </div>
                 ) : (
-                    <LessonVisualizer visualType={currentNode.visualType} />
+                    <LessonVisualizer visualType={currentNode.visualType} youtubeSearchQuery={currentNode.youtubeSearchQuery} />
                 )}
             </div>
 
@@ -550,11 +589,22 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
 
                     {/* Ask Professor Grace Modal Trigger */}
                     <button
-                        onClick={() => setIsAsking(true)}
+                        onClick={() => setIsAskModalOpen(true)}
                         className="absolute -top-5 right-12 bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-400/50 text-indigo-100 px-6 py-1.5 rounded-full font-medium tracking-wide flex items-center gap-2 transition-all hover:scale-105"
                     >
                         <HelpCircle className="w-5 h-5" />
                         Ask Professor
+                    </button>
+
+                    {/* Pop Quiz Trigger */}
+                    <button
+                        onClick={handlePopQuiz}
+                        disabled={isLoadingQuiz}
+                        className="absolute -top-5 right-56 bg-rose-500/20 hover:bg-rose-500/40 border border-rose-400/50 text-rose-100 px-6 py-1.5 rounded-full font-medium tracking-wide flex items-center gap-2 transition-all hover:scale-105 disabled:opacity-50 shadow-[0_0_15px_rgba(244,63,94,0.3)]"
+                        title="Generate an instant knowledge check!"
+                    >
+                        {isLoadingQuiz ? <span className="animate-spin">🔄</span> : <span>⚡</span>}
+                        Pop Quiz!
                     </button>
 
                     <div className="flex-1 overflow-y-auto pt-4 pr-2 flex flex-col justify-start custom-scrollbar relative">

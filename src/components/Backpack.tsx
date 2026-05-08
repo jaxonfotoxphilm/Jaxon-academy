@@ -38,6 +38,24 @@ const ITEM_DB: Record<string, { name: string; description: string; icon: string;
         description: 'Master of logic and order. Earned in Mathematics.',
         icon: '🧮',
         color: 'from-yellow-400 to-yellow-600'
+    },
+    'badge_math': {
+        name: 'Math Master',
+        description: 'Awarded by the Principal for excellence in logic and numbers.',
+        icon: '🧮',
+        color: 'from-indigo-400 to-indigo-600'
+    },
+    'badge_science': {
+        name: 'Science Explorer',
+        description: 'Awarded by the Principal for outstanding scientific discovery.',
+        icon: '🔬',
+        color: 'from-emerald-400 to-emerald-600'
+    },
+    'badge_reading': {
+        name: 'Reading Champion',
+        description: 'Awarded by the Principal for voracious reading and comprehension.',
+        icon: '📚',
+        color: 'from-amber-400 to-amber-600'
     }
 };
 
@@ -50,7 +68,7 @@ export const Backpack: React.FC<BackpackProps> = ({ currentUser, onClose }) => {
             setInventory(inv);
         };
         fetchInventory();
-        SoundManager.playHover(); // Play a nice sound on open
+        SoundManager.playLevelUp(); // Play epic sound on open
     }, [currentUser]);
 
     const CardHover = () => SoundManager.playHover();

@@ -99,6 +99,17 @@ class ParentManagerClass {
     public async deleteAssignment(id: string) {
         await supabase.from('assignments').delete().eq('id', id);
     }
+
+    // --- Progress / Analytics ---
+    public async getStudentProgress(studentName: string) {
+        const { data, error } = await supabase
+            .from('Student_Progress')
+            .select('*')
+            .eq('student_name', studentName)
+            .order('created_at', { ascending: false });
+        if (error || !data) return [];
+        return data;
+    }
 }
 
 export const ParentManager = new ParentManagerClass();

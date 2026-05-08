@@ -168,6 +168,59 @@ class SoundManagerClass {
         });
     }
 
+    public playReward() {
+        if (!this.audioEnabled) return;
+        this.unlockAudio();
+        this.init();
+        if (!this.audioCtx) return;
+        
+        const ctx = this.audioCtx;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+        
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
+    }
+
+    public playLevelUp() {
+        if (!this.audioEnabled) return;
+        this.unlockAudio();
+        this.init();
+        if (!this.audioCtx) return;
+        
+        const ctx = this.audioCtx;
+        const notes = [440, 554.37, 659.25, 880]; // A4, C#5, E5, A5 (A major arpeggio)
+        
+        notes.forEach((freq, index) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(freq, ctx.currentTime + (index * 0.1));
+            
+            gain.gain.setValueAtTime(0, ctx.currentTime + (index * 0.1));
+            gain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + (index * 0.1) + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (index * 0.1) + 0.3);
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.start(ctx.currentTime + (index * 0.1));
+            osc.stop(ctx.currentTime + (index * 0.1) + 0.3);
+        });
+    }
+
     public playCharacterVoice(text: string, voiceType: 'narrator' | 'professor' | 'hero' = 'narrator') {
         if (!this.audioEnabled || !('speechSynthesis' in window)) return;
         
@@ -181,10 +234,17 @@ class SoundManagerClass {
         
         // Pitch and rate modifiers based on character
         if (voiceType === 'professor') {
-            utterance.pitch = 1.1; // Warm female pitch
-            utterance.rate = 0.95;  // slightly slower and deliberate for teaching
-            // Professor Grace is female, try to find a high-quality female English voice
-            const profVoice = voices.find(v => v.name.includes('Samantha') || v.name.includes('Google US English') || v.name.includes('Female'));
+            utterance.pitch = 1.0; // Natural female pitch
+            utterance.rate = 0.9;  // Slower, storytelling pacing
+            // Professor Grace is female, grab the absolute best available voices.
+            // Google UK English Female is an amazing storytelling voice on Chrome. Samantha is great on Apple.
+            const premiumVoices = ['Google UK English Female', 'Samantha', 'Karen', 'Tessa', 'Microsoft Zira'];
+            let profVoice = null;
+            for (const vName of premiumVoices) {
+                profVoice = voices.find(v => v.name === vName);
+                if (profVoice) break;
+            }
+            if (!profVoice) profVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Woman'));
             if (profVoice) utterance.voice = profVoice;
         } else if (voiceType === 'hero') {
             utterance.pitch = 1.2; // higher and energetic

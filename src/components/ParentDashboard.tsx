@@ -7,6 +7,7 @@ import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { enUS } from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { motion } from 'framer-motion';
 
 const locales = {
   'en-US': enUS,
@@ -32,7 +33,7 @@ interface ProgressRecord {
 const STUDENTS = ["Ayla", "Aria", "Ana", "Donyale", "Aiko", "Ace"];
 
 export const ParentDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'progress' | 'enrollment' | 'assignments'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'progress' | 'enrollment' | 'assignments' | 'rewards'>('overview');
   
   // Progress State
   const [records, setRecords] = useState<ProgressRecord[]>([]);
@@ -106,6 +107,12 @@ export const ParentDashboard: React.FC = () => {
     loadLocalData();
   };
 
+  const handleGrantBadge = async (student: string, badgeId: string) => {
+      SoundManager.playReward();
+      await ParentManager.grantItem(student, badgeId);
+      alert(`Granted ${badgeId} to ${student}!`);
+  };
+
   const handleGenerateReport = async () => {
       setIsGeneratingReport(true);
       SoundManager.playClick();
@@ -129,6 +136,20 @@ export const ParentDashboard: React.FC = () => {
   
   const averageExamScore = examRecords.length > 0 ? Math.round(examRecords.reduce((acc, curr) => acc + curr.score, 0) / examRecords.length) : 0;
   const averageLessonScore = lessonRecords.length > 0 ? Math.round(lessonRecords.reduce((acc, curr) => acc + curr.score, 0) / lessonRecords.length) : 0;
+
+  // Calculate average scores by subject for the bar chart
+  const subjectScores: Record<string, { total: number, count: number }> = {};
+  records.forEach(r => {
+      const sub = r.subject?.replace('[EXAM] ', '') || 'Unknown';
+      if (!subjectScores[sub]) subjectScores[sub] = { total: 0, count: 0 };
+      subjectScores[sub].total += r.score;
+      subjectScores[sub].count += 1;
+  });
+  
+  const chartData = Object.entries(subjectScores).map(([sub, data]) => ({
+      subject: sub,
+      average: Math.round(data.total / data.count)
+  })).sort((a, b) => b.average - a.average).slice(0, 5); // Top 5 subjects
 
   return (
     <div className="w-full max-w-[1400px] mx-auto min-h-[85vh] bg-[#0A0D18] rounded-2xl border border-slate-800 shadow-2xl flex overflow-hidden animate-in fade-in duration-500">
@@ -167,6 +188,12 @@ export const ParentDashboard: React.FC = () => {
             >
                 <span>🎓</span> Enrollment
             </button>
+            <button 
+                onClick={() => { SoundManager.playClick(); setActiveTab('rewards'); }}
+                className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${activeTab === 'rewards' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+            >
+                <span>🏆</span> Rewards Vault
+            </button>
         </div>
 
         <div className="p-6 border-t border-slate-800">
@@ -199,20 +226,77 @@ export const ParentDashboard: React.FC = () => {
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                    <div className="bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-xl flex flex-col justify-between">
+                <motion.div 
+                    className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+                    initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+                >
+                    <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-xl flex flex-col justify-between">
                         <h4 className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-4">Total Modules Completed</h4>
                         <p className="text-5xl font-black text-white">{totalModules}</p>
-                    </div>
-                    <div className="bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-xl flex flex-col justify-between relative overflow-hidden">
+                    </motion.div>
+                    <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-xl flex flex-col justify-between relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
                         <h4 className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-4">Average Lesson Score</h4>
                         <p className="text-5xl font-black text-blue-400">{averageLessonScore}%</p>
-                    </div>
-                    <div className="bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-xl flex flex-col justify-between relative overflow-hidden">
+                    </motion.div>
+                    <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-xl flex flex-col justify-between relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
                         <h4 className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-4">Average Exam Score</h4>
                         <p className="text-5xl font-black text-purple-400">{averageExamScore}%</p>
+                    </motion.div>
+                </motion.div>
+
+                {/* Advanced Analytics & Activity Feed */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-12">
+                    {/* Visual Bar Chart */}
+                    <div className="bg-slate-900 border border-slate-700 p-8 rounded-2xl shadow-xl">
+                        <h4 className="text-xl font-extrabold text-white mb-6">Performance by Subject</h4>
+                        <div className="flex flex-col gap-5">
+                            {chartData.length === 0 ? (
+                                <p className="text-slate-500 italic">Not enough data to chart.</p>
+                            ) : (
+                                chartData.map(data => (
+                                    <div key={data.subject}>
+                                        <div className="flex justify-between text-sm font-bold text-slate-300 mb-2">
+                                            <span className="truncate max-w-[200px]">{data.subject}</span>
+                                            <span>{data.average}%</span>
+                                        </div>
+                                        <div className="w-full bg-slate-800 rounded-full h-3">
+                                            <div 
+                                                className={`h-3 rounded-full transition-all duration-1000 ${data.average >= 90 ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : data.average >= 70 ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-yellow-500'}`} 
+                                                style={{ width: `${data.average}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Recent Activity Feed */}
+                    <div className="bg-slate-900 border border-slate-700 p-8 rounded-2xl shadow-xl flex flex-col">
+                        <h4 className="text-xl font-extrabold text-white mb-6">Recent Activity</h4>
+                        <div className="flex-1 overflow-y-auto max-h-[250px] pr-2 custom-scrollbar flex flex-col gap-4">
+                            {records.length === 0 ? (
+                                <p className="text-slate-500 italic">No recent activity.</p>
+                            ) : (
+                                records.slice(0, 10).map((r, idx) => (
+                                    <div key={idx} className="flex gap-4 items-start pb-4 border-b border-slate-800/50 last:border-0 last:pb-0">
+                                        <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center shrink-0 border border-slate-700">
+                                            {r.subject.includes('[EXAM]') ? '📝' : '📖'}
+                                        </div>
+                                        <div>
+                                            <p className="text-slate-300 font-medium">
+                                                <span className="font-bold text-white">{r.student_name}</span> completed <span className="text-indigo-300">{r.subject.replace('[EXAM] ', '')}</span>
+                                            </p>
+                                            <p className="text-xs text-slate-500 font-bold tracking-widest mt-1">
+                                                SCORE: <span className={r.score >= 80 ? 'text-emerald-400' : 'text-yellow-400'}>{r.score}%</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -505,6 +589,52 @@ export const ParentDashboard: React.FC = () => {
                                 }
                             }}
                         />
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* --- REWARDS VAULT TAB --- */}
+        {activeTab === 'rewards' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <h3 className="text-3xl font-extrabold text-white mb-8 flex items-center gap-4">
+                    <span>🏆</span> Rewards Vault
+                </h3>
+                <div className="bg-slate-900 border border-slate-700 p-8 rounded-2xl shadow-xl max-w-4xl">
+                    <p className="text-slate-400 mb-8 text-lg">Grant digital badges to your students' Backpacks for their achievements!</p>
+                    
+                    <div className="flex flex-col gap-6">
+                        {STUDENTS.map(student => (
+                            <div key={student} className="bg-slate-950 border border-slate-800 p-6 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 hover:border-slate-700 transition-colors">
+                                <div className="flex items-center gap-4 min-w-[150px]">
+                                    <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center text-xl shadow-inner">👤</div>
+                                    <h4 className="text-xl font-bold text-white">{student}</h4>
+                                </div>
+                                <div className="flex flex-wrap gap-4 flex-1">
+                                    <button 
+                                        onClick={() => handleGrantBadge(student, 'badge_math')}
+                                        className="px-4 py-3 bg-indigo-500/10 hover:bg-indigo-500/30 border border-indigo-500/30 text-indigo-300 rounded-xl font-bold transition-all flex items-center gap-2 hover:scale-105 shadow-[0_0_15px_rgba(99,102,241,0.1)] hover:shadow-[0_0_20px_rgba(99,102,241,0.3)]"
+                                    >
+                                        <span className="text-2xl drop-shadow-lg">🧮</span>
+                                        <span className="hidden sm:inline">Math Master</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => handleGrantBadge(student, 'badge_science')}
+                                        className="px-4 py-3 bg-emerald-500/10 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-xl font-bold transition-all flex items-center gap-2 hover:scale-105 shadow-[0_0_15px_rgba(16,185,129,0.1)] hover:shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                                    >
+                                        <span className="text-2xl drop-shadow-lg">🔬</span>
+                                        <span className="hidden sm:inline">Science Explorer</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => handleGrantBadge(student, 'badge_reading')}
+                                        className="px-4 py-3 bg-amber-500/10 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 rounded-xl font-bold transition-all flex items-center gap-2 hover:scale-105 shadow-[0_0_15px_rgba(245,158,11,0.1)] hover:shadow-[0_0_20px_rgba(245,158,11,0.3)]"
+                                    >
+                                        <span className="text-2xl drop-shadow-lg">📚</span>
+                                        <span className="hidden sm:inline">Reading Champion</span>
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
