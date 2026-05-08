@@ -4,6 +4,7 @@ import { Login } from './components/Login';
 import { ParentDashboard } from './components/ParentDashboard';
 import { SoundManager } from './utils/SoundManager';
 import curriculumData from './data/curriculum-structure.json';
+import pdfList from './data/pdf-list.json';
 import { ParentManager } from './utils/ParentManager';
 import { StoryLessonEngine } from './components/StoryLessonEngine';
 import { Backpack } from './components/Backpack';
@@ -25,6 +26,7 @@ export default function App() {
   const [showBackpack, setShowBackpack] = useState(false);
   const [activeAssignments, setActiveAssignments] = useState<any[]>([]);
   
+  // @ts-ignore - lockedGradeId is kept for future features
   const [lockedGradeId, setLockedGradeId] = useState<string | null>(null);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
@@ -211,12 +213,10 @@ export default function App() {
                         }));
                     }
                     
-                    // Generate dynamic schedule from Core Knowledge curriculum
-                    const activeGradeObj = curriculumData.grades.find(g => g.id === "grade-6") || curriculumData.grades[0];
-                    const subjects = activeGradeObj.subjects.slice(0, 3);
-                    return subjects.map((sub, i) => {
-                        const firstLesson = sub.lessons?.[0];
-                        const titleText = firstLesson?.title || "Lesson 1: Overview";
+                    // Generate dynamic schedule from actual PDFs
+                    const gradeSpecificFiles = pdfList["Grade Specific"] || [];
+                    const subjects = gradeSpecificFiles.slice(0, 3);
+                    return subjects.map((file, i) => {
                         const colors = [
                             "from-blue-600 to-indigo-600",
                             "from-emerald-600 to-teal-600",
@@ -224,12 +224,12 @@ export default function App() {
                         ];
                         
                         return {
-                            title: sub.name,
-                            desc: titleText,
-                            icon: sub.icon || "📚",
+                            title: file.name,
+                            desc: "Required Reading Document",
+                            icon: "📄",
                             color: colors[i % colors.length],
                             type: "lesson",
-                            subjectId: firstLesson?.dynamicQuery || `dynamic:${activeGradeObj.label} ${sub.name}`,
+                            subjectId: file.path,
                             examId: undefined
                         };
                     });
@@ -241,7 +241,7 @@ export default function App() {
                             setSelectedExam(subject.examId);
                             navigate('exam-runner');
                         } else {
-                            launchLesson(`dynamic:${subject.title} ${subject.desc}`);
+                            window.open(subject.subjectId, '_blank', 'noopener,noreferrer');
                         }
                       }}>
                     <div className={`flex items-center justify-center w-16 h-16 rounded-2xl border border-white/10 ${subject.type === 'exam' ? 'bg-gradient-to-br from-rose-900/80 to-rose-950 text-rose-300' : 'bg-gradient-to-br from-slate-800/80 to-slate-900'} text-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] transition-all duration-500 shrink-0 z-10 group-hover:scale-110 group-hover:rotate-3 group-hover:border-white/30 ml-0 md:ml-2 backdrop-blur-xl`}>
@@ -292,10 +292,9 @@ export default function App() {
             className="pt-24 px-8 pb-12 w-full min-h-screen relative z-40 bg-[#040714]"
           >
             {currentView === 'dashboard' && currentUser === 'Principal' && <ParentDashboard />}
-            {currentView === 'library' && <Library lockedGradeId={lockedGradeId} currentUser={currentUser} launchLesson={launchLesson} />}
+            {currentView === 'library' && <Library />}
             {currentView === 'exams' && (
                 <ConcentratedStudy 
-                    lockedGradeId={lockedGradeId}
                     onLaunchExam={(examId) => {
                         if (examId === 'sat-placement') {
                             navigate('sat-placement');

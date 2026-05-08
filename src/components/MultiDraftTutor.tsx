@@ -8,6 +8,7 @@ import { supabase } from '../supabaseClient';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
 import { SoundManager } from '../utils/SoundManager';
+import pdfList from '../data/pdf-list.json';
 
 interface Message {
     role: 'student' | 'tutor';
@@ -36,9 +37,10 @@ const renderWithMath = (text: string) => {
 };
 
 export const MultiDraftTutor: React.FC<MultiDraftTutorProps> = ({ onExit, studentName, assignmentId }) => {
+    const [activeAssignmentId, setActiveAssignmentId] = useState(assignmentId);
     const [draftText, setDraftText] = useState('');
     const [messages, setMessages] = useState<Message[]>([
-        { role: 'tutor', text: `Hello! I'm Professor Grace. We are studying ${assignmentId}. Write your response or draft here, and I will help you improve it!` }
+        { role: 'tutor', text: `Hello! I'm Professor Grace. We are studying ${activeAssignmentId}. Write your response or draft here, and I will help you improve it!` }
     ]);
     const [isThinking, setIsThinking] = useState(false);
     const [isDictating, setIsDictating] = useState(false);
@@ -48,7 +50,7 @@ export const MultiDraftTutor: React.FC<MultiDraftTutorProps> = ({ onExit, studen
     const stopDictationRef = useRef<(() => void) | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const contextMaterial = `The student is currently completing a module on the topic of "${assignmentId}". You are Professor Grace. Do not assume the student is reading a PDF; rely on your own vast knowledge of "${assignmentId}" to evaluate their draft. Be strict but encouraging. Ensure they understand the core concepts.`;
+        const contextMaterial = `The student is currently completing a module on the topic of "${activeAssignmentId}". You are Professor Grace. Do not assume the student is reading a PDF; rely on your own vast knowledge of "${activeAssignmentId}" to evaluate their draft. Be strict but encouraging. Ensure they understand the core concepts.`;
 
     useEffect(() => {
         // We will maintain the actual verified URL here.
@@ -57,7 +59,7 @@ export const MultiDraftTutor: React.FC<MultiDraftTutorProps> = ({ onExit, studen
         const checkUrls = async () => {
             try {
                 // 1. Try Supabase
-                const { data } = supabase.storage.from('curriculum-pdfs').getPublicUrl(`${assignmentId}.pdf`);
+                const { data } = supabase.storage.from('curriculum-pdfs').getPublicUrl(`${activeAssignmentId}.pdf`);
                 if (data?.publicUrl) {
                     const res = await fetch(data.publicUrl, { method: 'HEAD' });
                     if (res.ok && res.headers.get('content-type')?.includes('application/pdf')) {
@@ -71,7 +73,7 @@ export const MultiDraftTutor: React.FC<MultiDraftTutorProps> = ({ onExit, studen
 
             try {
                 // 2. Try Local Fallback (for local development or if Supabase bucket doesn't have it)
-                const safeId = assignmentId.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+                const safeId = activeAssignmentId.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
                 const localFallback = `/curriculum-pdfs/${safeId}.pdf`;
                 const localRes = await fetch(localFallback, { method: 'HEAD' });
                 // Vite SPA fallback returns 200 OK with text/html for missing files, so we MUST check content-type
@@ -87,7 +89,7 @@ export const MultiDraftTutor: React.FC<MultiDraftTutorProps> = ({ onExit, studen
             setPdfUrl(null);
         };
         checkUrls();
-    }, [assignmentId]);
+    }, [activeAssignmentId]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -133,7 +135,7 @@ export const MultiDraftTutor: React.FC<MultiDraftTutorProps> = ({ onExit, studen
         XapiService.sendStatement({
             actor: { name: studentName },
             verb: XapiService.verbs.attempted,
-            object: { id: `assignment-${assignmentId}`, definition: { name: { "en-US": `Draft submission for ${assignmentId}` } } }
+            object: { id: `assignment-${activeAssignmentId}`, definition: { name: { "en-US": `Draft submission for ${activeAssignmentId}` } } }
         });
 
         const feedback = await GeminiService.getTutoringFeedback(draftText, contextMaterial);
@@ -154,7 +156,7 @@ export const MultiDraftTutor: React.FC<MultiDraftTutorProps> = ({ onExit, studen
         XapiService.sendStatement({
             actor: { name: studentName },
             verb: XapiService.verbs.completed,
-            object: { id: `assignment-${assignmentId}`, definition: { name: { "en-US": `Final submission for ${assignmentId}` } } },
+            object: { id: `assignment-${activeAssignmentId}`, definition: { name: { "en-US": `Final submission for ${activeAssignmentId}` } } },
             result: {
                 success: result.status === 'pass',
                 score: { raw: result.originalityScore, min: 0, max: 100 },
@@ -162,6 +164,56 @@ export const MultiDraftTutor: React.FC<MultiDraftTutorProps> = ({ onExit, studen
             }
         });
     };
+
+    // We also need pdfList imported if not already. Wait, let me add import!
+    if (activeAssignmentId === 'Open Writing Module') {
+        const categories = Object.keys(pdfList) as Array<keyof typeof pdfList>;
+        const [selectedCategory, setSelectedCategory] = useState<string>("Grade Specific");
+        const activeFiles = pdfList[selectedCategory as keyof typeof pdfList] || [];
+
+        return (
+            <div className="w-full max-w-5xl mx-auto animate-in fade-in duration-700 pb-20 pt-8">
+                <div className="text-center mb-12">
+                    <h2 className="text-5xl font-extrabold text-white tracking-widest uppercase mb-4 drop-shadow-md">Writing Tutor</h2>
+                    <p className="text-xl text-slate-400 font-light max-w-2xl mx-auto">
+                        Select a curriculum document to serve as the source material for your writing assignment.
+                    </p>
+                </div>
+
+                <div className="flex flex-wrap justify-center gap-3 mb-10">
+                    {categories.map(cat => (
+                        <button
+                            key={cat}
+                            onClick={() => {
+                                SoundManager.playClick();
+                                setSelectedCategory(cat);
+                            }}
+                            className={`px-5 py-2 rounded-full font-bold transition-all ${selectedCategory === cat ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
+                        >
+                            {cat}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {activeFiles.map((file: any) => (
+                        <div 
+                            key={file.id}
+                            className="bg-slate-800/80 border border-slate-700 hover:border-amber-500 rounded-2xl p-6 cursor-pointer group hover:scale-[1.02] transition-transform"
+                            onClick={() => {
+                                SoundManager.playClick();
+                                setActiveAssignmentId(file.id.replace('.pdf', ''));
+                            }}
+                        >
+                            <div className="text-3xl mb-4 group-hover:scale-110 transition-transform">✍️</div>
+                            <h3 className="font-bold text-white text-lg leading-tight mb-2">{file.name}</h3>
+                            <p className="text-sm text-slate-400">Write an essay based on this document.</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full h-full flex flex-col xl:flex-row gap-6 p-6 animate-in fade-in duration-500 bg-transparent relative z-50">

@@ -1,208 +1,133 @@
-import React, { useState, useEffect } from 'react';
-import curriculumData from '../data/curriculum-structure.json';
+import React, { useState } from 'react';
+import pdfList from '../data/pdf-list.json';
 import { SoundManager } from '../utils/SoundManager';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// removed CoursePathway interface
+export const Library: React.FC = () => {
+    const [activeCategory, setActiveCategory] = useState<string>("Grade Specific");
+    const categories = Object.keys(pdfList) as Array<keyof typeof pdfList>;
 
-export const Library: React.FC<{ lockedGradeId?: string | null; currentUser?: string | null; launchLesson?: (subjectId: string) => void }> = ({ lockedGradeId, currentUser, launchLesson }) => {
-    const [selectedGradeId, setSelectedGradeId] = useState<string>(lockedGradeId || curriculumData.grades[0].id);
-    const [renderTrigger, setRenderTrigger] = useState(0);
-
-    useEffect(() => {
-        const handleStorage = () => setRenderTrigger(prev => prev + 1);
-        window.addEventListener('storage', handleStorage);
-        return () => window.removeEventListener('storage', handleStorage);
-    }, []);
-
-    useEffect(() => {
-        if (lockedGradeId && currentUser !== 'Principal') {
-            setSelectedGradeId(lockedGradeId);
-        }
-    }, [lockedGradeId, currentUser]);
-
-    const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
-    const [activeModule, setActiveModule] = useState<string | null>(null);
-
-    const activeGrade = curriculumData.grades.find(g => g.id === selectedGradeId);
-    
-    const mandateSubject = { id: 'mandate:nebraska-civics', name: 'NE Civics & Financial Lit', icon: '🏛️' };
-    const activeSubject = selectedSubjectId === 'mandate:nebraska-civics' 
-        ? mandateSubject 
-        : activeGrade?.subjects.find(s => s.id === selectedSubjectId);
-
-
-
-    const handleGradeSelect = (gradeId: string) => {
+    const handleCategorySelect = (category: string) => {
         SoundManager.playClick();
-        setSelectedGradeId(gradeId);
-        setSelectedSubjectId(null);
-        setActiveModule(null);
+        setActiveCategory(category);
     };
 
-    const handleSubjectSelect = (subjectId: string) => {
+    const handlePdfSelect = (pdf: { id: string, name: string, path: string }) => {
         SoundManager.playClick();
-        setSelectedSubjectId(subjectId);
-        setActiveModule(null);
+        // Since we are basing off the curriculum folder, clicking the PDF simply opens it!
+        // We will open it in a new tab natively.
+        window.open(pdf.path, '_blank', 'noopener,noreferrer');
     };
 
-    const handleModuleSelect = async (moduleQuery: string) => {
-        SoundManager.playClick();
-        if (launchLesson) {
-            launchLesson(moduleQuery);
-        } else {
-            setActiveModule(moduleQuery);
-        }
+    const getIconForCategory = (cat: string) => {
+        if (cat === 'Elementary') return '🌱';
+        if (cat === 'Middle School') return '🎒';
+        if (cat === 'High School') return '🎓';
+        return '📚';
     };
+
+    const activeFiles = pdfList[activeCategory as keyof typeof pdfList] || [];
 
     return (
-        <div className="w-full min-h-[85vh] bg-[#02040A] flex flex-col md:flex-row relative overflow-hidden animate-in fade-in duration-500 font-sans">
+        <div className="flex h-full w-full rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] bg-[#040714] animate-in zoom-in-95 duration-700 relative">
             
-            {/* Ambient Background Glow */}
-            <div className="absolute inset-0 z-0 pointer-events-none">
-                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-900/10 rounded-full blur-[150px]"></div>
-                <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-indigo-900/10 rounded-full blur-[150px]"></div>
+            {/* Cinematic Background */}
+            <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#0B0F19] via-[#111827] to-[#040714] opacity-90"></div>
+                <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[120px] mix-blend-screen"></div>
+                <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-emerald-600/5 rounded-full blur-[100px] mix-blend-screen"></div>
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 mix-blend-overlay"></div>
             </div>
 
-            {/* Left Sidebar: Academy Navigation */}
-            <div className="w-full md:w-80 bg-white/[0.02] backdrop-blur-2xl border-r border-white/5 p-6 flex flex-col shrink-0 z-10 h-full overflow-y-auto shadow-2xl">
-                <div className="mb-10">
-                    <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 uppercase tracking-widest flex items-center gap-3 drop-shadow-sm">
-                        <span className="text-blue-500 drop-shadow-md">🎓</span> Virtual Academy
+            {/* Sidebar */}
+            <div className="w-72 bg-black/40 backdrop-blur-3xl border-r border-white/5 flex flex-col relative z-10">
+                <div className="p-8 pb-4">
+                    <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500 tracking-wider flex items-center gap-3">
+                        <span className="text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.5)] text-3xl">🏛️</span> 
+                        Archives
                     </h2>
-                    <p className="text-[10px] font-bold text-slate-500 tracking-[0.2em] mt-2 uppercase">Nebraska State Standards</p>
+                    <p className="text-slate-400 text-xs mt-2 font-medium tracking-wide uppercase">Official PDF Library</p>
                 </div>
 
-                {/* Grade Level Selection */}
-                <h3 className="font-bold text-slate-500 uppercase tracking-[0.15em] text-[10px] mb-4 flex items-center gap-2">
-                    <div className="h-px bg-slate-700/50 flex-1"></div> Academic Level <div className="h-px bg-slate-700/50 flex-1"></div>
-                </h3>
-                <motion.div 
-                    className="flex flex-col gap-2 mb-8"
-                    initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
-                >
-                    {curriculumData.grades
-                        .filter(g => currentUser === 'Principal' || !lockedGradeId || g.id === lockedGradeId)
-                        .map(g => (
-                        <motion.button
-                            variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}
-                            key={g.id}
-                            onClick={() => handleGradeSelect(g.id)}
-                            onMouseEnter={() => SoundManager.playHover()}
-                            className={`text-left px-5 py-3.5 rounded-xl font-bold text-sm transition-all duration-300 relative overflow-hidden ${selectedGradeId === g.id ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)] border border-blue-400/30' : 'bg-white/5 border border-transparent text-slate-400 hover:bg-white/10 hover:text-white hover:border-white/10'}`}
-                        >
-                            <span className="relative z-10">{g.label}</span>
-                        </motion.button>
-                    ))}
-                </motion.div>
-
-                {/* Subject Selection */}
-                {activeGrade && (
-                    <div className="animate-in fade-in duration-300">
-                        <h3 className="font-bold text-slate-600 uppercase tracking-widest text-[10px] mb-3">Core Subjects</h3>
-                        <motion.div 
-                            className="flex flex-col gap-1" 
-                            data-trigger={renderTrigger}
-                            initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
-                        >
-                            {activeGrade.subjects.filter(s => localStorage.getItem(`adopted-${s.name}`) !== 'false').map(s => (
-                                <motion.button
-                                    variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}
-                                    key={s.id}
-                                    onClick={() => handleSubjectSelect(s.id)}
-                                    onMouseEnter={() => SoundManager.playHover()}
-                                    className={`text-left px-4 py-3 rounded-lg font-bold text-sm transition-all flex items-center gap-3 ${selectedSubjectId === s.id ? 'bg-slate-800 text-white border border-slate-700' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900/50'}`}
-                                >
-                                    <span>{s.icon}</span> {s.name}
-                                </motion.button>
-                            ))}
-                        </motion.div>
-
-                        {/* STATE LEGISLATURE MANDATE */}
-                        <div className="mt-6 pt-6 border-t border-slate-800">
-                            <h3 className="font-bold text-rose-500/80 uppercase tracking-widest text-[10px] mb-3">State Mandates</h3>
-                            <button
-                                onClick={() => handleSubjectSelect('mandate:nebraska-civics')}
+                <div className="flex-1 overflow-y-auto px-4 py-4 custom-scrollbar">
+                    <h3 className="font-bold text-slate-600 uppercase tracking-widest text-[10px] mb-3 px-4">Collections</h3>
+                    <motion.div 
+                        className="flex flex-col gap-2" 
+                        initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
+                    >
+                        {categories.map(cat => (
+                            <motion.button
+                                variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}
+                                key={cat}
+                                onClick={() => handleCategorySelect(cat)}
                                 onMouseEnter={() => SoundManager.playHover()}
-                                className={`text-left px-4 py-3 rounded-lg font-bold text-sm transition-all flex items-center gap-3 ${selectedSubjectId === 'mandate:nebraska-civics' ? 'bg-rose-900/40 text-rose-300 border border-rose-500/50' : 'text-slate-500 hover:text-rose-400 hover:bg-slate-900/50'}`}
+                                className={`text-left px-5 py-4 rounded-xl font-bold text-sm transition-all flex items-center gap-3 shadow-lg ${activeCategory === cat ? 'bg-gradient-to-r from-slate-800 to-slate-800/50 text-white border border-slate-700 shadow-[0_0_20px_rgba(255,255,255,0.05)]' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5 border border-transparent'}`}
                             >
-                                <span>🏛️</span> {mandateSubject.name}
-                            </button>
-                        </div>
-                    </div>
-                )}
+                                <span className="text-xl">{getIconForCategory(cat)}</span> {cat}
+                            </motion.button>
+                        ))}
+                    </motion.div>
+                </div>
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 overflow-y-auto relative z-10 bg-transparent">
-                {!selectedSubjectId ? (
-                    <div className="h-full flex flex-col items-center justify-center text-slate-500 text-center animate-in zoom-in duration-700 relative">
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#02040A] via-[#0A0F24]/50 to-[#02040A] pointer-events-none"></div>
-                        <div className="w-32 h-32 bg-white/[0.02] backdrop-blur-3xl rounded-[2rem] flex items-center justify-center mb-8 shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-white/5 relative z-10 hover:scale-105 transition-transform duration-500">
-                            <span className="text-6xl drop-shadow-2xl">🏫</span>
-                        </div>
-                        <h3 className="text-3xl font-black text-white mb-3 tracking-tight relative z-10">Select a Course</h3>
-                        <p className="text-slate-400 max-w-md font-medium leading-relaxed relative z-10">Choose a core subject from the sidebar to view your state-aligned academic pathway.</p>
-                    </div>
-                ) : !activeModule ? (
-                    /* Learning Pathway UI */
-                    <div className="p-10 md:p-16 max-w-5xl mx-auto animate-in slide-in-from-bottom-8 duration-500">
-                        <div className="mb-12 border-b border-white/10 pb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 relative z-10">
-                            <div className="flex items-center gap-5">
-                                <div className="w-20 h-20 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center backdrop-blur-xl shadow-xl">
-                                    <span className="text-5xl drop-shadow-lg">{activeSubject?.icon}</span>
-                                </div>
-                                <div>
-                                    <h1 className="text-5xl font-black text-white tracking-tight">{activeSubject?.name}</h1>
-                                    <p className="text-blue-400 font-bold tracking-[0.15em] uppercase text-xs mt-3">{activeGrade?.label} Coursework</p>
-                                </div>
+            <div className="flex-1 overflow-y-auto relative z-10 bg-transparent p-10 md:p-16 custom-scrollbar">
+                <div className="max-w-6xl mx-auto animate-in slide-in-from-bottom-8 duration-500">
+                    <div className="mb-12 border-b border-white/10 pb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 relative z-10">
+                        <div className="flex items-center gap-6">
+                            <div className="w-20 h-20 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-2xl flex items-center justify-center backdrop-blur-xl shadow-[0_0_30px_rgba(255,255,255,0.05)]">
+                                <span className="text-5xl drop-shadow-lg">{getIconForCategory(activeCategory)}</span>
                             </div>
-                            
-                            {/* Official Curriculum Materials Link */}
-                            <a 
-                                href="https://www.coreknowledge.org/curriculum/download-curriculum/" 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="bg-white/5 backdrop-blur-xl hover:bg-white/10 border border-white/10 p-4 rounded-2xl flex items-center gap-4 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] group relative overflow-hidden"
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/10 to-emerald-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-                                <div className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-3 rounded-xl shadow-lg text-xl">
-                                    📚
-                                </div>
-                                <div>
-                                    <h4 className="text-white font-extrabold text-sm tracking-wide">Local Reading Room</h4>
-                                    <p className="text-slate-300 text-xs mt-1 font-medium">Access Downloaded Textbooks</p>
-                                </div>
-                            </a>
+                            <div>
+                                <h1 className="text-5xl font-black text-white tracking-tight">{activeCategory}</h1>
+                                <p className="text-blue-400 font-bold tracking-[0.15em] uppercase text-xs mt-3">Local Document Storage</p>
+                            </div>
                         </div>
-                        <p className="text-slate-400 text-lg leading-relaxed mb-12">Official Digital Textbook Structure aligned with Core Knowledge Sequence for {activeGrade?.label} {activeSubject?.name}.</p>
+                    </div>
+                    
+                    <p className="text-slate-400 text-lg leading-relaxed mb-12">Select a PDF to instantly open the official curriculum document in your reading room.</p>
 
-                        <div className="mb-12">
-                            <h2 className="text-xl font-extrabold text-white mb-6 flex items-center gap-3 border-b border-slate-800 pb-2">
-                                <span className="text-blue-500">📚</span> 
-                                Course Units
-                            </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {(activeSubject as any)?.lessons?.map((lesson: any) => (
-                                    <div key={lesson.id} 
-                                            className="p-6 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-lg hover:shadow-blue-900/40 hover:border-white/20 hover:bg-white/10 transition-all cursor-pointer flex flex-col justify-between h-full group relative overflow-hidden"
-                                            onClick={() => handleModuleSelect(lesson.dynamicQuery)}
-                                    >
-                                        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                        <div className="relative z-10">
-                                            <div className="text-xs font-bold text-blue-400 mb-2 tracking-widest uppercase">Day {lesson.day}</div>
-                                            <h3 className="font-bold text-white text-lg mb-2 leading-tight">{lesson.title}</h3>
-                                            <p className="text-sm text-slate-400 mb-4">Launch immersive lesson sequence.</p>
-                                        </div>
-                                        <button className="relative z-10 text-sm font-bold text-blue-400 group-hover:text-white flex items-center gap-1 transition-colors mt-auto">
-                                            Start Lesson <span>→</span>
-                                        </button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <AnimatePresence mode="popLayout">
+                            {activeFiles.map((file, idx) => (
+                                <motion.div 
+                                    key={file.id}
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.9 }}
+                                    transition={{ duration: 0.4, delay: idx * 0.02 }}
+                                    className="p-6 rounded-[1.5rem] bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-2xl border border-white/10 shadow-[0_15px_40px_-15px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_50px_-15px_rgba(59,130,246,0.3)] hover:border-blue-500/30 hover:-translate-y-2 transition-all cursor-pointer flex flex-col h-full group relative overflow-hidden"
+                                    onClick={() => handlePdfSelect(file)}
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 via-blue-500/5 to-blue-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                                    
+                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500/20 to-red-600/20 border border-rose-500/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 shadow-inner">
+                                        <span className="text-2xl">📄</span>
                                     </div>
-                                ))}
-                            </div>
-                        </div>
+                                    
+                                    <div className="flex-1">
+                                        <h3 className="font-extrabold text-white text-lg mb-2 leading-snug group-hover:text-blue-300 transition-colors">{file.name}</h3>
+                                        <p className="text-xs text-slate-400 font-mono tracking-wider break-all">{file.id}</p>
+                                    </div>
+
+                                    <div className="mt-8 flex justify-between items-center border-t border-white/10 pt-4">
+                                        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest group-hover:text-blue-400 transition-colors">PDF Document</span>
+                                        <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all shadow-[0_0_15px_rgba(59,130,246,0.5)] opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0">
+                                            →
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
                     </div>
-                ) : null}
+                    
+                    {activeFiles.length === 0 && (
+                        <div className="text-center py-24 text-slate-500 border border-dashed border-slate-800 rounded-3xl bg-slate-900/30">
+                            <span className="text-5xl mb-4 block opacity-50">📂</span>
+                            <p className="font-bold uppercase tracking-widest">No documents found in this collection.</p>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
