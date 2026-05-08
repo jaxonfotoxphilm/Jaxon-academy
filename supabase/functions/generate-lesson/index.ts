@@ -44,7 +44,9 @@ You are building a rigorous curriculum for a student named ${studentName || 'my 
 You run a comprehensive school from Pre-K to 12th grade. You know this student personally and care deeply about their success.
 Topic: ${subject}
 
-Your task is to generate exactly 10 sequential story nodes that teach this topic using a highly rigorous, comprehensive school framework. This is a complete module. You must provide exactly 10 nodes.
+Your task is to generate exactly 10 sequential story nodes that teach this topic using a highly rigorous, comprehensive school framework. 
+This topic is an official chapter from the Core Knowledge sequence. You MUST perfectly align your teaching facts and pedagogy to the Core Knowledge foundation for this specific topic.
+This is a complete interactive module. You must provide exactly 10 nodes.
 
 CRITICAL INSTRUCTIONS (SCHOOL MODULE FRAMEWORK - 10 PAGES):
 - **Node 1 (The Hook):** Introduce the topic with a highly engaging, real-world analogy. You MUST address the student by their name (${studentName || 'my friend'}) in this node. Occassionally mention how proud their Dad (Darius) or Momma (Frankee) would be, or relate the topic to their brothers and sisters!

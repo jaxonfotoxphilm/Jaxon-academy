@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import curriculumData from '../data/curriculum-structure.json';
 import { SoundManager } from '../utils/SoundManager';
-import { supabase } from '../supabaseClient';
-import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
 
 // removed CoursePathway interface
 
-export const Library: React.FC<{ lockedGradeId?: string | null; currentUser?: string | null }> = ({ lockedGradeId, currentUser }) => {
+export const Library: React.FC<{ lockedGradeId?: string | null; currentUser?: string | null; launchLesson?: (subjectId: string) => void }> = ({ lockedGradeId, currentUser, launchLesson }) => {
     const [selectedGradeId, setSelectedGradeId] = useState<string>(lockedGradeId || curriculumData.grades[0].id);
     const [renderTrigger, setRenderTrigger] = useState(0);
 
@@ -25,8 +23,6 @@ export const Library: React.FC<{ lockedGradeId?: string | null; currentUser?: st
 
     const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
     const [activeModule, setActiveModule] = useState<string | null>(null);
-    const [generatedContent, setGeneratedContent] = useState<string | null>(null);
-    const [isGenerating, setIsGenerating] = useState(false);
 
     const activeGrade = curriculumData.grades.find(g => g.id === selectedGradeId);
     
@@ -60,40 +56,20 @@ export const Library: React.FC<{ lockedGradeId?: string | null; currentUser?: st
         setSelectedGradeId(gradeId);
         setSelectedSubjectId(null);
         setActiveModule(null);
-        setGeneratedContent(null);
     };
 
     const handleSubjectSelect = (subjectId: string) => {
         SoundManager.playClick();
         setSelectedSubjectId(subjectId);
         setActiveModule(null);
-        setGeneratedContent(null);
     };
 
     const handleModuleSelect = async (moduleName: string) => {
         SoundManager.playClick();
-        setActiveModule(moduleName);
-        setGeneratedContent(null);
-        setIsGenerating(true);
-
-        try {
-            const { data, error } = await supabase.functions.invoke('generate-course-material', {
-                body: {
-                    gradeLevel: activeGrade?.label || 'Elementary',
-                    subject: activeSubject?.name || 'General Studies',
-                    topic: moduleName
-                }
-            });
-
-            if (error) throw error;
-            if (data && data.content) {
-                setGeneratedContent(data.content);
-            }
-        } catch (error) {
-            console.error("Failed to generate course material:", error);
-            setGeneratedContent("# Error\nFailed to fetch curriculum material. Please check your connection or contact the Principal.");
-        } finally {
-            setIsGenerating(false);
+        if (launchLesson) {
+            launchLesson(`dynamic:${activeGrade?.label} ${activeSubject?.name} - ${moduleName}`);
+        } else {
+            setActiveModule(moduleName);
         }
     };
 
@@ -244,49 +220,7 @@ export const Library: React.FC<{ lockedGradeId?: string | null; currentUser?: st
                             </div>
                         ))}
                     </div>
-                ) : (
-                    /* AI Generated Curriculum Viewer */
-                    <div className="animate-in slide-in-from-right-8 duration-500 h-full flex flex-col">
-                        <div className="flex justify-between items-center bg-[#0B0F19]/90 backdrop-blur-xl border-b border-slate-800 p-6 sticky top-0 z-20">
-                            <button onClick={() => setActiveModule(null)} className="text-slate-400 font-bold flex items-center gap-2 hover:text-white transition-colors bg-slate-900 px-4 py-2 rounded-lg border border-slate-800">
-                                <span>←</span> Back to Pathway
-                            </button>
-                            <div className="text-right">
-                                <h2 className="text-lg font-black text-white">{activeSubject?.name}</h2>
-                                <div className="text-blue-400 text-xs font-bold uppercase tracking-widest">{activeModule}</div>
-                            </div>
-                        </div>
-                        
-                        <div className="flex-1 bg-white p-8 md:p-16 overflow-y-auto">
-                            <div className="max-w-3xl mx-auto">
-                                {isGenerating ? (
-                                    <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-                                        <div className="w-16 h-16 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin mb-6"></div>
-                                        <h3 className="text-xl font-bold text-slate-800">Generating State Curriculum...</h3>
-                                        <p className="text-sm mt-2">Professor Grace is writing your official textbook chapter.</p>
-                                    </div>
-                                ) : (
-                                    <div className="prose prose-lg prose-slate max-w-none">
-                                        <ReactMarkdown>{generatedContent || ''}</ReactMarkdown>
-                                        
-                                        <div className="mt-16 pt-8 border-t-2 border-slate-200 flex justify-between items-center bg-slate-50 p-6 rounded-2xl">
-                                            <div>
-                                                <h4 className="font-bold text-slate-800 m-0">Finished Reading?</h4>
-                                                <p className="text-sm text-slate-500 m-0 mt-1">Head to the Study Camp to take the interactive lesson!</p>
-                                            </div>
-                                            <button 
-                                                onClick={() => setActiveModule(null)}
-                                                className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 transition-colors"
-                                            >
-                                                Return to Pathway
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
+                ) : null}
             </div>
         </div>
     );

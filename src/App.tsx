@@ -198,20 +198,42 @@ export default function App() {
               <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-700 delay-150 relative before:absolute before:inset-0 before:ml-8 md:before:ml-10 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-blue-500 before:via-indigo-500 before:to-transparent">
                 
                 {/* Dynamically Generate Core Daily Subjects Based on Grade */}
-                {(activeAssignments.length > 0 ? activeAssignments.map(a => ({
-                    title: curriculumData.grades.flatMap(g => g.subjects).find(s => s.id === a.subjectId)?.name || "Assigned Module",
-                    desc: a.note || "Principal Assigned Lesson",
-                    icon: a.subjectId.includes('math') ? "📐" : a.subjectId.includes('sci') ? "🔬" : "📚",
-                    color: "from-indigo-600 to-blue-600",
-                    border: "border-indigo-500/30",
-                    type: "lesson",
-                    subjectId: a.subjectId,
-                    examId: undefined
-                })) : [
-                  { title: "Mathematics", desc: "Fractions & Decimals (Module 4.2)", icon: "📐", color: "from-blue-600 to-indigo-600", border: "border-blue-500/30", type: "lesson", subjectId: "dynamic:Fractions" },
-                  { title: "Science", desc: "The Water Cycle & Weather", icon: "🔬", color: "from-emerald-600 to-teal-600", border: "border-emerald-500/30", type: "lesson", subjectId: "dynamic:Water Cycle" },
-                  { title: "Assessment", desc: "Nebraska Statehood Mastery Test", icon: "📝", color: "from-rose-600 to-red-600", border: "border-rose-500/30", type: "exam", examId: "dynamic:Nebraska Statehood" }
-                ]).map((subject, idx) => (
+                {(() => {
+                    if (activeAssignments.length > 0) {
+                        return activeAssignments.map(a => ({
+                            title: curriculumData.grades.flatMap(g => g.subjects).find(s => s.id === a.subjectId)?.name || "Assigned Module",
+                            desc: a.note || "Principal Assigned Lesson",
+                            icon: a.subjectId.includes('math') ? "📐" : a.subjectId.includes('sci') ? "🔬" : "📚",
+                            color: "from-indigo-600 to-blue-600",
+                            type: "lesson",
+                            subjectId: a.subjectId,
+                            examId: undefined
+                        }));
+                    }
+                    
+                    // Generate dynamic schedule from Core Knowledge curriculum
+                    const activeGradeObj = curriculumData.grades.find(g => g.id === "g6") || curriculumData.grades[0];
+                    const subjects = activeGradeObj.subjects.slice(0, 3);
+                    return subjects.map((sub, i) => {
+                        const firstUnit = (sub as any).textbookStructure?.[0];
+                        const firstChapter = firstUnit?.chapters[0] || "Chapter 1: Introduction";
+                        const colors = [
+                            "from-blue-600 to-indigo-600",
+                            "from-emerald-600 to-teal-600",
+                            "from-amber-500 to-orange-600"
+                        ];
+                        
+                        return {
+                            title: sub.name,
+                            desc: `${firstUnit ? firstUnit.unit + ' - ' : ''}${firstChapter}`,
+                            icon: sub.icon || "📚",
+                            color: colors[i % colors.length],
+                            type: "lesson",
+                            subjectId: `dynamic:${activeGradeObj.label} ${sub.name} - ${firstChapter}`,
+                            examId: undefined
+                        };
+                    });
+                })().map((subject, idx) => (
                   <div key={idx} className="relative flex items-center group cursor-pointer"
                       onClick={() => {
                         SoundManager.playClick();
@@ -270,7 +292,7 @@ export default function App() {
             className="pt-24 px-8 pb-12 w-full min-h-screen relative z-40 bg-[#040714]"
           >
             {currentView === 'dashboard' && currentUser === 'Principal' && <ParentDashboard />}
-            {currentView === 'library' && <Library lockedGradeId={lockedGradeId} currentUser={currentUser} />}
+            {currentView === 'library' && <Library lockedGradeId={lockedGradeId} currentUser={currentUser} launchLesson={launchLesson} />}
             {currentView === 'exams' && (
                 <ConcentratedStudy 
                     lockedGradeId={lockedGradeId}
