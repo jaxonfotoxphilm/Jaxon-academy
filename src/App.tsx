@@ -106,12 +106,14 @@ export default function App() {
         </div>
         <div className="flex gap-6 items-center">
           <button onClick={() => navigate('menu')} onMouseEnter={CardHover} className={`font-semibold tracking-wide uppercase text-sm transition-colors ${currentView === 'menu' ? 'text-white border-b-2 border-white pb-1' : 'text-slate-400 hover:text-white'}`}>
-            Curriculum Hub
+            My Lessons
           </button>
           
-          <button onClick={() => navigate('library')} onMouseEnter={CardHover} className={`font-semibold tracking-wide uppercase text-sm transition-colors flex items-center gap-2 ${currentView === 'library' ? 'text-amber-400 border-b-2 border-amber-400 pb-1' : 'text-slate-400 hover:text-amber-400'}`}>
-            <span>🏛️</span> Archives
-          </button>
+          {currentUser === 'Principal' && (
+            <button onClick={() => navigate('library')} onMouseEnter={CardHover} className={`font-semibold tracking-wide uppercase text-sm transition-colors flex items-center gap-2 ${currentView === 'library' ? 'text-amber-400 border-b-2 border-amber-400 pb-1' : 'text-slate-400 hover:text-amber-400'}`}>
+              <span>🏛️</span> Archives
+            </button>
+          )}
 
           <button onClick={() => navigate('exams')} onMouseEnter={CardHover} className={`font-semibold tracking-wide uppercase text-sm transition-colors ${currentView === 'exams' || currentView === 'exam-runner' ? 'text-blue-400 border-b-2 border-blue-400 pb-1' : 'text-slate-400 hover:text-blue-400'}`}>
             Study Camp
@@ -216,7 +218,20 @@ export default function App() {
                     
                     // Generate dynamic schedule from actual PDFs
                     const gradeSpecificFiles = pdfList["Grade Specific"] || [];
-                    const subjects = gradeSpecificFiles.slice(0, 3);
+                    
+                    // Filter by the student's grade if not Principal
+                    let subjects = gradeSpecificFiles;
+                    if (currentUser !== 'Principal' && lockedGradeId) {
+                        // e.g., lockedGradeId is 'grade-4'
+                        subjects = gradeSpecificFiles.filter(f => f.id.includes(`-${lockedGradeId}-`));
+                    }
+                    
+                    // If we found specific lessons, show them all (up to maybe 6), else fallback to default 3
+                    subjects = subjects.slice(0, 6);
+                    if (subjects.length === 0) {
+                        subjects = gradeSpecificFiles.slice(0, 3);
+                    }
+
                     return subjects.map((file, i) => {
                         const colors = [
                             "from-blue-600 to-indigo-600",
