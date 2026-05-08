@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-15px);
+    }
+  }
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+  
+  @keyframes vtube-talk {
+    0%, 100% {
+      transform: scaleY(1);
+    }
+    50% {
+      transform: scaleY(1.02) translateY(-2px);
+    }
+  }
+  .animate-talk {
+    animation: vtube-talk 0.3s ease-in-out infinite;
+    transform-origin: bottom center;
+  }
+
+  @keyframes pose-think {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(3deg) scale(1.02); }
+  }
+  .animate-pose-think {
+    animation: pose-think 0.5s ease-out forwards;
+    transform-origin: bottom center;
+  }
+}
+@tailwind utilities;

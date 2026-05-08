@@ -1,0 +1,166 @@
+{
+  "title": "Stanford 10 (SAT) Placement Examination",
+  "description": "Advanced Examination, Form E. Comprehensive evaluation for Grades 4-8 covering Reading, Mathematics, Science, and Language Usage.",
+  "questions": [
+    {
+      "id": 1,
+      "subject": "Reading Meaning",
+      "question": "Read the paragraph: 'The Romans were great builders. They constructed long aqueducts to carry water into their cities and built extensive networks of roads.' What is the main idea?",
+      "options": [
+        "The Romans were primarily farmers.",
+        "The Romans made significant engineering and architectural contributions.",
+        "Roman cities did not have enough water.",
+        "The Romans preferred traveling by sea."
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": 2,
+      "subject": "Reading Meaning",
+      "question": "Which word best completes the sentence? 'The heavy rains caused the river to ________ its banks.'",
+      "options": ["shrink", "overflow", "freeze", "navigate"],
+      "correctAnswer": 1
+    },
+    {
+      "id": 3,
+      "subject": "Reading Meaning",
+      "question": "Read the paragraph: 'Although the desert is dry and seems lifeless, many creatures have adapted to survive the harsh conditions by becoming nocturnal.' What does 'nocturnal' imply?",
+      "options": [
+        "Active during the day.",
+        "Requiring very little water.",
+        "Active during the night.",
+        "Covered in thick scales."
+      ],
+      "correctAnswer": 2
+    },
+    {
+      "id": 4,
+      "subject": "Reading Meaning",
+      "question": "If someone is described as 'industrious,' they are generally considered to be:",
+      "options": ["Lazy", "Hard-working", "Confused", "Wealthy"],
+      "correctAnswer": 1
+    },
+    {
+      "id": 5,
+      "subject": "Language Usage",
+      "question": "Identify the incorrect usage in the sentence: 'Between you and I, the secret should remain hidden.'",
+      "options": [
+        "Between",
+        "you and I",
+        "should remain",
+        "hidden"
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": 6,
+      "subject": "Language Usage",
+      "question": "Choose the correct verb: 'The flock of birds ________ flying south for the winter.'",
+      "options": ["are", "is", "were", "be"],
+      "correctAnswer": 1
+    },
+    {
+      "id": 7,
+      "subject": "Language Usage",
+      "question": "Which sentence is punctuated correctly?",
+      "options": [
+        "Its going to be a beautiful day.",
+        "The dog wagged it's tail.",
+        "The committee announced its decision.",
+        "Its' time to leave."
+      ],
+      "correctAnswer": 2
+    },
+    {
+      "id": 8,
+      "subject": "Language Usage",
+      "question": "Select the adverb in the following sentence: 'The runner quickly finished the grueling marathon.'",
+      "options": ["runner", "quickly", "finished", "grueling"],
+      "correctAnswer": 1
+    },
+    {
+      "id": 9,
+      "subject": "Mathematics",
+      "question": "What is the product of 45 and 12?",
+      "options": ["540", "450", "560", "500"],
+      "correctAnswer": 0
+    },
+    {
+      "id": 10,
+      "subject": "Mathematics",
+      "question": "If a train travels 60 miles per hour, how far will it travel in 3.5 hours?",
+      "options": ["180 miles", "200 miles", "210 miles", "220 miles"],
+      "correctAnswer": 2
+    },
+    {
+      "id": 11,
+      "subject": "Mathematics",
+      "question": "Simplify the fraction 24/36.",
+      "options": ["1/2", "3/4", "2/3", "4/5"],
+      "correctAnswer": 2
+    },
+    {
+      "id": 12,
+      "subject": "Mathematics",
+      "question": "What is 15% of 80?",
+      "options": ["10", "12", "15", "8"],
+      "correctAnswer": 1
+    },
+    {
+      "id": 13,
+      "subject": "Mathematics",
+      "question": "Solve for x: 3x - 7 = 14",
+      "options": ["x = 5", "x = 6", "x = 7", "x = 8"],
+      "correctAnswer": 2
+    },
+    {
+      "id": 14,
+      "subject": "Science",
+      "question": "Which process do plants use to convert sunlight into food?",
+      "options": ["Respiration", "Photosynthesis", "Transpiration", "Fermentation"],
+      "correctAnswer": 1
+    },
+    {
+      "id": 15,
+      "subject": "Science",
+      "question": "What is the boiling point of water at sea level in Celsius?",
+      "options": ["50 degrees", "90 degrees", "100 degrees", "212 degrees"],
+      "correctAnswer": 2
+    },
+    {
+      "id": 16,
+      "subject": "Science",
+      "question": "Which planet is known as the 'Red Planet'?",
+      "options": ["Venus", "Jupiter", "Mars", "Saturn"],
+      "correctAnswer": 2
+    },
+    {
+      "id": 17,
+      "subject": "Science",
+      "question": "What force pulls objects toward the center of the Earth?",
+      "options": ["Magnetism", "Friction", "Gravity", "Inertia"],
+      "correctAnswer": 2
+    },
+    {
+      "id": 18,
+      "subject": "History",
+      "question": "Who was the first President of the United States?",
+      "options": ["Thomas Jefferson", "Abraham Lincoln", "George Washington", "John Adams"],
+      "correctAnswer": 2
+    },
+    {
+      "id": 19,
+      "subject": "History",
+      "question": "Which document begins with the words 'We the People'?",
+      "options": ["The Declaration of Independence", "The Magna Carta", "The Emancipation Proclamation", "The United States Constitution"],
+      "correctAnswer": 3
+    },
+    {
+      "id": 20,
+      "subject": "History",
+      "question": "The Industrial Revolution marked a transition from agrarian societies to what?",
+      "options": ["Nomadic societies", "Industrial and manufacturing societies", "Feudal societies", "Digital societies"],
+      "correctAnswer": 1
+    }
+  ]
+}
