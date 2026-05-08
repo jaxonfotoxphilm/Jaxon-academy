@@ -31,25 +31,7 @@ export const Library: React.FC<{ lockedGradeId?: string | null; currentUser?: st
         ? mandateSubject 
         : activeGrade?.subjects.find(s => s.id === selectedSubjectId);
 
-    // Dynamic curriculum modules for the pathway
-    const textbookStructure: { unit: string, chapters: string[] }[] = (activeSubject as any)?.textbookStructure || [
-        {
-            unit: "Unit 1: Foundations",
-            chapters: [
-                "Chapter 1: Key Concepts and Definitions", 
-                "Chapter 2: Historical Context and Background",
-                "Chapter 3: Formative Assessment"
-            ]
-        },
-        {
-            unit: "Unit 2: Advanced Application",
-            chapters: [
-                "Chapter 4: Real-world Principles", 
-                "Chapter 5: Synthesis and Critical Analysis", 
-                "Chapter 6: Summative Mastery Assessment"
-            ]
-        }
-    ];
+
 
     const handleGradeSelect = (gradeId: string) => {
         SoundManager.playClick();
@@ -64,12 +46,12 @@ export const Library: React.FC<{ lockedGradeId?: string | null; currentUser?: st
         setActiveModule(null);
     };
 
-    const handleModuleSelect = async (moduleName: string) => {
+    const handleModuleSelect = async (moduleQuery: string) => {
         SoundManager.playClick();
         if (launchLesson) {
-            launchLesson(`dynamic:${activeGrade?.label} ${activeSubject?.name} - ${moduleName}`);
+            launchLesson(moduleQuery);
         } else {
-            setActiveModule(moduleName);
+            setActiveModule(moduleQuery);
         }
     };
 
@@ -195,30 +177,30 @@ export const Library: React.FC<{ lockedGradeId?: string | null; currentUser?: st
                         </div>
                         <p className="text-slate-400 text-lg leading-relaxed mb-12">Official Digital Textbook Structure aligned with Core Knowledge Sequence for {activeGrade?.label} {activeSubject?.name}.</p>
 
-                        {textbookStructure.map((unit: { unit: string, chapters: string[] }, uIdx: number) => (
-                            <div key={uIdx} className="mb-12">
-                                <h2 className="text-xl font-extrabold text-white mb-6 flex items-center gap-3 border-b border-slate-800 pb-2">
-                                    <span className="text-blue-500">📚</span> 
-                                    {unit.unit}
-                                </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {unit.chapters.map((chapter: string, cIdx: number) => (
-                                        <div key={cIdx} 
-                                             className="p-6 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-lg hover:shadow-blue-900/40 hover:border-white/20 hover:bg-white/10 transition-all cursor-pointer flex flex-col justify-between h-full"
-                                             onClick={() => handleModuleSelect(chapter)}
-                                        >
-                                            <div>
-                                                <h3 className="font-bold text-white text-lg mb-2">{chapter}</h3>
-                                                <p className="text-sm text-slate-400 mb-4">Read chapter content and complete embedded critical thinking prompts.</p>
-                                            </div>
-                                            <button className="text-sm font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors mt-auto">
-                                                Start Reading <span>→</span>
-                                            </button>
+                        <div className="mb-12">
+                            <h2 className="text-xl font-extrabold text-white mb-6 flex items-center gap-3 border-b border-slate-800 pb-2">
+                                <span className="text-blue-500">📚</span> 
+                                Course Units
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {(activeSubject as any)?.lessons?.map((lesson: any) => (
+                                    <div key={lesson.id} 
+                                            className="p-6 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-lg hover:shadow-blue-900/40 hover:border-white/20 hover:bg-white/10 transition-all cursor-pointer flex flex-col justify-between h-full group relative overflow-hidden"
+                                            onClick={() => handleModuleSelect(lesson.dynamicQuery)}
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                        <div className="relative z-10">
+                                            <div className="text-xs font-bold text-blue-400 mb-2 tracking-widest uppercase">Day {lesson.day}</div>
+                                            <h3 className="font-bold text-white text-lg mb-2 leading-tight">{lesson.title}</h3>
+                                            <p className="text-sm text-slate-400 mb-4">Launch immersive lesson sequence.</p>
                                         </div>
-                                    ))}
-                                </div>
+                                        <button className="relative z-10 text-sm font-bold text-blue-400 group-hover:text-white flex items-center gap-1 transition-colors mt-auto">
+                                            Start Lesson <span>→</span>
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+                        </div>
                     </div>
                 ) : null}
             </div>

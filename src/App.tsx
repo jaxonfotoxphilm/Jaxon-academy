@@ -212,11 +212,11 @@ export default function App() {
                     }
                     
                     // Generate dynamic schedule from Core Knowledge curriculum
-                    const activeGradeObj = curriculumData.grades.find(g => g.id === "g6") || curriculumData.grades[0];
+                    const activeGradeObj = curriculumData.grades.find(g => g.id === "grade-6") || curriculumData.grades[0];
                     const subjects = activeGradeObj.subjects.slice(0, 3);
                     return subjects.map((sub, i) => {
-                        const firstUnit = (sub as any).textbookStructure?.[0];
-                        const firstChapter = firstUnit?.chapters[0] || "Chapter 1: Introduction";
+                        const firstLesson = sub.lessons?.[0];
+                        const titleText = firstLesson?.title || "Lesson 1: Overview";
                         const colors = [
                             "from-blue-600 to-indigo-600",
                             "from-emerald-600 to-teal-600",
@@ -225,11 +225,11 @@ export default function App() {
                         
                         return {
                             title: sub.name,
-                            desc: `${firstUnit ? firstUnit.unit + ' - ' : ''}${firstChapter}`,
+                            desc: titleText,
                             icon: sub.icon || "📚",
                             color: colors[i % colors.length],
                             type: "lesson",
-                            subjectId: `dynamic:${activeGradeObj.label} ${sub.name} - ${firstChapter}`,
+                            subjectId: firstLesson?.dynamicQuery || `dynamic:${activeGradeObj.label} ${sub.name}`,
                             examId: undefined
                         };
                     });
