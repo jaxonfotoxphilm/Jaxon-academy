@@ -84,9 +84,8 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                     { id: "fallback-2", characterName: "Professor Grace", text: "Let's test your knowledge right away.", voiceType: "professor", visualType: "teaching-board", isQuiz: true, question: "If the AI database is offline, what should a smart student do?", options: ["Give up", "Keep learning", "Go to sleep", "Play games", "I don't understand"], correctIndex: 1 },
                     { id: "fallback-3", characterName: "Professor Grace", text: "Great job! Your dedication to learning is incredible. We will reconnect to the main syllabus shortly.", voiceType: "professor", visualType: "video-space", isQuiz: false, itemReward: "Badge of Patience" }
                 ];
-                const staticNodes = (lessonsData as Record<string, DialogueNode[]>)[subjectId] || 
-                                  (lessonsData as Record<string, DialogueNode[]>)['default'] || fallbackNodes;
-                setStoryNodes(staticNodes);
+                const staticNodes = (lessonsData as Record<string, DialogueNode[]>)[subjectId];
+                setStoryNodes(staticNodes && staticNodes.length > 1 ? staticNodes : fallbackNodes);
             }
             setIsLoading(false);
         };
@@ -314,9 +313,17 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
         SoundManager.playClick();
         if (!currentNode) return;
         if (currentNode.nextNodeId === 'end') { handleComplete(); return; }
+        
         if (currentNode.nextNodeId) {
             const nextIndex = storyNodes.findIndex(n => n.id === currentNode.nextNodeId);
-            if (nextIndex !== -1) setCurrentNodeIndex(nextIndex); else handleComplete();
+            if (nextIndex !== -1) {
+                setCurrentNodeIndex(nextIndex);
+            } else if (currentNodeIndex < storyNodes.length - 1) {
+                // If nextNodeId is invalid/not found, just increment to prevent immediate completion
+                setCurrentNodeIndex(currentNodeIndex + 1);
+            } else {
+                handleComplete();
+            }
         } else {
             if (currentNodeIndex < storyNodes.length - 1) setCurrentNodeIndex(currentNodeIndex + 1); else handleComplete();
         }
