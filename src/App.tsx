@@ -222,27 +222,50 @@ export default function App() {
                     // Filter by the student's grade if not Principal
                     let subjects = gradeSpecificFiles;
                     if (currentUser !== 'Principal' && lockedGradeId) {
-                        // e.g., lockedGradeId is 'grade-4'
                         subjects = gradeSpecificFiles.filter(f => f.id.includes(`-${lockedGradeId}-`));
                     }
                     
-                    // If we found specific lessons, show them all (up to maybe 6), else fallback to default 3
-                    subjects = subjects.slice(0, 6);
-                    if (subjects.length === 0) {
-                        subjects = gradeSpecificFiles.slice(0, 3);
+                    // Deduplicate files (remove ones with hyphens if space version exists)
+                    const uniqueSubjects = [];
+                    const seen = new Set();
+                    for (const f of subjects) {
+                        const cleanName = f.name.replace(/-/g, ' ').toLowerCase();
+                        if (!seen.has(cleanName)) {
+                            seen.add(cleanName);
+                            uniqueSubjects.push(f);
+                        }
                     }
+
+                    // Pick 4 core subjects for the day
+                    subjects = uniqueSubjects.slice(0, 4);
+                    if (subjects.length === 0) {
+                        subjects = gradeSpecificFiles.slice(0, 4);
+                    }
+
+                    // Deterministic lesson number based on day of year
+                    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24);
+                    const lessonNum = (dayOfYear % 180) + 1; // 180 days in a school year
 
                     return subjects.map((file, i) => {
                         const colors = [
                             "from-blue-600 to-indigo-600",
                             "from-emerald-600 to-teal-600",
-                            "from-amber-500 to-orange-600"
+                            "from-amber-500 to-orange-600",
+                            "from-purple-600 to-fuchsia-600"
                         ];
                         
+                        // Clean up the name for display (e.g., "Subj Grade 4 American History" -> "American History")
+                        const subjectDisplay = file.name.replace(/Subj Grade \d+ /i, '').replace(/Elem /i, '').replace(/Ms /i, '').replace(/Hs /i, '');
+                        
+                        const startPage = lessonNum * 5;
+                        const endPage = startPage + 4;
+
                         return {
-                            title: file.name,
-                            desc: "Required Reading Document",
-                            icon: "📄",
+                            title: subjectDisplay,
+                            desc: `Lesson ${lessonNum}: Required Reading (Pages ${startPage}-${endPage})`,
+                            icon: subjectDisplay.toLowerCase().includes('math') || subjectDisplay.toLowerCase().includes('arithmetic') ? "📐" : 
+                                  subjectDisplay.toLowerCase().includes('sci') ? "🔬" : 
+                                  subjectDisplay.toLowerCase().includes('hist') ? "🌍" : "📚",
                             color: colors[i % colors.length],
                             type: "lesson",
                             subjectId: file.path,
