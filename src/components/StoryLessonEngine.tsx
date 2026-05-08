@@ -532,17 +532,19 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                         </Suspense>
                     </Canvas>
                 ) : currentNode.youtubeSearchQuery ? (
-                    <div className="w-full h-full p-4 flex items-center justify-center bg-black rounded-3xl overflow-hidden shadow-2xl relative">
-                        <iframe 
-                            width="100%" 
-                            height="100%" 
-                            src={`https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(currentNode.youtubeSearchQuery + " educational kids")}`} 
-                            title="YouTube Video" 
-                            frameBorder="0" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                            allowFullScreen
-                            className="absolute inset-0 w-full h-full"
-                        ></iframe>
+                    <div className="w-full h-full md:p-12 p-4 flex items-center justify-center bg-transparent rounded-3xl overflow-hidden relative">
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-3xl border border-white/10 m-4 md:m-12 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden">
+                            <iframe 
+                                width="100%" 
+                                height="100%" 
+                                src={`https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(currentNode.youtubeSearchQuery + " educational kids")}`} 
+                                title="YouTube Video" 
+                                frameBorder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowFullScreen
+                                className="absolute inset-0 w-full h-full"
+                            ></iframe>
+                        </div>
                     </div>
                 ) : dynamicImageUrl ? (
                     <div className="w-full h-full p-12 flex items-center justify-center bg-slate-900/40">
@@ -589,12 +591,12 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                 </div>
 
                 {/* Dialogue Box */}
-                <div className="w-full md:flex-1 bg-black/85 backdrop-blur-3xl border border-white/10 p-8 md:p-12 rounded-[2rem] shadow-[0_0_60px_rgba(0,0,0,0.8)] relative flex flex-col max-h-[65vh]">
+                <div className="w-full md:flex-1 bg-[#02040A]/80 backdrop-blur-3xl border border-indigo-500/20 p-8 md:p-12 rounded-[2.5rem] shadow-[0_0_80px_rgba(0,0,0,0.9)] relative flex flex-col max-h-[65vh]">
                     {/* Shimmer border effect */}
-                    <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-50"></div>
+                    <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-70"></div>
                     
                     {/* Character Name Badge */}
-                    <div className="absolute -top-5 left-12 bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-1.5 rounded-full font-bold text-lg tracking-wider shadow-[0_0_20px_rgba(79,70,229,0.5)] border border-indigo-400/50">
+                    <div className="absolute -top-6 left-12 bg-gradient-to-r from-indigo-600 to-violet-700 px-10 py-2 rounded-full font-black text-xl tracking-[0.1em] text-white shadow-[0_0_30px_rgba(79,70,229,0.6)] border border-indigo-400/50">
                         {currentNode.characterName}
                     </div>
 

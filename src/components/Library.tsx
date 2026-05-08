@@ -98,20 +98,29 @@ export const Library: React.FC<{ lockedGradeId?: string | null; currentUser?: st
     };
 
     return (
-        <div className="w-full min-h-[85vh] bg-slate-950 flex flex-col md:flex-row relative overflow-hidden animate-in fade-in duration-500 font-sans">
+        <div className="w-full min-h-[85vh] bg-[#02040A] flex flex-col md:flex-row relative overflow-hidden animate-in fade-in duration-500 font-sans">
+            
+            {/* Ambient Background Glow */}
+            <div className="absolute inset-0 z-0 pointer-events-none">
+                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-900/10 rounded-full blur-[150px]"></div>
+                <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-indigo-900/10 rounded-full blur-[150px]"></div>
+            </div>
+
             {/* Left Sidebar: Academy Navigation */}
-            <div className="w-full md:w-80 bg-[#0f172a] border-r border-slate-800 p-6 flex flex-col shrink-0 z-10 h-full overflow-y-auto">
+            <div className="w-full md:w-80 bg-white/[0.02] backdrop-blur-2xl border-r border-white/5 p-6 flex flex-col shrink-0 z-10 h-full overflow-y-auto shadow-2xl">
                 <div className="mb-10">
-                    <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400 uppercase tracking-widest flex items-center gap-3">
-                        <span className="text-blue-500">🎓</span> Virtual Academy
+                    <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 uppercase tracking-widest flex items-center gap-3 drop-shadow-sm">
+                        <span className="text-blue-500 drop-shadow-md">🎓</span> Virtual Academy
                     </h2>
-                    <p className="text-xs font-bold text-slate-500 tracking-wider mt-2 uppercase">Nebraska State Standards</p>
+                    <p className="text-[10px] font-bold text-slate-500 tracking-[0.2em] mt-2 uppercase">Nebraska State Standards</p>
                 </div>
 
                 {/* Grade Level Selection */}
-                <h3 className="font-bold text-slate-600 uppercase tracking-widest text-[10px] mb-3">Academic Level</h3>
+                <h3 className="font-bold text-slate-500 uppercase tracking-[0.15em] text-[10px] mb-4 flex items-center gap-2">
+                    <div className="h-px bg-slate-700/50 flex-1"></div> Academic Level <div className="h-px bg-slate-700/50 flex-1"></div>
+                </h3>
                 <motion.div 
-                    className="flex flex-col gap-1 mb-8"
+                    className="flex flex-col gap-2 mb-8"
                     initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
                 >
                     {curriculumData.grades
@@ -122,9 +131,9 @@ export const Library: React.FC<{ lockedGradeId?: string | null; currentUser?: st
                             key={g.id}
                             onClick={() => handleGradeSelect(g.id)}
                             onMouseEnter={() => SoundManager.playHover()}
-                            className={`text-left px-4 py-3 rounded-lg font-bold text-sm transition-all ${selectedGradeId === g.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                            className={`text-left px-5 py-3.5 rounded-xl font-bold text-sm transition-all duration-300 relative overflow-hidden ${selectedGradeId === g.id ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)] border border-blue-400/30' : 'bg-white/5 border border-transparent text-slate-400 hover:bg-white/10 hover:text-white hover:border-white/10'}`}
                         >
-                            {g.label}
+                            <span className="relative z-10">{g.label}</span>
                         </motion.button>
                     ))}
                 </motion.div>
@@ -167,24 +176,27 @@ export const Library: React.FC<{ lockedGradeId?: string | null; currentUser?: st
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 overflow-y-auto relative z-10 bg-[#0B0F19]">
+            <div className="flex-1 overflow-y-auto relative z-10 bg-transparent">
                 {!selectedSubjectId ? (
-                    <div className="h-full flex flex-col items-center justify-center text-slate-500 text-center animate-in zoom-in duration-500">
-                        <div className="w-24 h-24 bg-slate-900 rounded-3xl flex items-center justify-center mb-6 shadow-2xl border border-slate-800">
-                            <span className="text-5xl">🏫</span>
+                    <div className="h-full flex flex-col items-center justify-center text-slate-500 text-center animate-in zoom-in duration-700 relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#02040A] via-[#0A0F24]/50 to-[#02040A] pointer-events-none"></div>
+                        <div className="w-32 h-32 bg-white/[0.02] backdrop-blur-3xl rounded-[2rem] flex items-center justify-center mb-8 shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-white/5 relative z-10 hover:scale-105 transition-transform duration-500">
+                            <span className="text-6xl drop-shadow-2xl">🏫</span>
                         </div>
-                        <h3 className="text-2xl font-bold text-white mb-2">Select a Course</h3>
-                        <p className="text-slate-400 max-w-md">Choose a core subject from the sidebar to view your state-aligned academic pathway.</p>
+                        <h3 className="text-3xl font-black text-white mb-3 tracking-tight relative z-10">Select a Course</h3>
+                        <p className="text-slate-400 max-w-md font-medium leading-relaxed relative z-10">Choose a core subject from the sidebar to view your state-aligned academic pathway.</p>
                     </div>
                 ) : !activeModule ? (
                     /* Learning Pathway UI */
                     <div className="p-10 md:p-16 max-w-5xl mx-auto animate-in slide-in-from-bottom-8 duration-500">
-                        <div className="mb-12 border-b border-slate-800 pb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-                            <div className="flex items-center gap-4">
-                                <span className="text-5xl drop-shadow-lg">{activeSubject?.icon}</span>
+                        <div className="mb-12 border-b border-white/10 pb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 relative z-10">
+                            <div className="flex items-center gap-5">
+                                <div className="w-20 h-20 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center backdrop-blur-xl shadow-xl">
+                                    <span className="text-5xl drop-shadow-lg">{activeSubject?.icon}</span>
+                                </div>
                                 <div>
-                                    <h1 className="text-4xl font-black text-white">{activeSubject?.name}</h1>
-                                    <p className="text-blue-400 font-bold tracking-wider uppercase text-sm mt-2">{activeGrade?.label} Coursework</p>
+                                    <h1 className="text-5xl font-black text-white tracking-tight">{activeSubject?.name}</h1>
+                                    <p className="text-blue-400 font-bold tracking-[0.15em] uppercase text-xs mt-3">{activeGrade?.label} Coursework</p>
                                 </div>
                             </div>
                             
@@ -193,14 +205,15 @@ export const Library: React.FC<{ lockedGradeId?: string | null; currentUser?: st
                                 href="https://www.coreknowledge.org/curriculum/download-curriculum/" 
                                 target="_blank" 
                                 rel="noopener noreferrer" 
-                                className="bg-slate-800/50 hover:bg-slate-800 border border-slate-700 p-4 rounded-xl flex items-center gap-4 transition-all hover:scale-105 group"
+                                className="bg-white/5 backdrop-blur-xl hover:bg-white/10 border border-white/10 p-4 rounded-2xl flex items-center gap-4 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] group relative overflow-hidden"
                             >
-                                <div className="bg-red-500/20 text-red-400 p-3 rounded-lg group-hover:bg-red-500 group-hover:text-white transition-colors text-xl">
-                                    📄
+                                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/10 to-emerald-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                                <div className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-3 rounded-xl shadow-lg text-xl">
+                                    📚
                                 </div>
                                 <div>
-                                    <h4 className="text-white font-bold text-sm">Official PDF Readers</h4>
-                                    <p className="text-slate-400 text-xs mt-1">Download Core Knowledge Textbooks</p>
+                                    <h4 className="text-white font-extrabold text-sm tracking-wide">Local Reading Room</h4>
+                                    <p className="text-slate-300 text-xs mt-1 font-medium">Access Downloaded Textbooks</p>
                                 </div>
                             </a>
                         </div>
