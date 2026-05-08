@@ -79,7 +79,11 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                 if (error || !data || !data.nodes) throw new Error("Fallback");
                 setStoryNodes(data.nodes);
             } catch(e) {
-                const fallbackNodes = [{ id: "error", characterName: "Professor Grace", text: "I'm sorry, I'm having trouble connecting to my academic database right now. Please check your connection and try again.", voiceType: "professor", visualType: "video-nature", isQuiz: false, itemReward: null }];
+                const fallbackNodes = [
+                    { id: "fallback-1", characterName: "Professor Grace", text: "Welcome back! I'm sorry, I'm having trouble connecting to my academic database right now. But we can still review some core concepts!", voiceType: "professor", visualType: "video-science", isQuiz: false, itemReward: null },
+                    { id: "fallback-2", characterName: "Professor Grace", text: "Let's test your knowledge right away.", voiceType: "professor", visualType: "teaching-board", isQuiz: true, question: "If the AI database is offline, what should a smart student do?", options: ["Give up", "Keep learning", "Go to sleep", "Play games", "I don't understand"], correctIndex: 1 },
+                    { id: "fallback-3", characterName: "Professor Grace", text: "Great job! Your dedication to learning is incredible. We will reconnect to the main syllabus shortly.", voiceType: "professor", visualType: "video-space", isQuiz: false, itemReward: "Badge of Patience" }
+                ];
                 const staticNodes = (lessonsData as Record<string, DialogueNode[]>)[subjectId] || 
                                   (lessonsData as Record<string, DialogueNode[]>)['default'] || fallbackNodes;
                 setStoryNodes(staticNodes);

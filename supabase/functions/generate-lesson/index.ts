@@ -78,9 +78,10 @@ Output ONLY valid JSON. The root must be an array of objects.
     
     // Clean up markdown formatting if Gemini wrapped it in ```json
     text = text.replace(/```json\n?|```\n?/g, '');
-    const nodes = JSON.parse(text);
+    let parsedNodes = JSON.parse(text);
+    if (parsedNodes.nodes) parsedNodes = parsedNodes.nodes; // Extract if Gemini wrapped it in an object
 
-    return new Response(JSON.stringify({ nodes }), {
+    return new Response(JSON.stringify({ nodes: parsedNodes }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
