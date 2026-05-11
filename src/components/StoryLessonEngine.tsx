@@ -809,7 +809,7 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
             className="w-full h-[80vh] rounded-3xl overflow-hidden relative flex flex-col justify-end border-2 border-white/20 shadow-2xl animate-in zoom-in duration-700"
             style={{ background: currentNode?.backgroundUrl || '#040714' }}
         >
-            <div className="absolute inset-0 z-0 overflow-hidden pointer-events-auto">
+            <div className={`absolute inset-0 z-0 overflow-hidden ${currentNode.youtubeSearchQuery ? 'pointer-events-auto' : 'pointer-events-auto'}`}>
                 {(hasEnv3D || hasProp3D) ? (
                     <Canvas camera={{ position: [0, 0, 5], fov: 45 }} className="w-full h-full">
                         <ambientLight intensity={1.5} />
@@ -902,12 +902,18 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                 ></div>
             </div>
             
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10 pointer-events-none"></div>
+            {/* Dark gradient overlay — hidden on video pages so video stays visible */}
+            {!currentNode.youtubeSearchQuery && (
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10 pointer-events-none"></div>
+            )}
 
-            {/* Content Container (Avatar + Dialogue) */}
-            <div className="relative z-30 w-full mt-auto flex flex-col md:flex-row items-end pb-8 px-4 md:px-12 gap-8 max-w-7xl mx-auto">
+            {/* Content Container (Avatar + Dialogue) — compact on video pages */}
+            <div className={`relative z-30 w-full mt-auto flex flex-col md:flex-row items-end px-4 md:px-12 gap-8 max-w-7xl mx-auto ${
+                currentNode.youtubeSearchQuery ? 'pb-3' : 'pb-8'
+            }`}>
                 
-                {/* Character Sprite (VTuber Lip Sync Model) OR 3D CGI Model */}
+                {/* Character Sprite — hidden on video pages to give video full screen */}
+                {!currentNode.youtubeSearchQuery && (
                 <div className="hidden md:block w-1/3 max-w-[350px] relative pointer-events-none drop-shadow-2xl flex-shrink-0 h-[60vh]">
                     {has3DModel ? (
                         <div className="w-full h-full absolute inset-0">
@@ -925,9 +931,12 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                         />
                     )}
                 </div>
+                )}
 
-                {/* Dialogue Box */}
-                <div className="w-full md:flex-1 bg-[#02040A]/80 backdrop-blur-3xl border border-indigo-500/20 p-8 md:p-12 rounded-[2.5rem] shadow-[0_0_80px_rgba(0,0,0,0.9)] relative flex flex-col max-h-[65vh]">
+                {/* Dialogue Box — slim bar on video pages, full panel otherwise */}
+                <div className={`w-full md:flex-1 bg-[#02040A]/80 backdrop-blur-3xl border border-indigo-500/20 rounded-[2.5rem] shadow-[0_0_80px_rgba(0,0,0,0.9)] relative flex flex-col ${
+                    currentNode.youtubeSearchQuery ? 'p-4 md:p-6 max-h-[25vh]' : 'p-8 md:p-12 max-h-[65vh]'
+                }`}>
                     {/* Shimmer border effect */}
                     <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-70"></div>
                     
