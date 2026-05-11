@@ -113,9 +113,7 @@ export default function App() {
     fetchUserData();
   }, [currentUser, currentView]);
 
-  if (!currentUser) {
-      return <Login onLogin={setCurrentUser} />;
-  }
+    // Early return was here
 
   const navigate = (view: ViewName) => {
     SoundManager.playClick();
@@ -219,6 +217,9 @@ export default function App() {
       if ((item as any).studentOnly && currentUser === 'Principal') return false;
       return true;
   });
+  if (!currentUser) {
+      return <Login onLogin={setCurrentUser} />;
+  }
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-white font-sans flex flex-col relative overflow-x-hidden grain-overlay" style={{ fontFamily: 'Inter, Outfit, sans-serif' }}>
