@@ -101,10 +101,12 @@ export const LessonVisualizer: React.FC<LessonVisualizerProps> = ({ visualType }
     const isVideoType = visualType.startsWith('video-');
 
     return (
-        <div className="absolute inset-0 w-full h-full flex items-center justify-center p-8 overflow-hidden pointer-events-auto">
+        <div className="absolute inset-0 w-full h-full flex items-center justify-center p-8 overflow-hidden pointer-events-none">
             <div className="absolute inset-0 z-0">
                 {isVideoType ? (
-                    <InteractiveVideo videoUrl={getVideoUrl()} subjectKey={visualType} interactionsMap={VIDEO_INTERACTIONS} />
+                    <div className="pointer-events-auto w-full h-full">
+                        <InteractiveVideo videoUrl={getVideoUrl()} subjectKey={visualType} interactionsMap={VIDEO_INTERACTIONS} />
+                    </div>
                 ) : (
                     <video
                         src={getVideoUrl()}
@@ -114,7 +116,7 @@ export const LessonVisualizer: React.FC<LessonVisualizerProps> = ({ visualType }
                 )}
                 <div className="absolute inset-0 bg-slate-900/60"></div>
             </div>
-            <div className="relative z-10 w-full h-full flex items-center justify-center">
+            <div className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none">
                 {!isVideoType && renderVisual()}
             </div>
         </div>

@@ -831,7 +831,7 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
             className="w-full h-[80vh] rounded-3xl overflow-hidden relative flex flex-col justify-end border-2 border-white/20 shadow-2xl animate-in zoom-in duration-700"
             style={{ background: currentNode?.backgroundUrl || '#040714' }}
         >
-            <div className={`absolute inset-0 z-0 overflow-hidden ${currentNode.youtubeSearchQuery ? 'pointer-events-auto' : 'pointer-events-auto'}`}>
+            <div className={`absolute inset-0 z-0 overflow-hidden ${currentNode.youtubeSearchQuery ? 'pointer-events-auto' : 'pointer-events-none'}`}>
                 {(hasEnv3D || hasProp3D) ? (
                     <Canvas camera={{ position: [0, 0, 5], fov: 45 }} className="w-full h-full">
                         <ambientLight intensity={1.5} />
