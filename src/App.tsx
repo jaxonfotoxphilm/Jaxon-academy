@@ -1,17 +1,48 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Login } from './components/Login';
-import { ParentDashboard } from './components/ParentDashboard';
 import { SoundManager } from './utils/SoundManager';
 import curriculumData from './data/curriculum-structure.json';
 import { ParentManager, type Assignment } from './utils/ParentManager';
-import { StoryLessonEngine } from './components/StoryLessonEngine';
-import { ConcentratedStudy } from './components/ConcentratedStudy';
-import { ExamEngine } from './components/ExamEngine';
-import { Library } from './components/Library';
-import { MultiDraftTutor } from './components/MultiDraftTutor';
-import { StudentProgress } from './components/StudentProgress';
 import { useSchoolDay } from './hooks/useSchoolDay';
+import { ErrorBoundary } from './components/ErrorBoundary';
+
+/**
+ * Code-split all heavy view components with React.lazy.
+ * Each is only downloaded when the user first navigates to that view,
+ * dramatically reducing the initial bundle size from ~4MB to the login shell.
+ */
+const ParentDashboard = lazy(() =>
+    import('./components/ParentDashboard').then(m => ({ default: m.ParentDashboard }))
+);
+const StoryLessonEngine = lazy(() =>
+    import('./components/StoryLessonEngine').then(m => ({ default: m.StoryLessonEngine }))
+);
+const ConcentratedStudy = lazy(() =>
+    import('./components/ConcentratedStudy').then(m => ({ default: m.ConcentratedStudy }))
+);
+const ExamEngine = lazy(() =>
+    import('./components/ExamEngine').then(m => ({ default: m.ExamEngine }))
+);
+const Library = lazy(() =>
+    import('./components/Library').then(m => ({ default: m.Library }))
+);
+const MultiDraftTutor = lazy(() =>
+    import('./components/MultiDraftTutor').then(m => ({ default: m.MultiDraftTutor }))
+);
+const StudentProgress = lazy(() =>
+    import('./components/StudentProgress').then(m => ({ default: m.StudentProgress }))
+);
+
+/** Skeleton shown while a lazy view is loading */
+const ViewSkeleton = () => (
+    <div className="w-full min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 rounded-full border-2 border-t-transparent border-[var(--accent-blue)] animate-spin" />
+            <p className="text-[var(--text-secondary)] text-sm font-semibold uppercase tracking-[0.15em] animate-pulse">Loading...</p>
+        </div>
+    </div>
+);
 
 /** Read the user's saved custom avatar from localStorage */
 function getUserAvatar(name: string): string {
@@ -359,12 +390,15 @@ export default function App() {
                   const isLocked = !isUnlocked;
 
                   return (
-                  <div key={idx} className={`relative flex items-center group ${isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                      onClick={() => {
-                        if (isLocked) {
-                            SoundManager.playClick();
-                            return;
-                        }
+                  <div
+                    key={idx}
+                    role="button"
+                    tabIndex={isLocked ? -1 : 0}
+                    aria-label={`${isCompleted ? 'Completed: ' : isLocked ? 'Locked: ' : 'Start lesson: '}${subject.title} — ${subject.desc}`}
+                    aria-disabled={isLocked}
+                    className={`relative flex items-center group ${isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    onClick={() => {
+                        if (isLocked) { SoundManager.playClick(); return; }
                         SoundManager.playClick();
                         if (subject.type === 'exam' && subject.examId) {
                             setSelectedExam(subject.examId);
@@ -375,7 +409,25 @@ export default function App() {
                         } else {
                             launchLesson(subject.subjectId);
                         }
-                      }}>
+                    }}
+                    onKeyDown={(e) => {
+                        if (isLocked) return;
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            SoundManager.playClick();
+                            if (subject.type === 'exam' && subject.examId) {
+                                setSelectedExam(subject.examId);
+                                navigate('exam-runner');
+                            } else if (typeof subject.subjectId === 'string' && subject.subjectId.endsWith('.pdf')) {
+                                setSelectedPdfUrl(subject.subjectId);
+                                setCurrentView('pdf-viewer');
+                            } else {
+                                launchLesson(subject.subjectId);
+                            }
+                        }
+                    }}
+                    onFocus={() => SoundManager.playHover()}
+                  >
                     <div className={`flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-2xl border bg-gradient-to-br from-slate-800/80 to-slate-900 text-2xl md:text-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] transition-all duration-500 shrink-0 z-10 ml-0 md:ml-2 backdrop-blur-xl ${
                         isCompleted ? 'border-emerald-500/40 group-hover:scale-110' : 
                         isLocked ? 'border-white/5' : 
@@ -451,12 +503,11 @@ export default function App() {
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className="pt-20 md:pt-24 px-4 md:px-8 pb-12 w-full min-h-screen relative z-40 bg-[#040714]"
           >
+          <Suspense fallback={<ViewSkeleton />}>
             {currentView === 'dashboard' && currentUser === 'Principal' && <ParentDashboard />}
             {currentView === 'library' && (
                 <Library 
-                    onLaunchLesson={(subjectId) => {
-                        launchLesson(subjectId);
-                    }}
+                    onLaunchLesson={(subjectId) => { launchLesson(subjectId); }}
                     lockedGradeId={lockedGradeId}
                     currentUser={currentUser}
                 />
@@ -499,28 +550,43 @@ export default function App() {
             )}
 
             {currentView === 'exam-runner' && selectedExam && currentUser && (
-                <ExamEngine examId={selectedExam} currentUser={currentUser} onExit={() => navigate('exams')} />
+                <ErrorBoundary label="Exam Engine" fallback={
+                    <div className="flex flex-col items-center gap-6 py-24">
+                        <span className="text-5xl">⚠️</span>
+                        <p className="text-slate-400 font-semibold">This exam couldn't load. Please try again.</p>
+                        <button onClick={() => navigate('exams')} className="px-6 py-3 bg-[var(--accent-blue)] text-white font-bold rounded-xl hover:opacity-90 transition-all">← Back to Study Camp</button>
+                    </div>
+                }>
+                    <ExamEngine examId={selectedExam} currentUser={currentUser} onExit={() => navigate('exams')} />
+                </ErrorBoundary>
             )}
 
             {currentView === 'lesson' && selectedSubject && currentUser && (
-              <StoryLessonEngine 
-                subjectId={selectedSubject} 
-                gradeLevel={currentGrade?.label || 'Elementary School'}
-                studentName={currentUser}
-                onBack={() => {
-                    // Mark assignment complete and show celebration toast
-                    if (currentUser) {
-                        const subjectTitle = dailySchedule.find(s => s.subjectId === selectedSubject)?.title || 'Lesson';
-                        ParentManager.completeAssignmentBySubject(currentUser, selectedSubject).then(() => {
+              <ErrorBoundary label="Story Lesson" fallback={
+                <div className="flex flex-col items-center gap-6 py-24">
+                    <span className="text-5xl">📚</span>
+                    <p className="text-slate-400 font-semibold">This lesson hit an unexpected error.</p>
+                    <button onClick={() => navigate('menu')} className="px-6 py-3 bg-[var(--accent-blue)] text-white font-bold rounded-xl hover:opacity-90 transition-all">← Back to Dashboard</button>
+                </div>
+              }>
+                <StoryLessonEngine 
+                    subjectId={selectedSubject} 
+                    gradeLevel={currentGrade?.label || 'Elementary School'}
+                    studentName={currentUser}
+                    onBack={() => {
+                        if (currentUser) {
+                            const subjectTitle = dailySchedule.find(s => s.subjectId === selectedSubject)?.title || 'Lesson';
+                            ParentManager.completeAssignmentBySubject(currentUser, selectedSubject).then(() => {
+                                navigate('menu');
+                                setCompletionToast(subjectTitle);
+                                setTimeout(() => setCompletionToast(null), 4000);
+                            });
+                        } else {
                             navigate('menu');
-                            setCompletionToast(subjectTitle);
-                            setTimeout(() => setCompletionToast(null), 4000);
-                        });
-                    } else {
-                        navigate('menu');
-                    }
-                }} 
-              />
+                        }
+                    }}
+                />
+              </ErrorBoundary>
             )}
             {currentView === 'tutor' && currentUser && (
                 <MultiDraftTutor 
@@ -535,6 +601,7 @@ export default function App() {
                     gradeId={lockedGradeId}
                 />
             )}
+          </Suspense>
           </motion.div>
         )}
         </AnimatePresence>

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { InteractiveVideo } from './InteractiveVideo';
 import { VIDEO_INTERACTIONS } from './VideoInteractions';
+import { ErrorBoundary } from './ErrorBoundary';
 
 /**
  * Curated YouTube background videos keyed by subject keyword.
@@ -193,7 +194,12 @@ export const LessonVisualizer: React.FC<LessonVisualizerProps> = ({ visualType, 
             <div className="absolute inset-0 z-0">
                 {isVideoType ? (
                     <div className="pointer-events-auto w-full h-full">
-                        <InteractiveVideo videoUrl={getPexelsFallback()} subjectKey={visualType} interactionsMap={VIDEO_INTERACTIONS} />
+                        {/* ErrorBoundary guards against WebGL/canvas crashes on unsupported browsers */}
+                        <ErrorBoundary label="Interactive Video" fallback={
+                            <video src={getPexelsFallback()} className="w-full h-full object-cover opacity-40 mix-blend-screen" autoPlay loop muted playsInline />
+                        }>
+                            <InteractiveVideo videoUrl={getPexelsFallback()} subjectKey={visualType} interactionsMap={VIDEO_INTERACTIONS} />
+                        </ErrorBoundary>
                     </div>
                 ) : youtubeId && bgReady ? (
                     /* Contextual YouTube video — only mounted after 800ms delay to prevent first-frame lag */
@@ -201,7 +207,12 @@ export const LessonVisualizer: React.FC<LessonVisualizerProps> = ({ visualType, 
                         className="w-full h-full absolute inset-0 overflow-hidden"
                         style={{ opacity: bgReady ? 1 : 0, transition: 'opacity 1.2s ease-in' }}
                     >
-                        {renderYouTubeBackground()}
+                        {/* ErrorBoundary guards against YouTube being blocked by network/CSP */}
+                        <ErrorBoundary label="YouTube Background" fallback={
+                            <video src={getPexelsFallback()} className="w-full h-full object-cover opacity-40 mix-blend-screen" autoPlay loop muted playsInline />
+                        }>
+                            {renderYouTubeBackground()}
+                        </ErrorBoundary>
                     </div>
                 ) : !isVideoType && !bgReady ? (
                     /* Placeholder while video loads — gradient shimmer */
