@@ -267,14 +267,21 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
 
     useEffect(() => {
         if (isComplete) return;
+        let cancelled = false;
         
         const playDynamicAudio = async (text: string, voiceType: string) => {
             // Stop any previous audio first
             killAllAudio();
             
-            // First try the premium cloud TTS, if it fails immediately fallback to local storytelling voice
+            // Try cloud TTS with a fast timeout — fall back to local browser TTS immediately
             try {
-                const { data, error } = await supabase.functions.invoke('generate-tts', { body: { text } });
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 3000); // 3s max
+                const { data, error } = await supabase.functions.invoke('generate-tts', { 
+                    body: { text },
+                });
+                clearTimeout(timeout);
+                if (cancelled) return;
                 if (error || !data || !data.audioContent) throw new Error("TTS Fallback");
                 const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
                 activeAudioRefs.current.push(audio);
@@ -283,21 +290,28 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                 audio.addEventListener('pause', () => setIsTalking(false));
                 audio.play();
             } catch(e) {
-                console.warn("Cloud TTS failed or unavailable, using high-quality local browser TTS.");
+                if (cancelled) return;
+                console.warn("Cloud TTS unavailable, using local browser TTS.");
                 setIsTalking(true);
                 SoundManager.playCharacterVoice(text, voiceType as any);
                 // Rough estimate for lip sync timing
-                setTimeout(() => setIsTalking(false), text.length * 60);
+                setTimeout(() => { if (!cancelled) setIsTalking(false); }, text.length * 60);
             }
         };
 
         const loadDynamicImage = async (query: string) => {
             try {
-                const { data, error } = await supabase.functions.invoke('generate-image', { body: { prompt: query } });
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 4000); // 4s max
+                const { data, error } = await supabase.functions.invoke('generate-image', { 
+                    body: { prompt: query },
+                });
+                clearTimeout(timeout);
+                if (cancelled) return;
                 if (error || !data || !data.imageBase64) throw new Error("Imagen Fallback");
                 setDynamicImageUrl(`data:image/jpeg;base64,${data.imageBase64}`);
             } catch(e) {
-                setDynamicImageUrl(null);
+                if (!cancelled) setDynamicImageUrl(null);
             }
         };
 
@@ -310,6 +324,8 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
         } else {
             setDynamicImageUrl(null);
         }
+
+        return () => { cancelled = true; };
     }, [currentNode, isComplete]);
 
     const handleAskSubmit = async (overrideText?: string) => {
