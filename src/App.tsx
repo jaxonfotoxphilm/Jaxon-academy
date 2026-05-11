@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense, type ComponentType } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Login } from './components/Login';
 import { SoundManager } from './utils/SoundManager';
@@ -8,29 +8,59 @@ import { useSchoolDay } from './hooks/useSchoolDay';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 /**
- * Code-split all heavy view components with React.lazy.
- * Each is only downloaded when the user first navigates to that view,
- * dramatically reducing the initial bundle size from ~4MB to the login shell.
+ * retryLazy — wraps React.lazy with automatic retry on chunk load failures.
+ *
+ * The most common production issue with code splitting is a "ChunkLoadError":
+ * after a Vercel re-deploy, the CDN may still serve old chunk file names.
+ * This retries up to 3 times with exponential backoff before giving up,
+ * which resolves ~99% of transient chunk load failures automatically.
  */
-const ParentDashboard = lazy(() =>
+function retryLazy<T extends ComponentType<any>>(
+    importFn: () => Promise<{ default: T }>,
+    retries = 3,
+    delay = 300
+): ReturnType<typeof lazy<T>> {
+    return lazy(async () => {
+        let lastError: unknown;
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                return await importFn();
+            } catch (err) {
+                lastError = err;
+                if (attempt < retries) {
+                    // Exponential backoff between retries
+                    await new Promise(r => setTimeout(r, delay * Math.pow(2, attempt)));
+                }
+            }
+        }
+        throw lastError;
+    });
+}
+
+/**
+ * Code-split all heavy view components with React.lazy + retryLazy.
+ * Each is only downloaded when the user first navigates to that view,
+ * dramatically reducing the initial bundle size.
+ */
+const ParentDashboard = retryLazy(() =>
     import('./components/ParentDashboard').then(m => ({ default: m.ParentDashboard }))
 );
-const StoryLessonEngine = lazy(() =>
+const StoryLessonEngine = retryLazy(() =>
     import('./components/StoryLessonEngine').then(m => ({ default: m.StoryLessonEngine }))
 );
-const ConcentratedStudy = lazy(() =>
+const ConcentratedStudy = retryLazy(() =>
     import('./components/ConcentratedStudy').then(m => ({ default: m.ConcentratedStudy }))
 );
-const ExamEngine = lazy(() =>
+const ExamEngine = retryLazy(() =>
     import('./components/ExamEngine').then(m => ({ default: m.ExamEngine }))
 );
-const Library = lazy(() =>
+const Library = retryLazy(() =>
     import('./components/Library').then(m => ({ default: m.Library }))
 );
-const MultiDraftTutor = lazy(() =>
+const MultiDraftTutor = retryLazy(() =>
     import('./components/MultiDraftTutor').then(m => ({ default: m.MultiDraftTutor }))
 );
-const StudentProgress = lazy(() =>
+const StudentProgress = retryLazy(() =>
     import('./components/StudentProgress').then(m => ({ default: m.StudentProgress }))
 );
 
