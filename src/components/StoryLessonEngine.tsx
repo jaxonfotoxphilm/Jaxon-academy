@@ -891,7 +891,7 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                                 className="flex-1 bg-slate-900/60 border border-slate-700/50 rounded-xl p-4 text-slate-200 text-sm leading-relaxed resize-none focus:outline-none focus:border-indigo-400/50 placeholder-slate-600 pointer-events-auto"
                             />
                             <button
-                                onClick={() => { setVideoWatched(true); handleNext(); }}
+                                onClick={() => { setVideoWatched(true); }}
                                 className={`mt-3 w-full py-3 rounded-xl font-bold text-sm tracking-wide transition-all pointer-events-auto ${
                                     videoWatched
                                         ? 'bg-emerald-600/30 border border-emerald-400/40 text-emerald-300 cursor-default'
