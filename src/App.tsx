@@ -179,15 +179,17 @@ export default function App() {
   });
 
   return (
-    <div className="min-h-screen bg-[#040714] text-white font-sans flex flex-col relative overflow-x-hidden">
+    <div className="min-h-screen bg-[var(--bg-primary)] text-white font-sans flex flex-col relative overflow-x-hidden grain-overlay" style={{ fontFamily: 'Inter, Outfit, sans-serif' }}>
       
 
 
       {/* Header NavBar */}
-      <header className="absolute top-0 w-full z-50 p-4 md:p-6 bg-gradient-to-b from-black/80 to-transparent flex justify-between items-center transition-all">
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('menu')} onMouseEnter={CardHover}>
-          <div className="text-2xl md:text-3xl">🏛️</div>
-          <h1 className="text-xl md:text-2xl font-extrabold tracking-widest uppercase">Jaxon<span className="font-light text-blue-400">Academy</span></h1>
+      <header className="absolute top-0 w-full z-50 px-4 md:px-8 py-4 md:py-5 bg-[hsla(228,80%,3%,0.7)] backdrop-blur-2xl border-b border-[var(--border-subtle)] flex justify-between items-center transition-all">
+        <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('menu')} onMouseEnter={CardHover}>
+          <div className="text-2xl md:text-3xl transition-transform group-hover:scale-110 group-hover:rotate-6">🏛️</div>
+          <h1 className="text-xl md:text-2xl font-extrabold tracking-[0.12em] uppercase" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            Jaxon<span className="font-light text-[var(--accent-blue)]">Academy</span>
+          </h1>
         </div>
 
         {/* Desktop Navigation */}
@@ -273,17 +275,9 @@ export default function App() {
       <main className="relative z-10 flex-grow w-full h-full">
         {/* Cinematic Video Background */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-            <video 
-                src="https://videos.pexels.com/video-files/3129671/3129671-hd_1920_1080_30fps.mp4" 
-                className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-screen"
-                autoPlay loop muted playsInline
-            />
-            <div className="absolute inset-0 bg-gradient-to-br from-[#040614]/95 via-[#0a102e]/85 to-[#040614]/95 backdrop-blur-[2px]"></div>
-            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 mix-blend-overlay"></div>
-            
-            {/* Ambient glowing orbs */}
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] mix-blend-screen"></div>
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-[120px] mix-blend-screen"></div>
+            <div className="absolute top-[-10%] left-[5%] w-[700px] h-[700px] bg-[hsla(224,76%,58%,0.05)] rounded-full blur-[160px] ambient-glow"></div>
+            <div className="absolute bottom-[-15%] right-[10%] w-[600px] h-[600px] bg-[hsla(280,60%,50%,0.04)] rounded-full blur-[140px] ambient-glow-delay"></div>
+            <div className="absolute top-[50%] left-[50%] w-[400px] h-[400px] bg-[hsla(160,60%,45%,0.03)] rounded-full blur-[120px] ambient-glow"></div>
         </div>
 
         <div className="flex-1 overflow-auto relative h-full z-10">
@@ -296,22 +290,22 @@ export default function App() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 1.05, filter: "blur(10px)" }}
                     transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                    className="w-full min-h-full pb-32"
+                    className="w-full min-h-full pb-32 pt-24"
                 >
             
             {/* GUIDED DAILY PATHWAY */}
             <div className="max-w-5xl mx-auto px-6 py-12">
-              <div className="mb-12 border-b border-white/10 pb-8 animate-in slide-in-from-top-8 duration-700">
+              <div className="mb-14 pb-8 animate-in slide-in-from-top-8 duration-700">
                 <div className="flex flex-wrap items-center gap-3 mb-6">
-                  <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-500/20 text-blue-400 font-black text-xs rounded-full uppercase tracking-widest border border-blue-500/30">
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[hsla(224,76%,58%,0.12)] text-[var(--accent-blue)] font-black text-xs rounded-full uppercase tracking-[0.15em] border border-[hsla(224,76%,58%,0.2)]">
                     <span>📅</span> Today's Schedule
                   </div>
-                  <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-500/15 text-emerald-400 font-black text-xs rounded-full uppercase tracking-widest border border-emerald-500/25">
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[hsla(160,60%,45%,0.1)] text-[var(--accent-emerald)] font-black text-xs rounded-full uppercase tracking-[0.15em] border border-[hsla(160,60%,45%,0.18)]">
                     <span>📆</span> {schoolDayLabel}
                   </div>
                 </div>
-                <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-4 tracking-tighter">Your Learning Pathway</h2>
-                <p className="text-lg md:text-xl text-slate-400 font-light max-w-2xl">
+                <h2 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>Your Learning Pathway</h2>
+                <p className="text-lg md:text-xl text-[var(--text-secondary)] font-light max-w-2xl">
                   {currentUser === 'Principal' ? "Previewing the student's daily guided schedule." : `Welcome back, ${currentUser}. Complete these modules in order to finish your school day.`}
                 </p>
               </div>
@@ -362,33 +356,32 @@ export default function App() {
                     </div>
                     
                     <div 
-                      className={`flex-1 ml-4 md:ml-8 backdrop-blur-2xl border rounded-2xl md:rounded-3xl p-5 md:p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 transition-all duration-500 relative overflow-hidden ${
-                          isCompleted ? 'bg-emerald-500/[0.04] border-emerald-500/20' :
-                          isLocked ? 'bg-white/[0.01] border-white/5' :
-                          'bg-white/[0.03] border-white/10 group-hover:border-white/30 hover:bg-white/[0.08] hover:-translate-y-1'
+                      className={`flex-1 ml-4 md:ml-8 glass-card card-shine border rounded-2xl md:rounded-3xl p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 transition-all duration-500 relative overflow-hidden gradient-border ${
+                          isCompleted ? '!bg-[hsla(160,60%,45%,0.04)] !border-[hsla(160,60%,45%,0.2)]' :
+                          isLocked ? '!bg-[hsla(0,0%,100%,0.01)] !border-[hsla(0,0%,100%,0.05)]' :
+                          'hover:-translate-y-1'
                       }`}
                     >
-                      {/* Premium internal glow */}
-                      {!isLocked && <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-r ${subject.color}`}></div>}
-                      <div className={`absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b ${isCompleted ? 'from-emerald-500 to-emerald-700' : isLocked ? 'from-slate-700 to-slate-800' : subject.color}`}></div>
+                      {/* Accent left border */}
+                      <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-3xl bg-gradient-to-b ${isCompleted ? 'from-[var(--accent-emerald)] to-emerald-700' : isLocked ? 'from-slate-700 to-slate-800' : subject.color}`}></div>
                       
                       <div className="flex justify-between items-start w-full relative z-10">
                         <div className="flex-1 min-w-0">
                           <h4 className={`text-lg md:text-xl font-extrabold mb-1 tracking-tight transition-colors ${
-                              isCompleted ? 'text-emerald-400' : isLocked ? 'text-slate-500' : 'text-white group-hover:text-blue-300'
+                              isCompleted ? 'text-[var(--accent-emerald)]' : isLocked ? 'text-slate-500' : 'text-white group-hover:text-[var(--accent-blue)]'
                           }`}>
                               {subject.title}
-                              {isCompleted && <span className="ml-2 text-xs font-bold text-emerald-500 uppercase tracking-widest">Complete</span>}
+                              {isCompleted && <span className="ml-2 text-xs font-bold text-emerald-500 uppercase tracking-[0.15em]">Complete</span>}
                           </h4>
-                          <p className={`font-medium text-xs md:text-sm truncate ${isLocked ? 'text-slate-600' : 'text-slate-400 group-hover:text-slate-300'} transition-colors`}>{subject.desc}</p>
+                          <p className={`font-medium text-xs md:text-sm truncate ${isLocked ? 'text-slate-600' : 'text-[var(--text-secondary)] group-hover:text-slate-300'} transition-colors`}>{subject.desc}</p>
                         </div>
                         <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full border flex items-center justify-center transition-all duration-500 shadow-inner shrink-0 ml-3 ${
-                            isCompleted ? 'bg-emerald-500/10 border-emerald-500/30' :
-                            isLocked ? 'bg-white/[0.02] border-white/5' :
-                            'bg-white/5 border-white/10 group-hover:bg-white group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]'
+                            isCompleted ? 'bg-[hsla(160,60%,45%,0.1)] border-[hsla(160,60%,45%,0.3)]' :
+                            isLocked ? 'bg-[hsla(0,0%,100%,0.02)] border-[hsla(0,0%,100%,0.05)]' :
+                            'bg-[hsla(0,0%,100%,0.05)] border-[var(--border-subtle)] group-hover:bg-white group-hover:scale-110 group-hover:shadow-[0_0_24px_var(--glow-blue)]'
                         }`}>
                           <span className={`text-lg md:text-xl font-black ml-0.5 transition-colors duration-500 ${
-                              isCompleted ? 'text-emerald-400' : isLocked ? 'text-slate-700' : 'text-white group-hover:text-black'
+                              isCompleted ? 'text-[var(--accent-emerald)]' : isLocked ? 'text-slate-700' : 'text-white group-hover:text-black'
                           }`}>
                               {isCompleted ? '✓' : isLocked ? '🔒' : '▶'}
                           </span>
@@ -400,16 +393,16 @@ export default function App() {
                 })}
               </div>
               
-              <div className="mt-16 flex flex-col sm:flex-row justify-center gap-4 animate-in fade-in duration-1000 delay-500">
+              <div className="mt-20 flex flex-col sm:flex-row justify-center gap-4 animate-in fade-in duration-1000 delay-500">
                 <button 
                     onClick={() => navigate('library')}
-                    className="px-8 py-4 bg-transparent border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 font-bold rounded-xl transition-all"
+                    className="px-8 py-4 bg-transparent border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white hover:border-[var(--border-hover)] font-bold rounded-2xl transition-all hover:-translate-y-0.5"
                 >
                     Browse Full Syllabus
                 </button>
                 <button 
                     onClick={() => navigate('exams')}
-                    className="px-8 py-4 bg-transparent border border-purple-700/50 text-purple-400 hover:text-purple-300 hover:border-purple-500/50 font-bold rounded-xl transition-all"
+                    className="px-8 py-4 bg-transparent border border-[hsla(280,60%,50%,0.2)] text-[hsla(280,60%,60%,1)] hover:text-[hsla(280,60%,70%,1)] hover:border-[hsla(280,60%,50%,0.4)] font-bold rounded-2xl transition-all hover:-translate-y-0.5"
                 >
                     Enter Study Camp
                 </button>

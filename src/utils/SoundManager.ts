@@ -1,6 +1,18 @@
-// Base64 encoded tiny audio blips
-// Hover: A soft tick
-// Empty placeholder to avoid huge strings, I'll use Web Audio API instead for cleaner sounds!
+/**
+ * SoundManager — Premium Web Audio API sound engine.
+ *
+ * Every sound uses layered oscillators with reverb simulation for a rich,
+ * warm audio experience. Frequencies are tuned to musically pleasing intervals.
+ *
+ * Sound palette:
+ *   - Hover:    Soft crystalline tick (glass tap)
+ *   - Click:    Warm pop with harmonic tail
+ *   - Chime:    Cinematic Cmaj7 arpeggio with delay reverb
+ *   - Reward:   Bright ascending triad fanfare
+ *   - Level Up: Sweeping pentatonic staircase with shimmer
+ *   - Error:    Gentle descending minor 2nd nudge
+ *   - Success:  Satisfying major 5th resolution
+ */
 
 class SoundManagerClass {
     private audioCtx: AudioContext | null = null;
@@ -38,13 +50,39 @@ class SoundManagerClass {
         this.unlocked = true;
     }
 
+    /**
+     * Creates a simple reverb-like effect by adding delayed copies of the signal.
+     * Returns a GainNode to connect oscillators into.
+     */
+    private createReverbBus(duration: number = 0.8, wetMix: number = 0.15): GainNode {
+        const ctx = this.audioCtx!;
+        const dry = ctx.createGain();
+        dry.gain.setValueAtTime(1 - wetMix, ctx.currentTime);
+        dry.connect(ctx.destination);
+
+        // Simulated reverb via staggered delays
+        const delays = [0.03, 0.07, 0.12];
+        delays.forEach(d => {
+            const delay = ctx.createDelay(1);
+            delay.delayTime.setValueAtTime(d, ctx.currentTime);
+            const feedback = ctx.createGain();
+            feedback.gain.setValueAtTime(wetMix * (1 - d), ctx.currentTime);
+            feedback.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+            dry.connect(delay);
+            delay.connect(feedback);
+            feedback.connect(ctx.destination);
+        });
+
+        return dry;
+    }
+
     public setUser(username: string) {
         this.currentUser = username;
         const savedPref = localStorage.getItem(`jaxonAcademy_audioPref_${username}`);
         if (savedPref !== null) {
             this.audioEnabled = savedPref === 'true';
         } else {
-            this.audioEnabled = true; // default to true
+            this.audioEnabled = true;
         }
         this.notifyListeners();
     }
@@ -58,192 +96,257 @@ class SoundManagerClass {
         this.notifyListeners();
     }
 
-    public isAudioEnabled() {
-        return this.audioEnabled;
-    }
+    public isAudioEnabled() { return this.audioEnabled; }
 
     public subscribe(listener: () => void) {
         this.listeners.push(listener);
-        return () => {
-            this.listeners = this.listeners.filter(l => l !== listener);
-        };
+        return () => { this.listeners = this.listeners.filter(l => l !== listener); };
     }
 
-    private notifyListeners() {
-        this.listeners.forEach(l => l());
-    }
+    private notifyListeners() { this.listeners.forEach(l => l()); }
 
     public stopAll() {
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-        }
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     }
 
+    /** Soft crystalline tick — like tapping glass */
     public playHover() {
         if (!this.audioEnabled) return;
-        this.unlockAudio();
-        this.init();
+        this.unlockAudio(); this.init();
         if (!this.audioCtx) return;
-        
-        const osc = this.audioCtx.createOscillator();
-        const gain = this.audioCtx.createGain();
-        
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(800, this.audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1200, this.audioCtx.currentTime + 0.05);
-        
-        gain.gain.setValueAtTime(0.1, this.audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.05);
-        
-        osc.connect(gain);
-        gain.connect(this.audioCtx.destination);
-        
-        osc.start();
-        osc.stop(this.audioCtx.currentTime + 0.05);
-    }
-
-    public playClick() {
-        if (!this.audioEnabled) return;
-        this.unlockAudio();
-        this.init();
-        if (!this.audioCtx) return;
-        
-        const osc = this.audioCtx.createOscillator();
-        const gain = this.audioCtx.createGain();
-        
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(400, this.audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(800, this.audioCtx.currentTime + 0.1);
-        
-        gain.gain.setValueAtTime(0.2, this.audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.1);
-        
-        osc.connect(gain);
-        gain.connect(this.audioCtx.destination);
-        
-        osc.start();
-        osc.stop(this.audioCtx.currentTime + 0.1);
-    }
-
-    public playCinematicChime() {
-        if (!this.audioEnabled) return;
-        this.unlockAudio();
-        this.init();
-        if (!this.audioCtx) return;
-        
         const ctx = this.audioCtx;
-        const rootFreq = 261.63; // C4
-        const chord = [1, 1.25, 1.5, 1.8877]; // C E G B (Major 7th)
-        
-        const masterGain = ctx.createGain();
-        masterGain.gain.setValueAtTime(0, ctx.currentTime);
-        masterGain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 1.5);
-        masterGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 4.0);
-        masterGain.connect(ctx.destination);
-        
-        // Add a simple convolution reverb or just use multiple oscillators to sound thick
-        chord.forEach((ratio, index) => {
+        const t = ctx.currentTime;
+
+        // Two layered sine tones for warmth
+        [1800, 2400].forEach((freq, i) => {
             const osc = ctx.createOscillator();
-            const oscGain = ctx.createGain();
-            
-            osc.type = index % 2 === 0 ? 'sine' : 'triangle';
-            // slight detune for thickness
-            osc.frequency.setValueAtTime(rootFreq * ratio * (1 + (index * 0.002)), ctx.currentTime);
-            
-            // Sweep pitch slightly up
-            osc.frequency.exponentialRampToValueAtTime(rootFreq * ratio * 1.05, ctx.currentTime + 3.0);
-            
-            // Stagger entrances for arpeggio effect
-            const startTime = ctx.currentTime + (index * 0.15);
-            
-            oscGain.gain.setValueAtTime(0, startTime);
-            oscGain.gain.linearRampToValueAtTime(0.3 / chord.length, startTime + 0.5);
-            oscGain.gain.exponentialRampToValueAtTime(0.001, startTime + 3.5);
-            
-            osc.connect(oscGain);
-            oscGain.connect(masterGain);
-            
-            osc.start(startTime);
-            osc.stop(startTime + 4.0);
+            const g = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, t);
+            g.gain.setValueAtTime(0, t);
+            g.gain.linearRampToValueAtTime(0.04 - i * 0.015, t + 0.008);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+            osc.connect(g);
+            g.connect(ctx.destination);
+            osc.start(t);
+            osc.stop(t + 0.06);
         });
     }
 
-    public playReward() {
+    /** Warm pop with harmonic overtone */
+    public playClick() {
         if (!this.audioEnabled) return;
-        this.unlockAudio();
-        this.init();
+        this.unlockAudio(); this.init();
         if (!this.audioCtx) return;
-        
         const ctx = this.audioCtx;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(600, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
-        
-        gain.gain.setValueAtTime(0, ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-        
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        
-        osc.start();
-        osc.stop(ctx.currentTime + 0.3);
+        const t = ctx.currentTime;
+        const bus = this.createReverbBus(0.3, 0.1);
+
+        // Fundamental pop
+        const osc1 = ctx.createOscillator();
+        const g1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(520, t);
+        osc1.frequency.exponentialRampToValueAtTime(680, t + 0.04);
+        g1.gain.setValueAtTime(0, t);
+        g1.gain.linearRampToValueAtTime(0.15, t + 0.005);
+        g1.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        osc1.connect(g1);
+        g1.connect(bus);
+        osc1.start(t);
+        osc1.stop(t + 0.12);
+
+        // Harmonic shimmer
+        const osc2 = ctx.createOscillator();
+        const g2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(1040, t);
+        g2.gain.setValueAtTime(0, t);
+        g2.gain.linearRampToValueAtTime(0.04, t + 0.01);
+        g2.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+        osc2.connect(g2);
+        g2.connect(bus);
+        osc2.start(t);
+        osc2.stop(t + 0.08);
     }
 
+    /** Cinematic Cmaj7 arpeggio with delay reverb — plays on login / major transitions */
+    public playCinematicChime() {
+        if (!this.audioEnabled) return;
+        this.unlockAudio(); this.init();
+        if (!this.audioCtx) return;
+        const ctx = this.audioCtx;
+        const t = ctx.currentTime;
+
+        // C4, E4, G4, B4 (Cmaj7 — warm, sophisticated)
+        const notes = [261.63, 329.63, 392.00, 493.88];
+        const bus = this.createReverbBus(2.5, 0.25);
+        const master = ctx.createGain();
+        master.gain.setValueAtTime(0, t);
+        master.gain.linearRampToValueAtTime(0.2, t + 0.8);
+        master.gain.exponentialRampToValueAtTime(0.001, t + 4.0);
+        master.connect(bus);
+
+        notes.forEach((freq, i) => {
+            const delay = i * 0.18;
+            // Main tone
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = i % 2 === 0 ? 'sine' : 'triangle';
+            osc.frequency.setValueAtTime(freq * (1 + i * 0.001), t + delay);
+            osc.frequency.exponentialRampToValueAtTime(freq * 1.003, t + delay + 3.0);
+            g.gain.setValueAtTime(0, t + delay);
+            g.gain.linearRampToValueAtTime(0.25 / notes.length, t + delay + 0.3);
+            g.gain.exponentialRampToValueAtTime(0.001, t + delay + 3.5);
+            osc.connect(g);
+            g.connect(master);
+            osc.start(t + delay);
+            osc.stop(t + delay + 4.0);
+
+            // Octave shimmer (very quiet)
+            const osc2 = ctx.createOscillator();
+            const g2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(freq * 2, t + delay);
+            g2.gain.setValueAtTime(0, t + delay);
+            g2.gain.linearRampToValueAtTime(0.03, t + delay + 0.5);
+            g2.gain.exponentialRampToValueAtTime(0.001, t + delay + 2.5);
+            osc2.connect(g2);
+            g2.connect(master);
+            osc2.start(t + delay);
+            osc2.stop(t + delay + 3.0);
+        });
+    }
+
+    /** Bright ascending triad — correct answer / reward */
+    public playReward() {
+        if (!this.audioEnabled) return;
+        this.unlockAudio(); this.init();
+        if (!this.audioCtx) return;
+        const ctx = this.audioCtx;
+        const t = ctx.currentTime;
+        const bus = this.createReverbBus(0.5, 0.2);
+
+        // C5, E5, G5 ascending quickly
+        const notes = [523.25, 659.25, 783.99];
+        notes.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, t + i * 0.08);
+            g.gain.setValueAtTime(0, t + i * 0.08);
+            g.gain.linearRampToValueAtTime(0.18, t + i * 0.08 + 0.015);
+            g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.08 + 0.4);
+            osc.connect(g);
+            g.connect(bus);
+            osc.start(t + i * 0.08);
+            osc.stop(t + i * 0.08 + 0.4);
+        });
+    }
+
+    /** Sweeping pentatonic staircase with shimmer — lesson complete / level up */
     public playLevelUp() {
         if (!this.audioEnabled) return;
-        this.unlockAudio();
-        this.init();
+        this.unlockAudio(); this.init();
         if (!this.audioCtx) return;
-        
         const ctx = this.audioCtx;
-        const notes = [440, 554.37, 659.25, 880]; // A4, C#5, E5, A5 (A major arpeggio)
-        
-        notes.forEach((freq, index) => {
+        const t = ctx.currentTime;
+        const bus = this.createReverbBus(1.0, 0.3);
+
+        // A major pentatonic ascending: A4, B4, C#5, E5, F#5, A5
+        const notes = [440, 493.88, 554.37, 659.25, 739.99, 880];
+        notes.forEach((freq, i) => {
             const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(freq, ctx.currentTime + (index * 0.1));
-            
-            gain.gain.setValueAtTime(0, ctx.currentTime + (index * 0.1));
-            gain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + (index * 0.1) + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (index * 0.1) + 0.3);
-            
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            
-            osc.start(ctx.currentTime + (index * 0.1));
-            osc.stop(ctx.currentTime + (index * 0.1) + 0.3);
+            const g = ctx.createGain();
+            osc.type = i < 3 ? 'triangle' : 'sine';
+            osc.frequency.setValueAtTime(freq, t + i * 0.1);
+            g.gain.setValueAtTime(0, t + i * 0.1);
+            g.gain.linearRampToValueAtTime(0.12, t + i * 0.1 + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.1 + 0.5);
+            osc.connect(g);
+            g.connect(bus);
+            osc.start(t + i * 0.1);
+            osc.stop(t + i * 0.1 + 0.5);
+        });
+
+        // Final shimmer chord (A5 + C#6)
+        const shimmerDelay = notes.length * 0.1;
+        [880, 1108.73].forEach(freq => {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, t + shimmerDelay);
+            g.gain.setValueAtTime(0, t + shimmerDelay);
+            g.gain.linearRampToValueAtTime(0.08, t + shimmerDelay + 0.05);
+            g.gain.exponentialRampToValueAtTime(0.001, t + shimmerDelay + 1.2);
+            osc.connect(g);
+            g.connect(bus);
+            osc.start(t + shimmerDelay);
+            osc.stop(t + shimmerDelay + 1.2);
+        });
+    }
+
+    /** Gentle descending minor 2nd — wrong answer / error nudge */
+    public playError() {
+        if (!this.audioEnabled) return;
+        this.unlockAudio(); this.init();
+        if (!this.audioCtx) return;
+        const ctx = this.audioCtx;
+        const t = ctx.currentTime;
+
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, t);
+        osc.frequency.exponentialRampToValueAtTime(380, t + 0.15);
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.12, t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+        osc.connect(g);
+        g.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.25);
+    }
+
+    /** Satisfying major 5th resolution — success confirmation */
+    public playSuccess() {
+        if (!this.audioEnabled) return;
+        this.unlockAudio(); this.init();
+        if (!this.audioCtx) return;
+        const ctx = this.audioCtx;
+        const t = ctx.currentTime;
+        const bus = this.createReverbBus(0.6, 0.15);
+
+        // C5 → G5 (perfect 5th = pure satisfaction)
+        [523.25, 783.99].forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, t + i * 0.12);
+            g.gain.setValueAtTime(0, t + i * 0.12);
+            g.gain.linearRampToValueAtTime(0.15, t + i * 0.12 + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.12 + 0.5);
+            osc.connect(g);
+            g.connect(bus);
+            osc.start(t + i * 0.12);
+            osc.stop(t + i * 0.12 + 0.5);
         });
     }
 
     /**
      * Plays character dialogue using the tiered VoiceService.
      * Falls through: ElevenLabs → Kokoro TTS → Web Speech API.
-     * The voice type parameter is kept for API compatibility but
-     * ElevenLabs/Kokoro use their own voice selection internally.
      */
     public playCharacterVoice(text: string, _voiceType: 'narrator' | 'professor' | 'hero' = 'narrator') {
         if (!this.audioEnabled) return;
-        
-        // Dynamically import VoiceService to avoid circular deps
-        import('./VoiceService').then(({ speak }) => {
-            speak(text);
-        });
+        import('./VoiceService').then(({ speak }) => { speak(text); });
     }
 
     /**
      * Pre-loads the Kokoro TTS WASM model in the background.
-     * Call early (e.g. on app mount) so it's ready when ElevenLabs budget runs out.
      */
     public preloadVoiceModels() {
-        import('./VoiceService').then(({ preloadKokoro }) => {
-            preloadKokoro();
-        });
+        import('./VoiceService').then(({ preloadKokoro }) => { preloadKokoro(); });
     }
 }
 

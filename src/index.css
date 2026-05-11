@@ -1,29 +1,140 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Design System: Root Tokens ─── */
+:root {
+  --bg-primary: hsl(228, 80%, 3%);
+  --bg-card: hsla(228, 40%, 8%, 0.6);
+  --border-subtle: hsla(230, 60%, 50%, 0.12);
+  --border-hover: hsla(230, 60%, 60%, 0.35);
+  --accent-blue: hsl(224, 76%, 58%);
+  --accent-indigo: hsl(246, 60%, 55%);
+  --accent-emerald: hsl(160, 60%, 45%);
+  --text-primary: hsl(0, 0%, 95%);
+  --text-secondary: hsl(225, 15%, 55%);
+  --glow-blue: hsla(224, 76%, 58%, 0.3);
+  --glow-indigo: hsla(246, 60%, 55%, 0.25);
+}
+
+/* ─── Global Defaults ─── */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', 'Outfit', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+
+/* ─── Custom Scrollbar ─── */
+.custom-scrollbar::-webkit-scrollbar,
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsla(230, 30%, 40%, 0.3);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsla(230, 40%, 50%, 0.5);
+}
+
+/* ─── Premium Glass Card ─── */
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(24px) saturate(1.3);
+  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+  border: 1px solid var(--border-subtle);
+  border-radius: 1.5rem;
+  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.glass-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 12px 40px -12px rgba(0, 0, 0, 0.5),
+    0 0 0 1px var(--border-hover),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.04);
+}
+
+/* ─── Animated Gradient Border ─── */
+.gradient-border {
+  position: relative;
+  overflow: hidden;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    var(--accent-indigo), 
+    var(--accent-blue), 
+    var(--accent-emerald), 
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: shimmer-border 4s ease-in-out infinite;
+}
+
+@keyframes shimmer-border {
+  0%, 100% { background-position: 200% 0; }
+  50% { background-position: -200% 0; }
+}
+
+/* ─── Film Grain Texture ─── */
+.grain-overlay::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  mix-blend-mode: overlay;
+}
+
+/* ─── Ambient Glow Pulse ─── */
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.08; transform: scale(1); }
+  50% { opacity: 0.15; transform: scale(1.05); }
+}
+
+.ambient-glow {
+  animation: glow-pulse 8s ease-in-out infinite;
+}
+
+.ambient-glow-delay {
+  animation: glow-pulse 10s ease-in-out infinite reverse;
+}
+
+/* ─── Character Animations ─── */
 @layer utilities {
   @keyframes float {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-15px);
-    }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
   }
   .animate-float {
     animation: float 4s ease-in-out infinite;
   }
   
   @keyframes vtube-talk {
-    0%, 100% {
-      transform: scaleY(1);
-    }
-    50% {
-      transform: scaleY(1.02) translateY(-2px);
-    }
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(1.02) translateY(-2px); }
   }
   .animate-talk {
     animation: vtube-talk 0.3s ease-in-out infinite;
@@ -39,4 +150,61 @@
     transform-origin: bottom center;
   }
 }
-@tailwind utilities;
+
+/* ─── Smooth Selection Ring ─── */
+@keyframes ring-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.profile-ring {
+  background: conic-gradient(
+    from 0deg,
+    var(--accent-blue),
+    var(--accent-indigo),
+    hsl(280, 60%, 55%),
+    var(--accent-emerald),
+    var(--accent-blue)
+  );
+  animation: ring-rotate 3s linear infinite;
+  border-radius: 50%;
+  padding: 3px;
+}
+
+/* ─── Subject Card Shine ─── */
+@keyframes card-shine {
+  0% { transform: translateX(-100%) rotate(25deg); }
+  100% { transform: translateX(200%) rotate(25deg); }
+}
+
+.card-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    hsla(0, 0%, 100%, 0.04) 45%,
+    hsla(0, 0%, 100%, 0.08) 50%,
+    hsla(0, 0%, 100%, 0.04) 55%,
+    transparent 60%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.card-shine:hover::after {
+  opacity: 1;
+  animation: card-shine 1.2s ease-out;
+}
+
+/* ─── Progress Timeline Dot Pulse ─── */
+@keyframes dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--glow-blue); }
+  50% { box-shadow: 0 0 0 8px transparent; }
+}
+
+.timeline-dot-active {
+  animation: dot-pulse 2s ease-in-out infinite;
+}
