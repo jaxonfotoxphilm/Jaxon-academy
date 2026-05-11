@@ -13,6 +13,19 @@ import { MultiDraftTutor } from './components/MultiDraftTutor';
 import { StudentProgress } from './components/StudentProgress';
 import { useSchoolDay } from './hooks/useSchoolDay';
 
+/** Read the user's saved custom avatar from localStorage */
+function getUserAvatar(name: string): string {
+  try {
+    const data = JSON.parse(localStorage.getItem('jaxon-academy-custom-avatar') || '{}');
+    if (data[name]) return data[name];
+  } catch { /* ignore */ }
+  // Fallback defaults
+  const defaults: Record<string, string> = {
+    'Principal': '/assets/avatar_knight.png',
+  };
+  return defaults[name] || `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(name)}&backgroundColor=transparent`;
+}
+
 type ViewName = 'menu' | 'dashboard' | 'lesson' | 'exams' | 'exam-runner' | 'library' | 'tutor' | 'pdf-viewer' | 'progress';
 
 export default function App() {
@@ -222,7 +235,7 @@ export default function App() {
           <div className="flex items-center gap-3 ml-2 border-l border-white/20 pl-4 group cursor-pointer" onClick={() => { setCurrentUser(null); setCurrentView('menu'); }} onMouseEnter={CardHover}>
             <span className="font-semibold text-sm group-hover:text-red-400 transition-colors">{currentUser}</span>
             <div className="w-10 h-10 rounded-full bg-slate-800 border-2 border-transparent group-hover:border-white transition-all overflow-hidden">
-              <img src="/assets/avatar_astronaut.png" alt="Profile" className="w-full h-full object-cover" />
+              <img src={getUserAvatar(currentUser)} alt="Profile" className="w-full h-full object-cover" />
             </div>
           </div>
         </div>
