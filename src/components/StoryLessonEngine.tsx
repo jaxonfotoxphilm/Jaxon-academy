@@ -61,6 +61,8 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
     const [hasProp3D, setHasProp3D] = useState(false);
     const [mathInputValue, setMathInputValue] = useState('');
     const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
+    const [videoWatched, setVideoWatched] = useState(false);
+    const [noteText, setNoteText] = useState('');
 
 
     useEffect(() => {
@@ -470,21 +472,42 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
 
     const handleNext = () => {
         SoundManager.playClick();
+        // Stop any playing audio/speech before navigating
+        SoundManager.stopAll();
+        import('../utils/VoiceService').then(({ stopSpeaking }) => stopSpeaking());
+        
         if (!currentNode) return;
         if (currentNode.nextNodeId === 'end') { handleComplete(); return; }
+        
+        // Reset video and note state for next node
+        setVideoWatched(false);
+        setShowQuizResult(null);
+        setMathInputValue('');
         
         if (currentNode.nextNodeId) {
             const nextIndex = storyNodes.findIndex(n => n.id === currentNode.nextNodeId);
             if (nextIndex !== -1) {
                 setCurrentNodeIndex(nextIndex);
             } else if (currentNodeIndex < storyNodes.length - 1) {
-                // If nextNodeId is invalid/not found, just increment to prevent immediate completion
                 setCurrentNodeIndex(currentNodeIndex + 1);
             } else {
                 handleComplete();
             }
         } else {
             if (currentNodeIndex < storyNodes.length - 1) setCurrentNodeIndex(currentNodeIndex + 1); else handleComplete();
+        }
+    };
+
+    /** Navigate backwards through lesson nodes */
+    const handleBack = () => {
+        SoundManager.playClick();
+        SoundManager.stopAll();
+        import('../utils/VoiceService').then(({ stopSpeaking }) => stopSpeaking());
+        if (currentNodeIndex > 0) {
+            setVideoWatched(false);
+            setShowQuizResult(null);
+            setMathInputValue('');
+            setCurrentNodeIndex(currentNodeIndex - 1);
         }
     };
 
@@ -701,33 +724,82 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
      * Uses standard /embed/{videoId} format which is fully supported.
      * Falls back to a "Watch on YouTube" button for topics without a curated ID.
      */
+    /**
+     * Curated educational YouTube video IDs mapped by topic keyword.
+     * Covers all subjects across the 14-grade curriculum.
+     * Falls back to a YouTube search link for uncovered topics.
+     */
     const VIDEO_IDS: Record<string, string> = {
-        'clauses': 'PpSPFKAoFxo',
-        'phrases': 'B1oZ5wEzpfA',
-        'essays': 'dHdU_DTZlnc',
-        'nouns': '4E2e1FC3e10',
-        'mythology': 'Yb-OYmHVsio',
-        'folklore': 'Q3-nP_N87jI',
-        'poetry': 'JwhouCNq_Ew',
-        'equations': 'l3XzepN03KQ',
-        'inequalities': 'xOxvyeSl0uA',
-        'functions': 'kvGsIo1TmsM',
-        'polynomials': 'ffLLmV4mZwU',
-        'graphing': 'T4jMLJRlsPM',
-        'ecosystems': 'v5K_NOTaD4A',
-        'cells': 'URUJD5NEXC8',
-        'genetics': 'CBezq1fFUEA',
-        'geology': 'FD3FMKQfm6k',
-        'astronomy': 'libKVRa01L8',
-        'ancient civilizations': 'jchcA3GG-YY',
-        'middle ages': '12G0FhQ170w',
-        'renaissance': 'Vufba_ZDTas',
-        'constitution': 'bO7FQsCcbD8',
-        'latin roots': 'VLnH4-1fK_I',
-        'synonyms': 'vIEifRY3nAs',
-        'addition': 'Fe8u4I8AUqo',
-        'subtraction': 'ug0FLEKAHAU',
-        'counting': 'bGetqbqYE4Q',
+        // Language Arts / ELA
+        'letter recognition': 'ezGcPMfH5qI', 'letter sounds': 'jvAYUvQsLWo',
+        'rhyming': 'PsBf3KuONaI', 'short vowels': 'hb9t3EurHfg',
+        'long vowels': 'xWHp2C558DI', 'blends': 'RSoHkMp-6jI',
+        'sight words': 'dyBKGazDhdI', 'phonics': 'YAsFCo9BGWY',
+        'reading strategies': 'YlEJkaOJ6yQ', 'nouns': '4E2e1FC3e10',
+        'verbs': 'DgZI5L4Eb60', 'verb tenses': 'LHmOQiQx3gI',
+        'adjectives': 'sHaOp5meuIU', 'adverbs': 'CmSf6E37PgE',
+        'clauses': 'PpSPFKAoFxo', 'sentences': 'dIxE7tCR5Lw',
+        'writing': 'dHdU_DTZlnc', 'essays': 'dHdU_DTZlnc',
+        'figurative language': 'X3acnKZLE0w', 'poetry': 'JwhouCNq_Ew',
+        'comprehension': 'YlEJkaOJ6yQ', 'vocabulary': 'vIEifRY3nAs',
+        'grammar': 'HpX9nndksSI', 'punctuation': 'J9_oKAgBLIA',
+        'spelling': 'hu1TiqiVqqs', 'prefixes': 'VLnH4-1fK_I',
+        'suffixes': 'VLnH4-1fK_I', 'root words': 'VLnH4-1fK_I',
+        // Math
+        'counting': 'bGetqbqYE4Q', 'number recognition': 'DR-cfDsz_FY',
+        'shapes': '6k0bKXhLH4A', 'patterns': 'K3tJVIGsDCA',
+        'addition': 'Fe8u4I8AUqo', 'subtraction': 'ug0FLEKAHAU',
+        'multiplication': 'qU6YnXkhGRk', 'division': 'rGx1QNl1Fk0',
+        'fractions': 'n0FZhQ_GkKw', 'decimals': 'do_IbHId2Os',
+        'place value': 'aR0WvQsOm_U', 'measurement': 'GnS47MUbEig',
+        'time': 'HrxZWNu72WI', 'money': 'dO3JBhoeeJI',
+        'area': 'xCIEBx3MwRg', 'perimeter': 'AAY1bBaCaIk',
+        'equations': 'l3XzepN03KQ', 'inequalities': 'xOxvyeSl0uA',
+        'functions': 'kvGsIo1TmsM', 'polynomials': 'ffLLmV4mZwU',
+        'graphing': 'T4jMLJRlsPM', 'algebra': 'NybHckSEQBI',
+        'geometry': 'H8gJpL1x4Q0', 'trigonometry': 'T6-U7UlBwsY',
+        'statistics': 'sxQaBpKfDRk', 'probability': 'KzfWUEJjG18',
+        'exponents': 'XZRQhkii0h0', 'quadratics': 'IlNAJl36-10',
+        // Science
+        'five senses': 'q1xNuU7gaAQ', 'living': 'GhBVhpGb7hU',
+        'weather': 'Uo8lbeVUGSg', 'seasons': 'VHR9pMqO2bE',
+        'plants': 'p3St51F4kE8', 'animals': 'oiyZaDxZsAg',
+        'life cycles': 'k7dIxdWfbGY', 'food chains': 'MuKs9o1s8FA',
+        'ecosystems': 'v5K_NOTaD4A', 'habitats': '9S2d3cj6IpI',
+        'cells': 'URUJD5NEXC8', 'genetics': 'CBezq1fFUEA',
+        'dna': 'zwibgNGe4aY', 'evolution': 'GhHOjC4oxh8',
+        'matter': 'IW0v6untlek', 'atoms': 'h6JNWP9CkaI',
+        'chemical reactions': '8m6RtOpqvtU', 'periodic table': 'rz4Dd1I_fX0',
+        'forces': 'VtyoEHE28sE', 'motion': 'VtyoEHE28sE',
+        'energy': 'CW0_S5YpYVo', 'electricity': 'mc979OhitAg',
+        'magnetism': 'MnhYy_JZGVY', 'waves': 'RNTbWymU0bI',
+        'light': 'bGfrYcOKp9c', 'sound': 'GkNHeBhlBRU',
+        'rocks': 'FD3FMKQfm6k', 'minerals': 'FD3FMKQfm6k',
+        'water cycle': 'al2GRvFbcJA', 'solar system': 'libKVRa01L8',
+        'earth': 'HCDVN7DCzYE', 'volcano': 'lAmqsMQG3RM',
+        'body systems': 'gEUu-A2wfSE', 'biology': '8IHU2JEbsAQ',
+        'chemistry': 'FSyAehMdpyI', 'physics': 'b1t41Q3xRM8',
+        'climate': 'SN5-DnOHQmE', 'environment': 'HBFk1EHmHJM',
+        // Social Studies / History
+        'community': '-ZzxMCMl0mw', 'maps': 'DO5J2sKRZEI',
+        'american symbols': 'MSvJ9SBIGok', 'holidays': 'F2L3T5trfDg',
+        'families': 'PKzJ9gH7Euo', 'government': 'bO7FQsCcbD8',
+        'constitution': 'bO7FQsCcbD8', 'bill of rights': 'yYEfLm5dLMQ',
+        'ancient civilizations': 'jchcA3GG-YY', 'mesopotamia': 'sohXPx_XZ6Y',
+        'ancient egypt': 'hO1tzmi1V5g', 'ancient greece': 'g2hDkDEa5PE',
+        'ancient rome': 'oPf27gAup9U', 'medieval': '12G0FhQ170w',
+        'middle ages': '12G0FhQ170w', 'renaissance': 'Vufba_ZDTas',
+        'reformation': 'IATyzSAjC1w', 'exploration': 'wOclF9eP5uM',
+        'colonial': 'o69TvGqyMOo', 'revolution': 'HlE7n-NxOcY',
+        'civil war': 'rY9zHNOjGrs', 'westward': 'q16RpV8aJFo',
+        'immigration': 'Fe79i1jN4s8', 'industrial': 'zhL5DCizj5c',
+        'world war': 'HUqy-OQvVGg', 'cold war': 'wVqziNV7dGY',
+        // Bible
+        'creation': 'teu7BCZTgDs', 'noah': 'dFSBU6cz1_o',
+        'moses': '4t2FAfwQaas', 'david': 'WGGhvUQGzIc',
+        'jesus': 'dqTwnElYAiM', 'parables': 'L8XYHO-mYMI',
+        'apostles': 'Dmqv0MFOHn0', 'psalms': 'j9phNEaPrv8',
+        'proverbs': 'Gab04dPs_ZA', 'gospel': 'dqTwnElYAiM',
     };
     const ytQuery = currentNode.youtubeSearchQuery?.toLowerCase() || '';
     const youtubeVideoId = Object.entries(VIDEO_IDS).find(([key]) => ytQuery.includes(key))?.[1] || null;
@@ -748,8 +820,10 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                         </Suspense>
                     </Canvas>
                 ) : currentNode.youtubeSearchQuery ? (
-                    <div className="w-full h-full md:p-8 p-4 flex items-center justify-center bg-transparent rounded-3xl overflow-hidden relative">
-                        <div className="absolute inset-0 bg-black/60 backdrop-blur-3xl border border-white/10 m-4 md:m-8 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden">
+                    /* ─── Full-Screen Video Layout with Note-Taking ─── */
+                    <div className="w-full h-full flex flex-col md:flex-row bg-black">
+                        {/* Video Panel — takes most of the space */}
+                        <div className="flex-1 relative min-h-[40vh] md:min-h-0">
                             {youtubeVideoId ? (
                                 <iframe 
                                     width="100%" 
@@ -762,10 +836,10 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                                     className="absolute inset-0 w-full h-full"
                                 ></iframe>
                             ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center gap-6 p-8">
+                                <div className="w-full h-full flex flex-col items-center justify-center gap-6 p-8 bg-slate-950">
                                     <div className="text-7xl animate-bounce">🎬</div>
                                     <h3 className="text-2xl font-bold text-white text-center">Educational Video</h3>
-                                    <p className="text-slate-400 text-center max-w-md">Watch this recommended video to learn more about the topic.</p>
+                                    <p className="text-slate-400 text-center max-w-md">Watch this video to learn about the topic.</p>
                                     <a
                                         href={`https://www.youtube.com/results?search_query=${encodeURIComponent(currentNode.youtubeSearchQuery || '')}`}
                                         target="_blank"
@@ -776,6 +850,37 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                                     </a>
                                 </div>
                             )}
+                            {/* Video timer overlay — unlocks Next after watching */}
+                            {!videoWatched && (
+                                <div className="absolute bottom-4 right-4 bg-black/70 backdrop-blur-sm text-amber-400 px-4 py-2 rounded-full text-sm font-bold border border-amber-400/30 animate-pulse z-20">
+                                    ⏳ Watch the video to continue
+                                </div>
+                            )}
+                        </div>
+                        {/* Note-Taking Sidebar */}
+                        <div className="w-full md:w-[380px] bg-[#0a0e1a] border-t md:border-t-0 md:border-l border-indigo-500/20 flex flex-col p-5 shrink-0">
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="text-xl">📝</span>
+                                <h4 className="text-lg font-bold text-white tracking-wide">My Notes</h4>
+                            </div>
+                            <p className="text-slate-400 text-xs mb-3 leading-relaxed">Write down key points from the video. Good notes help you remember what you learned!</p>
+                            <textarea
+                                value={noteText}
+                                onChange={e => setNoteText(e.target.value)}
+                                placeholder={`Take notes on what you learn, ${studentName}...\n\n• Key vocabulary\n• Important facts\n• Questions you have`}
+                                className="flex-1 bg-slate-900/60 border border-slate-700/50 rounded-xl p-4 text-slate-200 text-sm leading-relaxed resize-none focus:outline-none focus:border-indigo-400/50 placeholder-slate-600 pointer-events-auto"
+                            />
+                            <button
+                                onClick={() => { setVideoWatched(true); }}
+                                className={`mt-3 w-full py-3 rounded-xl font-bold text-sm tracking-wide transition-all pointer-events-auto ${
+                                    videoWatched
+                                        ? 'bg-emerald-600/30 border border-emerald-400/40 text-emerald-300 cursor-default'
+                                        : 'bg-indigo-600 hover:bg-indigo-500 text-white hover:scale-[1.02] active:scale-95'
+                                }`}
+                                disabled={videoWatched}
+                            >
+                                {videoWatched ? '✅ Video Complete — Click Next' : '✓ I finished watching'}
+                            </button>
                         </div>
                     </div>) : dynamicImageUrl ? (
                     <div className="w-full h-full p-12 flex items-center justify-center bg-slate-900/40">
@@ -1006,10 +1111,26 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="mt-4 flex justify-end gap-6">
+                                    <div className="mt-4 flex justify-between items-center gap-4">
+                                            {/* Back button */}
+                                            {currentNodeIndex > 0 && (
+                                                <button 
+                                                    onClick={handleBack}
+                                                    className="shrink-0 px-6 py-3 bg-white/10 text-slate-300 font-semibold text-base rounded-full hover:bg-white/20 transition-colors border border-white/20 hover:scale-105 active:scale-95"
+                                                >
+                                                    ◀ Back
+                                                </button>
+                                            )}
+                                            <div className="flex-1" />
+                                            {/* Next button — disabled during video until watched */}
                                             <button 
                                                 onClick={handleNext}
-                                                className="shrink-0 px-8 py-4 bg-white text-black font-bold text-lg rounded-full hover:bg-slate-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95"
+                                                disabled={!!currentNode.youtubeSearchQuery && !videoWatched}
+                                                className={`shrink-0 px-8 py-4 font-bold text-lg rounded-full transition-colors shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95 ${
+                                                    currentNode.youtubeSearchQuery && !videoWatched
+                                                        ? 'bg-slate-700 text-slate-500 cursor-not-allowed shadow-none'
+                                                        : 'bg-white text-black hover:bg-slate-200'
+                                                }`}
                                             >
                                                 Next ▶
                                             </button>
