@@ -1,15 +1,71 @@
-    // src/components/LessonVisualizer.tsx
+// src/components/LessonVisualizer.tsx
 import React from 'react';
-// cartoon assets can be imported here as needed
 import { InteractiveVideo } from './InteractiveVideo';
 import { VIDEO_INTERACTIONS } from './VideoInteractions';
+
+/**
+ * Curated YouTube background videos keyed by subject keyword.
+ * These play muted as ambient background visuals behind the lesson UI.
+ * Each maps a visualType keyword → a YouTube video ID for contextual ambiance.
+ */
+const BACKGROUND_YOUTUBE: Record<string, string> = {
+    // Science
+    'science':  'DkzQxoTMaJA',  // Beautiful science visuals
+    'atom':     'FSyAehMdpyI',  // Atoms & molecules animated
+    'biology':  'QnQe0xW_JY4',  // Biology cells animation
+    'cell':     'URUJD5NEXC8',  // Inside a cell
+    'space':    'libKVRa01L8',  // Space & galaxy footage
+    'nature':   'LXb3EKWsInQ',  // Nature documentary 4K
+    'eco':      'GlcmWsTR3OE',  // Ecosystem footage
+    'earth':    'HCDVN7DCzYE',  // Planet earth
+    // Math
+    'math':     'X9e3JhM5FY4',  // Math patterns and beauty
+    'geometry': 'WqzK3UAXaHc',  // Geometry visualization
+    'algebra':  'NybHckSEQBI',  // Algebra concepts
+    'arith':    'jQ-aWFYT_SU',  // Arithmetic for kids
+    'count':    'e0dJWfQHF8Y',  // Counting visuals
+    'add':      'jQ-aWFYT_SU',  // Addition
+    'subtract': 'aukMVFCxyQA',  // Subtraction
+    // History
+    'history':  'xuCn8ux2gbs',  // History documentary
+    'ancient':  'Yocja_N5s1I',  // Ancient civilizations
+    'civil':    'ONP5jv_EWTI',  // Civics / government
+    // Reading & Language Arts
+    'reading':  'S9FLl6r5vy0',  // Reading & learning
+    'book':     'S9FLl6r5vy0',  // Books & reading
+    'grammar':  'sDVH5MrAVao',  // Grammar concepts
+    'vocab':    'ZVPflMwMEYA',  // Vocabulary
+    'spell':    'ZVPflMwMEYA',  // Spelling
+    'essay':    'S9FLl6r5vy0',  // Essay writing
+    'writing':  'S9FLl6r5vy0',  // Writing
+    // Bible / Religious studies
+    'bible':    'ak06MSETeo4',  // Bible stories animated
+    'creation': 'teu7BCZTgDs',  // Creation story
+    'jesus':    'dqTwnElYAiM',  // Life of Jesus
+    'gospel':   'dqTwnElYAiM',  // Gospel stories
+    'psalm':    'j9phNEaPrv8',  // Psalms
+    'proverb':  'Gab04dPs_ZA',  // Proverbs
+};
+
+/**
+ * Finds the best contextual YouTube video ID by matching keywords
+ * from the visualType string against our curated background map.
+ */
+const getBackgroundYouTubeId = (visualType: string): string | null => {
+    const lower = visualType.toLowerCase();
+    for (const [keyword, videoId] of Object.entries(BACKGROUND_YOUTUBE)) {
+        if (lower.includes(keyword)) return videoId;
+    }
+    // Fallback: relaxing educational ambient
+    return 'LXb3EKWsInQ';
+};
 
 interface LessonVisualizerProps {
     visualType?: string;
     youtubeSearchQuery?: string;
 }
 
-export const LessonVisualizer: React.FC<LessonVisualizerProps> = ({ visualType }) => {
+export const LessonVisualizer: React.FC<LessonVisualizerProps> = ({ visualType, youtubeSearchQuery }) => {
     if (!visualType) return null;
 
     const renderVisual = () => {
@@ -91,30 +147,59 @@ export const LessonVisualizer: React.FC<LessonVisualizerProps> = ({ visualType }
         }
     };
 
-    const getVideoUrl = () => {
-        if (visualType.includes('nature')) return "https://videos.pexels.com/video-files/3129671/3129671-hd_1920_1080_30fps.mp4"; // Forest nature
-        if (visualType.includes('history')) return "https://videos.pexels.com/video-files/3163534/3163534-hd_1920_1080_30fps.mp4"; // Historical architecture/landscape
-        if (visualType.includes('science') || visualType.includes('space')) return "https://videos.pexels.com/video-files/1851190/1851190-hd_1920_1080_25fps.mp4"; // Space/galaxy
-        return "https://videos.pexels.com/video-files/3129671/3129671-hd_1920_1080_30fps.mp4"; // Default
+    /** Pexels fallback URLs (only used if no YouTube match) */
+    const getPexelsFallback = () => {
+        if (visualType.includes('nature')) return "https://videos.pexels.com/video-files/3129671/3129671-hd_1920_1080_30fps.mp4";
+        if (visualType.includes('history')) return "https://videos.pexels.com/video-files/3163534/3163534-hd_1920_1080_30fps.mp4";
+        if (visualType.includes('science') || visualType.includes('space')) return "https://videos.pexels.com/video-files/1851190/1851190-hd_1920_1080_25fps.mp4";
+        return "https://videos.pexels.com/video-files/3129671/3129671-hd_1920_1080_30fps.mp4";
     };
 
     const isVideoType = visualType.startsWith('video-');
+
+    // Resolve background video: prefer contextual YouTube, fall back to Pexels
+    const youtubeId = getBackgroundYouTubeId(youtubeSearchQuery || visualType);
+
+    /**
+     * Renders a muted, looping YouTube embed as ambient background.
+     * Uses YouTube's embed API params: autoplay=1, mute=1, controls=0, loop=1, playlist=ID
+     * The iframe is pointer-events-none so lesson buttons remain clickable.
+     */
+    const renderYouTubeBackground = () => {
+        if (!youtubeId) return null;
+        return (
+            <iframe
+                src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${youtubeId}&modestbranding=1&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&fs=0`}
+                title="Background Video"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
+                className="absolute inset-0 w-full h-full pointer-events-none"
+                style={{ transform: 'scale(1.2)', objectFit: 'cover' }}
+                tabIndex={-1}
+            />
+        );
+    };
 
     return (
         <div className="absolute inset-0 w-full h-full flex items-center justify-center p-8 overflow-hidden pointer-events-none">
             <div className="absolute inset-0 z-0">
                 {isVideoType ? (
                     <div className="pointer-events-auto w-full h-full">
-                        <InteractiveVideo videoUrl={getVideoUrl()} subjectKey={visualType} interactionsMap={VIDEO_INTERACTIONS} />
+                        <InteractiveVideo videoUrl={getPexelsFallback()} subjectKey={visualType} interactionsMap={VIDEO_INTERACTIONS} />
                     </div>
+                ) : youtubeId ? (
+                    /* Contextual YouTube video as ambient background */
+                    renderYouTubeBackground()
                 ) : (
+                    /* Pexels stock fallback */
                     <video
-                        src={getVideoUrl()}
+                        src={getPexelsFallback()}
                         className="w-full h-full object-cover opacity-40 mix-blend-screen"
                         autoPlay loop muted playsInline
                     />
                 )}
-                <div className="absolute inset-0 bg-slate-900/60"></div>
+                {/* Dark overlay to keep text readable over video */}
+                <div className="absolute inset-0 bg-slate-900/70"></div>
             </div>
             <div className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none">
                 {!isVideoType && renderVisual()}
