@@ -29,7 +29,7 @@ createRoot(document.getElementById('root')!).render(
         }}>
           <div style={{ fontSize: '3rem' }}>🏛️</div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 900, margin: 0 }}>Jaxon Academy</h1>
-          <p style={{ color: 'hsl(225, 15%, 55%)', margin: 0, maxWidth: '360px' }}>
+          <p style={{ color: 'hsl(225, 15%, 55%)', margin: 0, maxWidth: '600px' }} id="error-message-display">
             Something went wrong loading the app. Please refresh the page.
           </p>
           <button

@@ -41,19 +41,22 @@ export class ErrorBoundary extends Component<Props, State> {
 
     render() {
         if (this.state.hasError) {
-            if (this.props.fallback) return this.props.fallback;
             return (
-                <div className="w-full h-full flex items-center justify-center">
-                    <div className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/5 border border-white/10 text-center max-w-xs">
-                        <span className="text-3xl opacity-60">⚠️</span>
-                        <p className="text-slate-400 text-xs font-semibold uppercase tracking-widest">
-                            {this.props.label || 'Component'} unavailable
+                <div className="w-full min-h-screen flex items-center justify-center bg-[#0a0a1a] text-white p-6">
+                    <div className="flex flex-col items-center gap-4 p-8 rounded-3xl bg-white/5 border border-white/10 text-center max-w-xl">
+                        <span className="text-5xl opacity-80">⚠️</span>
+                        <h2 className="text-xl font-bold">App Crash Detected</h2>
+                        <p className="text-red-400 font-mono text-sm bg-black/40 p-4 rounded-xl text-left w-full overflow-auto whitespace-pre-wrap">
+                            {this.state.message}
+                        </p>
+                        <p className="text-slate-400 text-sm mt-2">
+                            {this.props.label || 'Component'} encountered an unexpected error.
                         </p>
                         <button
-                            onClick={() => this.setState({ hasError: false, message: '' })}
-                            className="text-xs text-[var(--accent-blue)] hover:underline transition-colors"
+                            onClick={() => window.location.reload()}
+                            className="mt-4 px-6 py-3 bg-[var(--accent-blue)] text-white font-bold rounded-xl hover:opacity-90 transition-all"
                         >
-                            Try again
+                            Reload Application
                         </button>
                     </div>
                 </div>
