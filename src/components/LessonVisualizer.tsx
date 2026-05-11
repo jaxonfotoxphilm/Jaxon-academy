@@ -1,4 +1,8 @@
-    import React from 'react';
+    // src/components/LessonVisualizer.tsx
+import React from 'react';
+// cartoon assets can be imported here as needed
+import { InteractiveVideo } from './InteractiveVideo';
+import { VIDEO_INTERACTIONS } from './VideoInteractions';
 
 interface LessonVisualizerProps {
     visualType?: string;
@@ -75,7 +79,6 @@ export const LessonVisualizer: React.FC<LessonVisualizerProps> = ({ visualType }
                             </div>
                             {/* Book spine shadow */}
                             <div className="absolute left-1/2 top-0 bottom-0 w-4 -ml-2 bg-gradient-to-r from-transparent via-slate-300 to-transparent opacity-50"></div>
-                            
                             {/* Floating glowing letters */}
                             <div className="absolute top-1/4 left-1/4 text-4xl text-blue-500 font-serif font-bold animate-[bounce_3s_infinite] drop-shadow-[0_0_10px_rgba(59,130,246,0.8)] opacity-0 animate-in fade-in fill-mode-forwards" style={{ animationDelay: '1s' }}>A</div>
                             <div className="absolute top-1/2 right-1/3 text-5xl text-purple-500 font-serif font-bold animate-[bounce_4s_infinite] drop-shadow-[0_0_10px_rgba(168,85,247,0.8)] opacity-0 animate-in fade-in fill-mode-forwards" style={{ animationDelay: '2s' }}>B</div>
@@ -98,19 +101,14 @@ export const LessonVisualizer: React.FC<LessonVisualizerProps> = ({ visualType }
     const isVideoType = visualType.startsWith('video-');
 
     return (
-        <div className="absolute inset-0 w-full h-full flex items-center justify-center p-8 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 w-full h-full flex items-center justify-center p-8 overflow-hidden pointer-events-auto">
             <div className="absolute inset-0 z-0">
                 {isVideoType ? (
-                    <video 
-                        key={visualType}
-                        src={getVideoUrl()} 
-                        className="w-full h-full object-cover opacity-40 mix-blend-screen"
-                        autoPlay loop muted playsInline
-                    />
+                    <InteractiveVideo videoUrl={getVideoUrl()} subjectKey={visualType} interactionsMap={VIDEO_INTERACTIONS} />
                 ) : (
-                    <video 
-                        src="https://videos.pexels.com/video-files/3129671/3129671-hd_1920_1080_30fps.mp4" 
-                        className="w-full h-full object-cover opacity-10 mix-blend-screen"
+                    <video
+                        src={getVideoUrl()}
+                        className="w-full h-full object-cover opacity-40 mix-blend-screen"
                         autoPlay loop muted playsInline
                     />
                 )}
