@@ -1,0 +1,415 @@
+/**
+ * MiniGame Component — Renders interactive educational mini-games inline within lessons.
+ * 
+ * Supported game types:
+ * - "wordScramble"  → Unscramble letters to form the correct word
+ * - "fillBlank"     → Type the missing word into a sentence
+ * - "matchPairs"    → Drag/click to match terms with definitions
+ * - "trueFalse"     → Quick true/false rapid-fire round
+ * 
+ * Each game automatically awards points on completion and calls onComplete().
+ */
+
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface MiniGameProps {
+    /** Game type identifier */
+    gameType: string;
+    /** The topic being studied (used to generate game content) */
+    topic: string;
+    /** The subject area */
+    subject: string;
+    /** Student's name for personalization */
+    studentName: string;
+    /** Called when the student completes the game */
+    onComplete: () => void;
+    /** Called with score delta (+5 correct, -5 wrong) */
+    onScoreChange: (delta: number) => void;
+}
+
+/** Scrambles an array using Fisher-Yates */
+function shuffle<T>(arr: T[]): T[] {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+/**
+ * Subject-specific mini-game content banks.
+ * Maps topic keywords to relevant educational content for each game type.
+ */
+const CONTENT_BANK: Record<string, { words: string[], pairs: [string,string][], sentences: [string,string][], trueFalse: [string,boolean][] }> = {
+    // Language Arts / Grammar
+    'Clauses': {
+        words: ['CLAUSE', 'PHRASE', 'SUBJECT', 'PREDICATE', 'DEPENDENT'],
+        pairs: [['Independent Clause','Can stand alone as a sentence'],['Dependent Clause','Cannot stand alone'],['Subordinating Conjunction','Introduces a dependent clause'],['Relative Clause','Starts with who, which, that']],
+        sentences: [['A ___ clause can stand alone as a complete sentence.','independent'],['A dependent clause begins with a ___ conjunction.','subordinating'],['Every clause must contain a subject and a ___.','predicate']],
+        trueFalse: [['A dependent clause can stand alone as a sentence.',false],['An independent clause expresses a complete thought.',true],['The word "because" is a subordinating conjunction.',true],['A clause never contains a verb.',false]]
+    },
+    'Nouns': {
+        words: ['PROPER', 'COMMON', 'ABSTRACT', 'PLURAL', 'PRONOUN'],
+        pairs: [['Proper Noun','Names a specific person/place'],['Common Noun','Names a general category'],['Abstract Noun','Names an idea or feeling'],['Collective Noun','Names a group']],
+        sentences: [['A ___ noun names a specific person, place, or thing.','proper'],['The plural of "child" is ___.','children'],['A noun that names an idea, like "freedom," is an ___ noun.','abstract']],
+        trueFalse: [['A proper noun should always be capitalized.',true],['The word "happiness" is a concrete noun.',false],['Pronouns replace nouns in a sentence.',true],['All nouns are things you can touch.',false]]
+    },
+    // Math
+    'Equations': {
+        words: ['VARIABLE', 'COEFFICIENT', 'CONSTANT', 'EXPRESSION', 'SOLVE'],
+        pairs: [['Variable','Unknown value (x, y)'],['Coefficient','Number multiplied by variable'],['Constant','Fixed number with no variable'],['Equation','Statement that two expressions are equal']],
+        sentences: [['In 3x + 5, the number 3 is the ___.','coefficient'],['A letter that represents an unknown value is called a ___.','variable'],['To find the value of x, you must ___ the equation.','solve']],
+        trueFalse: [['An equation always has an equals sign.',true],['5x means 5 plus x.',false],['A variable can represent different values.',true],['Constants change depending on x.',false]]
+    },
+    'Polynomials': {
+        words: ['MONOMIAL', 'BINOMIAL', 'TRINOMIAL', 'DEGREE', 'FACTOR'],
+        pairs: [['Monomial','Polynomial with one term'],['Binomial','Polynomial with two terms'],['Trinomial','Polynomial with three terms'],['Degree','Highest exponent in polynomial']],
+        sentences: [['A polynomial with exactly two terms is called a ___.','binomial'],['The ___ of a polynomial is the highest power of the variable.','degree'],['3x² + 2x + 1 is a ___ because it has three terms.','trinomial']],
+        trueFalse: [['A monomial has exactly one term.',true],['The degree of 5x³ is 5.',false],['x² + 3x - 7 is a trinomial.',true],['Polynomials cannot have negative exponents in standard form.',true]]
+    },
+    // Science
+    'Ecosystems': {
+        words: ['BIOME', 'HABITAT', 'NICHE', 'PRODUCER', 'CONSUMER'],
+        pairs: [['Producer','Makes its own food (plants)'],['Consumer','Eats other organisms'],['Decomposer','Breaks down dead matter'],['Food Web','Interconnected food chains']],
+        sentences: [['Plants are called ___ because they make their own food through photosynthesis.','producers'],['An animal\'s specific role in an ecosystem is called its ___.','niche'],['A ___ is a large region with specific climate and organisms.','biome']],
+        trueFalse: [['All energy in an ecosystem originally comes from the sun.',true],['Decomposers are a type of producer.',false],['A habitat is where an organism lives.',true],['Consumers make their own food.',false]]
+    },
+    'Cells': {
+        words: ['NUCLEUS', 'MEMBRANE', 'CYTOPLASM', 'MITOSIS', 'ORGANELLE'],
+        pairs: [['Nucleus','Control center of the cell'],['Cell Membrane','Controls what enters/exits'],['Mitochondria','Powerhouse of the cell'],['Ribosome','Makes proteins']],
+        sentences: [['The ___ is often called the control center of the cell.','nucleus'],['Cell division in which one cell becomes two identical cells is called ___.','mitosis'],['The jelly-like substance inside a cell is called ___.','cytoplasm']],
+        trueFalse: [['Plant cells have cell walls but animal cells do not.',true],['The mitochondria is called the powerhouse of the cell.',true],['All cells have a nucleus.',false],['Ribosomes are responsible for making proteins.',true]]
+    },
+    // History
+    'Ancient Civilizations': {
+        words: ['PHARAOH', 'DYNASTY', 'EMPIRE', 'MESOPOTAMIA', 'REPUBLIC'],
+        pairs: [['Mesopotamia','Land between Tigris & Euphrates'],['Egypt','Civilization along the Nile'],['Greece','Birthplace of democracy'],['Rome','Founded as a republic']],
+        sentences: [['The rulers of ancient Egypt were called ___.','pharaohs'],['___ is often called the cradle of civilization.','Mesopotamia'],['Ancient Greece is known as the birthplace of ___.','democracy']],
+        trueFalse: [['The pyramids were built in ancient Rome.',false],['Mesopotamia means "land between two rivers."',true],['Democracy originated in ancient Greece.',true],['The Roman Empire lasted only 50 years.',false]]
+    },
+    // Literature
+    'Mythology': {
+        words: ['ODYSSEY', 'OLYMPUS', 'HERO', 'LEGEND', 'ALLEGORY'],
+        pairs: [['Zeus','King of the Greek gods'],['Odysseus','Hero of the Odyssey'],['Athena','Goddess of wisdom'],['Mythology','Collection of traditional stories']],
+        sentences: [['Mount ___ was the home of the Greek gods.','Olympus'],['Homer wrote the epic poem called the ___.','Odyssey'],['A story that explains natural phenomena through gods is called a ___.','myth']],
+        trueFalse: [['Zeus was the king of the Greek gods.',true],['The Odyssey was written by Shakespeare.',false],['Myths often explain natural events.',true],['Athena was the goddess of war, not wisdom.',false]]
+    }
+};
+
+/** Fallback content for topics not in the bank */
+function getDefaultContent(topic: string) {
+    return {
+        words: [topic.toUpperCase().slice(0,8), 'STUDY', 'LEARN', 'REVIEW', 'MASTER'],
+        pairs: [['Key Concept','The main idea of '+topic],['Example','A real-world application'],['Definition','The formal meaning'],['Practice','Hands-on learning']],
+        sentences: [['The main concept of this lesson is ___.', topic.toLowerCase()], ['Understanding ___ helps build stronger knowledge.', topic.toLowerCase()], ['Good students always ___ their work.', 'review']],
+        trueFalse: [['Studying regularly improves understanding.',true],['You only need to read material once to master it.',false],['Practice helps reinforce new concepts.',true],['Asking questions is a sign of weakness.',false]] as [string,boolean][]
+    };
+}
+
+export const MiniGame: React.FC<MiniGameProps> = ({ gameType, topic, studentName, onComplete, onScoreChange }) => {
+    const content = CONTENT_BANK[topic] || getDefaultContent(topic);
+
+    switch (gameType) {
+        case 'wordScramble': return <WordScrambleGame content={content} studentName={studentName} onComplete={onComplete} onScoreChange={onScoreChange} />;
+        case 'matchPairs':   return <MatchPairsGame content={content} studentName={studentName} onComplete={onComplete} onScoreChange={onScoreChange} />;
+        case 'fillBlank':    return <FillBlankGame content={content} studentName={studentName} onComplete={onComplete} onScoreChange={onScoreChange} />;
+        case 'trueFalse':    return <TrueFalseGame content={content} studentName={studentName} onComplete={onComplete} onScoreChange={onScoreChange} />;
+        default:             return <WordScrambleGame content={content} studentName={studentName} onComplete={onComplete} onScoreChange={onScoreChange} />;
+    }
+};
+
+/* ─── Word Scramble Game ─── */
+function WordScrambleGame({ content, studentName, onComplete, onScoreChange }: { content: any, studentName: string, onComplete: () => void, onScoreChange: (d:number)=>void }) {
+    const word = content.words[Math.floor(Math.random() * content.words.length)];
+    const [scrambled] = useState(() => shuffle(word.split('')).join(''));
+    const [guess, setGuess] = useState('');
+    const [solved, setSolved] = useState(false);
+    const [attempts, setAttempts] = useState(0);
+
+    const handleSubmit = () => {
+        if (guess.toUpperCase().trim() === word) {
+            setSolved(true);
+            onScoreChange(5);
+            setTimeout(onComplete, 2000);
+        } else {
+            setAttempts(a => a + 1);
+            onScoreChange(-3);
+        }
+    };
+
+    return (
+        <div className="bg-gradient-to-br from-indigo-950/80 to-purple-950/80 backdrop-blur-xl border border-indigo-400/30 rounded-2xl p-6 mt-4 animate-in slide-in-from-bottom-4 duration-500">
+            <h4 className="text-lg font-bold text-indigo-300 mb-1 tracking-widest uppercase">🔤 Word Scramble</h4>
+            <p className="text-slate-400 text-sm mb-4">Unscramble the letters to form the vocabulary word, {studentName}!</p>
+            
+            <div className="flex gap-2 justify-center mb-6">
+                {scrambled.split('').map((letter: string, i: number) => (
+                    <motion.div
+                        key={i}
+                        initial={{ rotateY: 180, opacity: 0 }}
+                        animate={{ rotateY: 0, opacity: 1 }}
+                        transition={{ delay: i * 0.1 }}
+                        className="w-12 h-14 bg-white/10 border-2 border-indigo-400/50 rounded-lg flex items-center justify-center text-2xl font-black text-white shadow-[0_0_10px_rgba(99,102,241,0.3)]"
+                    >
+                        {letter}
+                    </motion.div>
+                ))}
+            </div>
+
+            {!solved ? (
+                <div className="flex gap-3">
+                    <input
+                        type="text"
+                        value={guess}
+                        onChange={e => setGuess(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') handleSubmit(); }}
+                        placeholder="Type the word..."
+                        className="flex-1 bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-lg focus:outline-none focus:border-indigo-400"
+                        autoFocus
+                    />
+                    <button onClick={handleSubmit} className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl font-bold text-white hover:scale-105 transition-transform">
+                        Check
+                    </button>
+                </div>
+            ) : (
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-center">
+                    <div className="text-5xl mb-2">🎉</div>
+                    <p className="text-emerald-400 font-bold text-xl">Correct! The word is {word}!</p>
+                </motion.div>
+            )}
+
+            {attempts > 0 && !solved && (
+                <p className="text-amber-400 text-sm mt-3 animate-pulse">
+                    Not quite — try again! Hint: the word has {word.length} letters. {attempts >= 3 ? `It starts with "${word[0]}"` : ''}
+                </p>
+            )}
+        </div>
+    );
+}
+
+/* ─── Match Pairs Game ─── */
+function MatchPairsGame({ content, studentName, onComplete, onScoreChange }: { content: any, studentName: string, onComplete: () => void, onScoreChange: (d:number)=>void }) {
+    const pairs: [string,string][] = content.pairs.slice(0, 4);
+    const [shuffledDefs] = useState(() => shuffle(pairs.map(p => p[1])));
+    const [selectedTerm, setSelectedTerm] = useState<number | null>(null);
+    const [matched, setMatched] = useState<Set<number>>(new Set());
+    const [wrongFlash, setWrongFlash] = useState<number | null>(null);
+
+    const handleDefClick = (defIdx: number) => {
+        if (selectedTerm === null) return;
+        const correctDef = pairs[selectedTerm][1];
+        if (shuffledDefs[defIdx] === correctDef) {
+            setMatched(prev => new Set([...prev, selectedTerm]));
+            onScoreChange(3);
+            setSelectedTerm(null);
+            if (matched.size + 1 === pairs.length) {
+                setTimeout(onComplete, 1500);
+            }
+        } else {
+            setWrongFlash(defIdx);
+            onScoreChange(-2);
+            setTimeout(() => setWrongFlash(null), 600);
+        }
+    };
+
+    return (
+        <div className="bg-gradient-to-br from-emerald-950/80 to-teal-950/80 backdrop-blur-xl border border-emerald-400/30 rounded-2xl p-6 mt-4 animate-in slide-in-from-bottom-4 duration-500">
+            <h4 className="text-lg font-bold text-emerald-300 mb-1 tracking-widest uppercase">🔗 Match the Pairs</h4>
+            <p className="text-slate-400 text-sm mb-4">Click a term, then click its matching definition, {studentName}!</p>
+
+            {matched.size === pairs.length ? (
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-center py-4">
+                    <div className="text-5xl mb-2">✨</div>
+                    <p className="text-emerald-400 font-bold text-xl">All pairs matched! Great job!</p>
+                </motion.div>
+            ) : (
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-3">
+                        <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">Terms</p>
+                        {pairs.map((pair, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => !matched.has(idx) && setSelectedTerm(idx)}
+                                disabled={matched.has(idx)}
+                                className={`p-3 rounded-xl text-left text-sm font-semibold transition-all border ${
+                                    matched.has(idx) ? 'bg-emerald-800/40 border-emerald-500/50 text-emerald-300 opacity-60' :
+                                    selectedTerm === idx ? 'bg-white/20 border-white/60 text-white scale-105 shadow-lg' :
+                                    'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                                }`}
+                            >
+                                {matched.has(idx) ? '✓ ' : ''}{pair[0]}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex flex-col gap-3">
+                        <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">Definitions</p>
+                        {shuffledDefs.map((def: string, idx: number) => (
+                            <button
+                                key={idx}
+                                onClick={() => handleDefClick(idx)}
+                                disabled={[...matched].some(m => pairs[m][1] === def)}
+                                className={`p-3 rounded-xl text-left text-sm transition-all border ${
+                                    [...matched].some(m => pairs[m][1] === def) ? 'bg-emerald-800/40 border-emerald-500/50 text-emerald-300 opacity-60' :
+                                    wrongFlash === idx ? 'bg-red-800/60 border-red-400/60 text-red-200 animate-shake' :
+                                    'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                                }`}
+                            >
+                                {def}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+/* ─── Fill in the Blank Game ─── */
+function FillBlankGame({ content, studentName, onComplete, onScoreChange }: { content: any, studentName: string, onComplete: () => void, onScoreChange: (d:number)=>void }) {
+    const sentences: [string,string][] = content.sentences.slice(0, 3);
+    const [currentIdx, setCurrentIdx] = useState(0);
+    const [answer, setAnswer] = useState('');
+    const [feedback, setFeedback] = useState<'correct'|'wrong'|null>(null);
+    const [completed, setCompleted] = useState(0);
+
+    const handleCheck = () => {
+        const correct = sentences[currentIdx][1].toLowerCase().trim();
+        if (answer.toLowerCase().trim() === correct) {
+            setFeedback('correct');
+            onScoreChange(5);
+            setCompleted(c => c + 1);
+            setTimeout(() => {
+                setFeedback(null);
+                setAnswer('');
+                if (currentIdx < sentences.length - 1) {
+                    setCurrentIdx(i => i + 1);
+                } else {
+                    onComplete();
+                }
+            }, 1500);
+        } else {
+            setFeedback('wrong');
+            onScoreChange(-3);
+            setTimeout(() => setFeedback(null), 1500);
+        }
+    };
+
+    if (completed === sentences.length) {
+        return (
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="bg-gradient-to-br from-amber-950/80 to-orange-950/80 backdrop-blur-xl border border-amber-400/30 rounded-2xl p-6 mt-4 text-center">
+                <div className="text-5xl mb-2">📝</div>
+                <p className="text-amber-400 font-bold text-xl">All blanks filled! Excellent work!</p>
+            </motion.div>
+        );
+    }
+
+    return (
+        <div className="bg-gradient-to-br from-amber-950/80 to-orange-950/80 backdrop-blur-xl border border-amber-400/30 rounded-2xl p-6 mt-4 animate-in slide-in-from-bottom-4 duration-500">
+            <h4 className="text-lg font-bold text-amber-300 mb-1 tracking-widest uppercase">📝 Fill in the Blank</h4>
+            <p className="text-slate-400 text-sm mb-4">Complete the sentence, {studentName}! ({currentIdx + 1}/{sentences.length})</p>
+
+            <AnimatePresence mode="wait">
+                <motion.div key={currentIdx} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}>
+                    <p className="text-xl text-white mb-4 leading-relaxed">
+                        {sentences[currentIdx][0].split('___').map((part, i, arr) => (
+                            <span key={i}>
+                                {part}
+                                {i < arr.length - 1 && <span className="inline-block w-32 border-b-2 border-amber-400/60 mx-1" />}
+                            </span>
+                        ))}
+                    </p>
+                    <div className="flex gap-3">
+                        <input
+                            type="text"
+                            value={answer}
+                            onChange={e => setAnswer(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') handleCheck(); }}
+                            placeholder="Type the missing word..."
+                            className="flex-1 bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-lg focus:outline-none focus:border-amber-400"
+                            autoFocus
+                        />
+                        <button onClick={handleCheck} className="px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-600 rounded-xl font-bold text-white hover:scale-105 transition-transform">
+                            Check
+                        </button>
+                    </div>
+                    {feedback === 'correct' && <p className="text-emerald-400 font-bold mt-3 animate-pulse">✅ Correct!</p>}
+                    {feedback === 'wrong' && <p className="text-amber-400 font-bold mt-3 animate-pulse">Not quite — hint: the answer starts with "{sentences[currentIdx][1][0].toUpperCase()}"</p>}
+                </motion.div>
+            </AnimatePresence>
+        </div>
+    );
+}
+
+/* ─── True/False Game ─── */
+function TrueFalseGame({ content, studentName, onComplete, onScoreChange }: { content: any, studentName: string, onComplete: () => void, onScoreChange: (d:number)=>void }) {
+    const questions: [string,boolean][] = content.trueFalse.slice(0, 4);
+    const [currentIdx, setCurrentIdx] = useState(0);
+    const [feedback, setFeedback] = useState<'correct'|'wrong'|null>(null);
+    const [streak, setStreak] = useState(0);
+
+    const handleAnswer = (answer: boolean) => {
+        if (answer === questions[currentIdx][1]) {
+            setFeedback('correct');
+            setStreak(s => s + 1);
+            onScoreChange(4);
+            setTimeout(() => {
+                setFeedback(null);
+                if (currentIdx < questions.length - 1) {
+                    setCurrentIdx(i => i + 1);
+                } else {
+                    onComplete();
+                }
+            }, 1200);
+        } else {
+            setFeedback('wrong');
+            setStreak(0);
+            onScoreChange(-3);
+            setTimeout(() => setFeedback(null), 1200);
+        }
+    };
+
+    if (currentIdx >= questions.length) {
+        return (
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="bg-gradient-to-br from-rose-950/80 to-pink-950/80 backdrop-blur-xl border border-rose-400/30 rounded-2xl p-6 mt-4 text-center">
+                <div className="text-5xl mb-2">⚡</div>
+                <p className="text-rose-400 font-bold text-xl">Lightning round complete!</p>
+            </motion.div>
+        );
+    }
+
+    return (
+        <div className="bg-gradient-to-br from-rose-950/80 to-pink-950/80 backdrop-blur-xl border border-rose-400/30 rounded-2xl p-6 mt-4 animate-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center justify-between mb-1">
+                <h4 className="text-lg font-bold text-rose-300 tracking-widest uppercase">⚡ True or False</h4>
+                {streak > 1 && <span className="text-amber-400 font-bold text-sm animate-bounce">🔥 {streak} streak!</span>}
+            </div>
+            <p className="text-slate-400 text-sm mb-4">Quick-fire round, {studentName}! ({currentIdx + 1}/{questions.length})</p>
+
+            <AnimatePresence mode="wait">
+                <motion.div key={currentIdx} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+                    <p className="text-xl text-white mb-6 leading-relaxed font-medium">"{questions[currentIdx][0]}"</p>
+                    <div className="flex gap-4">
+                        <button
+                            onClick={() => handleAnswer(true)}
+                            disabled={feedback !== null}
+                            className="flex-1 py-4 bg-emerald-800/40 hover:bg-emerald-700/60 border border-emerald-400/40 rounded-xl text-emerald-200 font-bold text-xl transition-all hover:scale-105 disabled:opacity-50"
+                        >
+                            ✅ True
+                        </button>
+                        <button
+                            onClick={() => handleAnswer(false)}
+                            disabled={feedback !== null}
+                            className="flex-1 py-4 bg-red-800/40 hover:bg-red-700/60 border border-red-400/40 rounded-xl text-red-200 font-bold text-xl transition-all hover:scale-105 disabled:opacity-50"
+                        >
+                            ❌ False
+                        </button>
+                    </div>
+                    {feedback === 'correct' && <p className="text-emerald-400 font-bold mt-4 text-center text-lg animate-pulse">Correct! 🎯</p>}
+                    {feedback === 'wrong' && <p className="text-rose-400 font-bold mt-4 text-center text-lg animate-pulse">The answer was {questions[currentIdx][1] ? 'True' : 'False'}. Keep going!</p>}
+                </motion.div>
+            </AnimatePresence>
+        </div>
+    );
+}

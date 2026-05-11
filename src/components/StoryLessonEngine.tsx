@@ -12,6 +12,7 @@ import { ParentManager } from '../utils/ParentManager';
 import { MultiDraftTutor } from './MultiDraftTutor';
 import { AnimatePresence, motion } from 'framer-motion';
 import lessonsData from '../data/lessons.json';
+import { MiniGame } from './MiniGame';
 
 interface DialogueNode {
     id: string;
@@ -32,6 +33,9 @@ interface DialogueNode {
     youtubeSearchQuery?: string;
     isMathInput?: boolean;
     correctAnswer?: string;
+    imagePrompt?: string;
+    miniGame?: string;
+    feedbackWrong?: string;
 }
 
 export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }: { subjectId: string, gradeLevel: string, studentName: string, onBack: () => void }) => {
@@ -69,6 +73,160 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
     }, []);
 
     useEffect(() => {
+        /**
+         * Builds a rich 8-node interactive lesson locally when the AI backend is unavailable.
+         * Uses the subjectId/dynamicQuery to extract subject name and topic,
+         * then generates: Hook → YouTube Video → Word Scramble → Practice → Quiz → Fill-Blank → True/False → Synthesis
+         */
+        const buildOfflineLesson = (rawSubject: string): DialogueNode[] => {
+            const cleaned = rawSubject.replace('dynamic:', '').replace(/-/g, ' ');
+            const words = cleaned.split(/\s+/);
+            let topic = words[words.length - 1] || 'this subject';
+            let subjectName = cleaned;
+            const prefixes = ['Language Arts', 'Science Biology', 'Science & Biology', 'Arithmetic Logic', 'Arithmetic & Logic', 'American History', 'World Geography', 'World Literature', 'Grammar Composition', 'Grammar & Composition', 'Vocabulary Spelling', 'Vocabulary & Spelling', 'Pre Algebra', 'Pre-Algebra / Algebra 1', 'Earth Space Science', 'Earth & Space Science', 'Life Science', 'World History', 'Civics Government', 'Civics & Government'];
+            for (const prefix of prefixes) {
+                if (cleaned.toLowerCase().startsWith(prefix.toLowerCase())) {
+                    subjectName = prefix;
+                    topic = cleaned.substring(prefix.length).trim() || topic;
+                    break;
+                }
+            }
+            if (topic.length < 2) topic = subjectName;
+
+            /** Subject-specific YouTube search queries for high-quality educational videos */
+            const youtubeQueries: Record<string, string> = {
+                'Clauses': 'independent and dependent clauses grammar lesson middle school',
+                'Phrases': 'types of phrases in English grammar explained',
+                'Essays': 'how to write a 5 paragraph essay middle school',
+                'Nouns': 'types of nouns proper common abstract grammar kids',
+                'Mythology': 'Greek mythology for kids educational documentary',
+                'Folklore': 'world folklore and fairy tales educational',
+                'Poetry Analysis': 'how to analyze poetry middle school English',
+                'Equations': 'solving one step equations algebra explained',
+                'Inequalities': 'solving inequalities algebra 1 step by step',
+                'Functions': 'what is a function in math explained simply',
+                'Polynomials': 'polynomials explained algebra 1 lesson',
+                'Graphing': 'graphing linear equations coordinate plane tutorial',
+                'Ecosystems': 'ecosystems and biomes science lesson for kids',
+                'Cells': 'parts of a cell biology lesson animated',
+                'Genetics': 'genetics and DNA explained for middle school',
+                'Geology': 'rocks and minerals earth science lesson',
+                'Astronomy': 'solar system and space science educational',
+                'Ancient Civilizations': 'ancient civilizations documentary for students',
+                'Middle Ages': 'medieval times history lesson for kids',
+                'Renaissance': 'the Renaissance period history explained',
+                'Constitution': 'US Constitution explained for students',
+                'Latin Roots': 'Latin and Greek roots vocabulary lesson',
+                'Synonyms': 'synonyms and antonyms vocabulary building lesson',
+                'Counting': 'counting and number recognition kindergarten',
+                'Addition': 'addition facts math lesson for kids',
+                'Subtraction': 'subtraction with regrouping explained',
+            };
+
+            const ytQuery = youtubeQueries[topic] || `${topic} ${subjectName} educational lesson ${gradeLevel}`;
+
+            /** Subject-aware lesson content templates */
+            const subjectHooks: Record<string, string> = {
+                'Grammar & Composition': `Today we're exploring ${topic} — these are the building blocks that make your writing powerful. Every great author, from Shakespeare to your favorite novelist, masters ${topic.toLowerCase()} to craft sentences that captivate readers.`,
+                'World Literature': `Get ready for an epic journey into ${topic}! The stories we'll explore today have been told for thousands of years, shaping cultures and inspiring generations. These tales are some of the most important in human history.`,
+                'Pre-Algebra / Algebra 1': `Math time! Today's topic is ${topic}. I know math can feel intimidating, but here's the secret — ${topic.toLowerCase()} is actually a puzzle, and once you see the pattern, you'll feel like a genius. Let's crack the code together!`,
+                'Earth & Space Science': `${studentName}, imagine you're an explorer charting unknown territory — that's exactly what we're doing today as we dive into ${topic}! Scientists spend their entire careers studying this, and you're about to learn the fundamentals that make it all click.`,
+                'Life Science': `Welcome to the incredible world of ${topic}! Biology is the study of life itself, and ${topic.toLowerCase()} is one of the most fascinating chapters. What you learn today connects directly to how your own body works.`,
+                'World History': `Step into the time machine, ${studentName}! Today we're traveling back to explore ${topic}. The events and people we'll learn about shaped the entire modern world — and some of it will absolutely blow your mind.`,
+                'Vocabulary & Spelling': `Words are power, ${studentName}! Today we're studying ${topic}, and these are the secret weapons that make you sound brilliant in conversations and essays. Once you master these, you'll start noticing them everywhere.`,
+            };
+
+            const hookText = subjectHooks[subjectName] || `Today we're diving into an exciting topic in ${subjectName}: ${topic}. This connects to everything you've been learning, and I promise — by the end of this lesson, you'll see the world a little differently!`;
+
+            return [
+                {
+                    id: "offline-1",
+                    characterName: "Professor Grace",
+                    text: `Good morning, ${studentName}! ${hookText} Your family would be so proud that you're tackling this today. Let's get started! 📚`,
+                    voiceType: "professor",
+                    visualType: "reading-book",
+                    isQuiz: false,
+                    itemReward: null as any
+                },
+                {
+                    id: "offline-2",
+                    characterName: "Professor Grace",
+                    text: `Before I teach you the details, let's watch a short video about ${topic}. Pay close attention — I'm going to quiz you on what you see! Take notes if you can. After the video, we'll dive into some hands-on activities. 🎬`,
+                    voiceType: "professor",
+                    visualType: "video-nature",
+                    isQuiz: false,
+                    youtubeSearchQuery: ytQuery,
+                    itemReward: null as any
+                },
+                {
+                    id: "offline-3",
+                    characterName: "Professor Grace",
+                    text: `Great video, right? Now let's test your vocabulary with a quick word scramble! Unscramble the letters to form a key term from our lesson on ${topic}. 🔤`,
+                    voiceType: "professor",
+                    visualType: "science-atom",
+                    isQuiz: false,
+                    miniGame: "wordScramble",
+                    itemReward: null as any
+                },
+                {
+                    id: "offline-4",
+                    characterName: "Professor Grace",
+                    text: `Excellent work on that scramble, ${studentName}! Now let's connect what you've learned to the bigger picture. Think about ${topic.toLowerCase()} — it's not just something in a textbook. It shows up in your daily life, in the news, in the world around you. The best scholars are the ones who can see these connections. Can you think of where you've seen ${topic.toLowerCase()} in action? 🤔`,
+                    voiceType: "professor",
+                    visualType: "history-scroll",
+                    isQuiz: false,
+                    itemReward: null as any
+                },
+                {
+                    id: "offline-5",
+                    characterName: "Professor Grace",
+                    text: `Time for a knowledge check! Let's see what you've learned about ${topic}. Read each option carefully — remember, the best answer isn't always the most obvious one. 🎯`,
+                    voiceType: "professor",
+                    visualType: "math-geometry",
+                    isQuiz: true,
+                    question: `Based on what you've learned, which statement about ${topic} is most accurate?`,
+                    options: [
+                        `${topic} is only relevant in academic settings and has no real-world application`,
+                        `Understanding ${topic} builds foundational knowledge that connects to advanced concepts across ${subjectName}`,
+                        `${topic} was only recently added to educational curricula and has limited importance`,
+                        `${topic} is mainly memorization and doesn't require critical thinking`,
+                        `I don't understand, break it down for me`
+                    ],
+                    correctIndex: 1,
+                    itemReward: null as any
+                },
+                {
+                    id: "offline-6",
+                    characterName: "Professor Grace",
+                    text: `Now let's fill in some blanks! Complete each sentence using what you've learned about ${topic}. This is how real scholars reinforce their knowledge — by putting concepts into their own words. ✍️`,
+                    voiceType: "professor",
+                    visualType: "reading-book",
+                    isQuiz: false,
+                    miniGame: "fillBlank",
+                    itemReward: null as any
+                },
+                {
+                    id: "offline-7",
+                    characterName: "Professor Grace",
+                    text: `Lightning round! True or false — how fast can you go? This tests your instincts and deep understanding of ${topic}. Trust what you've learned! ⚡`,
+                    voiceType: "professor",
+                    visualType: "science-atom",
+                    isQuiz: false,
+                    miniGame: "trueFalse",
+                    itemReward: null as any
+                },
+                {
+                    id: "offline-8",
+                    characterName: "Professor Grace",
+                    text: `Outstanding work today, ${studentName}! 🌟 You've watched an educational video, unscrambled vocabulary, answered quiz questions, filled in blanks, and crushed a lightning round — all on ${topic} in ${subjectName}. That's the kind of dedication that makes a true scholar. Your family would be so proud. Tomorrow, we'll build on everything you've learned today. Keep being amazing! 🎓`,
+                    voiceType: "professor",
+                    visualType: "video-space",
+                    isQuiz: false,
+                    itemReward: "Knowledge Star" as any
+                }
+            ];
+        };
+
         const initializeCurriculum = async () => {
             setIsLoading(true);
             try {
@@ -79,13 +237,14 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                 if (error || !data || !data.nodes) throw new Error("Fallback");
                 setStoryNodes(data.nodes);
             } catch(e) {
-                const fallbackNodes: DialogueNode[] = [
-                    { id: "fallback-1", characterName: "Professor Grace", text: "Welcome back! I'm sorry, I'm having trouble connecting to my academic database right now. But we can still review some core concepts!", voiceType: "professor", visualType: "teaching-board", isQuiz: false, itemReward: null as any },
-                    { id: "fallback-2", characterName: "Professor Grace", text: "Let's test your knowledge right away.", voiceType: "professor", visualType: "teaching-board", isQuiz: true, question: "If the AI database is offline, what should a smart student do?", options: ["Give up", "Keep learning", "Go to sleep", "Play games", "I don't understand"], correctIndex: 1 },
-                    { id: "fallback-3", characterName: "Professor Grace", text: "Great job! Your dedication to learning is incredible. We will reconnect to the main syllabus shortly.", voiceType: "professor", visualType: "video-space", isQuiz: false, itemReward: "Badge of Patience" as any }
-                ];
+                // Check for static lesson data first
                 const staticNodes = (lessonsData as Record<string, DialogueNode[]>)[subjectId];
-                setStoryNodes(staticNodes && staticNodes.length > 1 ? staticNodes : fallbackNodes);
+                if (staticNodes && staticNodes.length > 1) {
+                    setStoryNodes(staticNodes);
+                } else {
+                    // Build a proper curriculum-driven offline lesson
+                    setStoryNodes(buildOfflineLesson(subjectId));
+                }
             }
             setIsLoading(false);
         };
@@ -331,6 +490,14 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
 
     const handleQuizAnswer = async (index: number) => {
         if (!currentNode) return;
+
+        // "I don't understand" is always the last option (index 4) — open help instead of marking wrong
+        if (currentNode.options && index === currentNode.options.length - 1 && currentNode.options[index]?.toLowerCase().includes("don't understand")) {
+            SoundManager.playCharacterVoice("No problem! Let me break this down for you.", "professor");
+            handleHint();
+            return;
+        }
+
         if (currentNode.branchTargets && currentNode.branchTargets[index]) {
             SoundManager.playCharacterVoice("Understood.", "professor");
             const targetId = currentNode.branchTargets[index];
@@ -424,41 +591,54 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
         setIsComplete(true);
         SoundManager.playClick();
         
+        const cleanSubject = subjectId.replace('dynamic:', '');
+        const isPassed = score >= 70;
+
+        /**
+         * Save lesson completion to localStorage for local progress tracking.
+         * This powers the lesson-locking system on the dashboard and
+         * works even when Supabase is offline.
+         */
+        const storageKey = `jaxon-academy-completed-${studentName}`;
+        const completedSet: string[] = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        if (!completedSet.includes(subjectId) && isPassed) {
+            completedSet.push(subjectId);
+            localStorage.setItem(storageKey, JSON.stringify(completedSet));
+        }
+
         try {
-            const cleanSubject = subjectId.replace('dynamic:', '');
-            // 1. Push final score to database
-            const { error: progressError } = await supabase.from('student_progress').insert([
-                { student_name: studentName, subject: cleanSubject, score: score }
-            ]);
+            /**
+             * Save lesson completion to student_progress.
+             * - `subject`: human-readable subject name (e.g., "Phonics & Word Study Alphabet")
+             * - `topic`: the full dynamicQuery for per-lesson tracking
+             * - `score`: 0–100 percentage
+             */
+            const { error: progressError } = await supabase.from('student_progress').insert([{
+                student_name: studentName,
+                subject: cleanSubject,
+                topic: subjectId,
+                score: score,
+                completed_at: new Date().toISOString()
+            }]);
             if (progressError) console.error("Progress sync error:", progressError);
 
-            // 2. Mark assignment complete if it exists
+            // Mark Principal-assigned task complete if it exists
             await ParentManager.completeAssignmentBySubject(studentName, subjectId);
+
+            // Grant backpack item if earned and lesson passed
+            if (earnedItem && isPassed) {
+                await ParentManager.grantItem(studentName, earnedItem);
+            }
         } catch(e) {
             console.error("Failed to sync progress to Parent Portal:", e);
         }
+
         setShowTutor(false);
-        const isPassed = score >= 70;
         
         if (isPassed) {
             SoundManager.playCharacterVoice("Lesson complete. Splendid work today.", "professor");
         } else {
             SoundManager.playCharacterVoice("Module failed. You will need to review this material.", "professor");
-        }
-
-        try {
-            await supabase.from('student_progress').insert({
-                student_name: studentName,
-                subject: subjectId,
-                score: score,
-                completed_at: new Date().toISOString()
-            });
-
-            if (earnedItem && isPassed) {
-                await ParentManager.grantItem(studentName, earnedItem);
-            }
-        } catch (e) {
-            console.error("Failed to save progress", e);
         }
     };
 
@@ -516,6 +696,42 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
 
     if (!currentNode) return null;
 
+    /**
+     * Curated educational YouTube video IDs mapped by topic keyword.
+     * Uses standard /embed/{videoId} format which is fully supported.
+     * Falls back to a "Watch on YouTube" button for topics without a curated ID.
+     */
+    const VIDEO_IDS: Record<string, string> = {
+        'clauses': 'PpSPFKAoFxo',
+        'phrases': 'B1oZ5wEzpfA',
+        'essays': 'dHdU_DTZlnc',
+        'nouns': '4E2e1FC3e10',
+        'mythology': 'Yb-OYmHVsio',
+        'folklore': 'Q3-nP_N87jI',
+        'poetry': 'JwhouCNq_Ew',
+        'equations': 'l3XzepN03KQ',
+        'inequalities': 'xOxvyeSl0uA',
+        'functions': 'kvGsIo1TmsM',
+        'polynomials': 'ffLLmV4mZwU',
+        'graphing': 'T4jMLJRlsPM',
+        'ecosystems': 'v5K_NOTaD4A',
+        'cells': 'URUJD5NEXC8',
+        'genetics': 'CBezq1fFUEA',
+        'geology': 'FD3FMKQfm6k',
+        'astronomy': 'libKVRa01L8',
+        'ancient civilizations': 'jchcA3GG-YY',
+        'middle ages': '12G0FhQ170w',
+        'renaissance': 'Vufba_ZDTas',
+        'constitution': 'bO7FQsCcbD8',
+        'latin roots': 'VLnH4-1fK_I',
+        'synonyms': 'vIEifRY3nAs',
+        'addition': 'Fe8u4I8AUqo',
+        'subtraction': 'ug0FLEKAHAU',
+        'counting': 'bGetqbqYE4Q',
+    };
+    const ytQuery = currentNode.youtubeSearchQuery?.toLowerCase() || '';
+    const youtubeVideoId = Object.entries(VIDEO_IDS).find(([key]) => ytQuery.includes(key))?.[1] || null;
+
     return (
         <div 
             className="w-full h-[80vh] rounded-3xl overflow-hidden relative flex flex-col justify-end border-2 border-white/20 shadow-2xl animate-in zoom-in duration-700"
@@ -532,21 +748,36 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                         </Suspense>
                     </Canvas>
                 ) : currentNode.youtubeSearchQuery ? (
-                    <div className="w-full h-full md:p-12 p-4 flex items-center justify-center bg-transparent rounded-3xl overflow-hidden relative">
-                        <div className="absolute inset-0 bg-black/60 backdrop-blur-3xl border border-white/10 m-4 md:m-12 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden">
-                            <iframe 
-                                width="100%" 
-                                height="100%" 
-                                src={`https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(currentNode.youtubeSearchQuery + " educational kids")}`} 
-                                title="YouTube Video" 
-                                frameBorder="0" 
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                allowFullScreen
-                                className="absolute inset-0 w-full h-full"
-                            ></iframe>
+                    <div className="w-full h-full md:p-8 p-4 flex items-center justify-center bg-transparent rounded-3xl overflow-hidden relative">
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-3xl border border-white/10 m-4 md:m-8 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden">
+                            {youtubeVideoId ? (
+                                <iframe 
+                                    width="100%" 
+                                    height="100%" 
+                                    src={`https://www.youtube.com/embed/${youtubeVideoId}?rel=0&modestbranding=1`} 
+                                    title="Educational Video" 
+                                    frameBorder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                    allowFullScreen
+                                    className="absolute inset-0 w-full h-full"
+                                ></iframe>
+                            ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center gap-6 p-8">
+                                    <div className="text-7xl animate-bounce">🎬</div>
+                                    <h3 className="text-2xl font-bold text-white text-center">Educational Video</h3>
+                                    <p className="text-slate-400 text-center max-w-md">Watch this recommended video to learn more about the topic.</p>
+                                    <a
+                                        href={`https://www.youtube.com/results?search_query=${encodeURIComponent(currentNode.youtubeSearchQuery || '')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-8 py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold text-lg rounded-xl shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:scale-105 transition-all flex items-center gap-3 pointer-events-auto"
+                                    >
+                                        ▶ Watch on YouTube
+                                    </a>
+                                </div>
+                            )}
                         </div>
-                    </div>
-                ) : dynamicImageUrl ? (
+                    </div>) : dynamicImageUrl ? (
                     <div className="w-full h-full p-12 flex items-center justify-center bg-slate-900/40">
                         <img 
                             src={dynamicImageUrl} 
@@ -634,7 +865,34 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                                     {currentNode.text || "Generating content..."}
                                 </p>
 
-                                {currentNode.isMathInput ? (
+                                {/* Mini-Game rendering for interactive lesson nodes */}
+                                {currentNode.miniGame ? (
+                                    <div className="mt-2 pointer-events-auto">
+                                        <MiniGame
+                                            gameType={currentNode.miniGame}
+                                            topic={(() => {
+                                                const cleaned = subjectId.replace('dynamic:', '').replace(/-/g, ' ');
+                                                const prefixes = ['Grammar & Composition', 'World Literature', 'Vocabulary & Spelling', 'Pre-Algebra / Algebra 1', 'Earth & Space Science', 'Life Science', 'World History', 'Civics & Government'];
+                                                for (const p of prefixes) {
+                                                    if (cleaned.toLowerCase().startsWith(p.toLowerCase())) return cleaned.substring(p.length).trim() || cleaned;
+                                                }
+                                                return cleaned.split(/\s+/).pop() || cleaned;
+                                            })()}
+                                            subject={subjectId.replace('dynamic:', '')}
+                                            studentName={studentName}
+                                            onComplete={() => handleNext()}
+                                            onScoreChange={(delta) => setScore(prev => Math.max(0, Math.min(100, prev + delta)))}
+                                        />
+                                        <div className="mt-4 flex justify-end">
+                                            <button 
+                                                onClick={handleNext}
+                                                className="px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-slate-300 font-medium rounded-full transition-all hover:scale-105"
+                                            >
+                                                Skip Game →
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : currentNode.isMathInput ? (
                                     <div className="mt-4 animate-in slide-in-from-bottom-4 duration-500">
                                         <p className="text-2xl font-bold leading-relaxed mb-6 text-yellow-300 drop-shadow-[0_0_10px_rgba(253,224,71,0.5)]">
                                             ✍️ {currentNode.question}
@@ -688,15 +946,17 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                                             🤔 {currentNode.question}
                                         </p>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {currentNode.options?.map((opt, idx) => (
+                                            {currentNode.options?.map((opt, idx) => {
+                                                const isHelpOption = idx === (currentNode.options?.length || 0) - 1 && opt.toLowerCase().includes("don't understand");
+                                                return (
                                                 <button 
                                                     key={idx}
                                                     onClick={() => handleQuizAnswer(idx)}
-                                                    className={`p-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-left text-lg font-medium transition-all hover:scale-[1.02] ${idx === 4 ? 'md:col-span-2 bg-rose-900/20 hover:bg-rose-800/40 border-rose-500/30 text-rose-200' : ''}`}
+                                                    className={`p-4 border rounded-xl text-left text-lg font-medium transition-all hover:scale-[1.02] ${isHelpOption ? 'md:col-span-2 bg-indigo-900/30 hover:bg-indigo-700/40 border-indigo-400/40 text-indigo-200' : 'bg-white/10 hover:bg-white/20 border-white/20'}`}
                                                 >
-                                                    {opt}
+                                                    {isHelpOption ? '💡 ' : ''}{opt}
                                                 </button>
-                                            ))}
+                                            )})}
                                         </div>
                                         <div className="mt-4 flex justify-end">
                                             <button 

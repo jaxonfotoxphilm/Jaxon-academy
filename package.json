@@ -19,6 +19,7 @@
     "date-fns": "^4.1.0",
     "framer-motion": "^12.38.0",
     "katex": "^0.16.45",
+    "kokoro-js": "^1.2.1",
     "lucide-react": "^1.14.0",
     "react": "^19.2.5",
     "react-big-calendar": "^1.19.4",

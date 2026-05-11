@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send } from 'lucide-react';
 import { SoundManager } from '../utils/SoundManager';
+import { supabase } from '../supabaseClient';
 
 interface Message {
   id: string;
@@ -13,10 +14,17 @@ interface AITutorProps {
   currentSubjectContext?: string | null;
 }
 
-export const AITutor = (_props: AITutorProps) => {
+/**
+ * AITutor — Global floating chat widget for asking Professor Grace questions.
+ * 
+ * Connected to the `ask-professor` Supabase Edge Function which uses Gemini 2.5 Flash.
+ * Falls back to local hardcoded responses when the Edge Function is unavailable.
+ * Passes the current subject context for contextual answers.
+ */
+export const AITutor = ({ currentSubjectContext }: AITutorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { id: '1', sender: 'ai', text: "Hello! I am Professor Grace AI. How can I help you with your studies today?" }
+    { id: '1', sender: 'ai', text: "Hello! I am Professor Grace. How can I help you with your studies today?" }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -26,6 +34,10 @@ export const AITutor = (_props: AITutorProps) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  /**
+   * Sends the user's question to the ask-professor Edge Function.
+   * On failure, falls back to a helpful offline response.
+   */
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -33,18 +45,61 @@ export const AITutor = (_props: AITutorProps) => {
     SoundManager.playClick();
     const userMessage: Message = { id: Date.now().toString(), sender: 'user', text: input };
     setMessages(prev => [...prev, userMessage]);
+    const userInput = input;
     setInput('');
     setIsTyping(true);
 
-    setTimeout(() => {
-      let responseText = "I am currently operating in offline mode. Please refer to your study guides for more information.";
-      if (input.toLowerCase().includes("hello") || input.toLowerCase().includes("hi")) {
-          responseText = "Hello there! Remember to check your daily syllabus.";
+    try {
+      // Build chat history for context continuity (last 6 messages)
+      const chatHistory = messages.slice(-6).map(m => ({
+        role: m.sender === 'user' ? 'student' : 'tutor',
+        text: m.text
+      }));
+
+      const { data, error } = await supabase.functions.invoke('ask-professor', {
+        body: {
+          question: userInput,
+          context: currentSubjectContext || 'General studies and homework help',
+          chatHistory,
+        }
+      });
+
+      if (error || !data?.response) {
+        throw new Error(error?.message || 'No response received');
       }
-      setMessages(prev => [...prev, { id: Date.now().toString(), sender: 'ai', text: responseText }]);
+
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        sender: 'ai',
+        text: data.response
+      }]);
       SoundManager.playHover();
-      setIsTyping(false);
-    }, 1500);
+    } catch (err) {
+      console.warn("Professor Grace AI unavailable, using offline mode:", err);
+      
+      // Intelligent offline fallback
+      let responseText = "I'm having trouble connecting to my reference library right now. Please try again in a moment, or check your study guides for help.";
+      const lowerInput = userInput.toLowerCase();
+      
+      if (lowerInput.includes("hello") || lowerInput.includes("hi") || lowerInput.includes("hey")) {
+        responseText = "Hello there! I'm currently in limited mode, but I'm always happy to see you. Make sure to check your daily syllabus for today's assignments!";
+      } else if (lowerInput.includes("help") || lowerInput.includes("stuck")) {
+        responseText = "I wish I could help directly right now — my AI connection is offline. Try re-reading the lesson material carefully, and break the problem into smaller pieces. You've got this!";
+      } else if (lowerInput.includes("math") || lowerInput.includes("number")) {
+        responseText = "Great math question! While I'm offline, remember: always show your work step by step. Check if you can estimate the answer first to see if your final answer makes sense.";
+      } else if (lowerInput.includes("read") || lowerInput.includes("book") || lowerInput.includes("story")) {
+        responseText = "Reading is wonderful! While I'm offline, try this: after reading a passage, close the book and summarize what happened in your own words. That's how strong readers build comprehension!";
+      }
+      
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        sender: 'ai',
+        text: responseText
+      }]);
+      SoundManager.playHover();
+    }
+
+    setIsTyping(false);
   };
 
   return (
@@ -76,11 +131,16 @@ export const AITutor = (_props: AITutorProps) => {
                   <h3 className="font-bold text-white leading-tight">Professor Grace</h3>
                   <p className="text-xs text-indigo-300 flex items-center gap-1">
                     <span className={`w-2 h-2 rounded-full ${isTyping ? 'bg-green-400 animate-pulse' : 'bg-indigo-400'}`}></span>
-                    {isTyping ? 'Typing...' : 'Online'}
+                    {isTyping ? 'Thinking...' : 'Online'}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {currentSubjectContext && (
+                  <span className="text-[9px] text-indigo-400 font-bold uppercase tracking-widest bg-indigo-500/10 px-2 py-1 rounded-full border border-indigo-500/20 max-w-[120px] truncate">
+                    {currentSubjectContext.replace('dynamic:', '').substring(0, 20)}
+                  </span>
+                )}
                 <button onClick={() => setIsOpen(false)} className="p-2 text-slate-400 hover:text-white transition-colors">
                   <X className="w-5 h-5" />
                 </button>
@@ -124,7 +184,7 @@ export const AITutor = (_props: AITutorProps) => {
                 />
                 <button 
                   type="submit" 
-                  disabled={!input.trim()}
+                  disabled={!input.trim() || isTyping}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-colors disabled:opacity-50 disabled:hover:bg-indigo-600"
                 >
                   <Send className="w-4 h-4" />

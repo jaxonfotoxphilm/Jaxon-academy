@@ -33,7 +33,7 @@ interface ProgressRecord {
 const STUDENTS = ["Ayla", "Aria", "Ana", "Donyale", "Aiko", "Ace"];
 
 export const ParentDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'progress' | 'enrollment' | 'assignments' | 'rewards'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'progress' | 'enrollment' | 'assignments' | 'rewards' | 'report-cards'>('overview');
   
   // Progress State
   const [records, setRecords] = useState<ProgressRecord[]>([]);
@@ -53,6 +53,7 @@ export const ParentDashboard: React.FC = () => {
   const [assignSubject, setAssignSubject] = useState(curriculumData.grades[0].subjects[0].id);
   const [assignNote, setAssignNote] = useState('');
   const [customSubjectOverride, setCustomSubjectOverride] = useState('');
+  const [reportStudent, setReportStudent] = useState(STUDENTS[0]);
 
   const [assignDay, setAssignDay] = useState('Monday');
   const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -193,6 +194,12 @@ export const ParentDashboard: React.FC = () => {
                 className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${activeTab === 'rewards' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
             >
                 <span>🏆</span> Rewards Vault
+            </button>
+            <button 
+                onClick={() => { SoundManager.playClick(); setActiveTab('report-cards'); }}
+                className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${activeTab === 'report-cards' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+            >
+                <span>📄</span> Report Cards
             </button>
         </div>
 
@@ -637,6 +644,125 @@ export const ParentDashboard: React.FC = () => {
                         ))}
                     </div>
                 </div>
+            </div>
+        )}
+
+        {/* --- REPORT CARDS TAB --- */}
+        {activeTab === 'report-cards' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+                    <h3 className="text-3xl font-extrabold text-white flex items-center gap-4">
+                        <span>📄</span> Report Cards
+                    </h3>
+                    <div className="flex items-center gap-4">
+                        <select
+                            value={reportStudent}
+                            onChange={(e) => { SoundManager.playClick(); setReportStudent(e.target.value); }}
+                            className="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white font-bold focus:border-blue-500 outline-none"
+                        >
+                            {STUDENTS.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                        <button
+                            onClick={() => window.print()}
+                            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all flex items-center gap-2 shadow-lg"
+                        >
+                            🖨️ Print Transcript
+                        </button>
+                    </div>
+                </div>
+
+                {(() => {
+                    const studentRecords = records.filter(r => r.student_name === reportStudent);
+                    const enrolledGrade = enrollments[reportStudent];
+                    const gradeData = curriculumData.grades.find(g => g.id === enrolledGrade);
+                    const subjects = gradeData?.subjects || [];
+                    const uniqueSubjects = subjects.filter((s: any, i: number, arr: any[]) => arr.findIndex((t: any) => t.name === s.name) === i);
+
+                    // Build per-subject grade breakdown
+                    const subjectGrades = uniqueSubjects.map((subj: any) => {
+                        const subjectRecords = studentRecords.filter(r =>
+                            r.subject?.toLowerCase().includes(subj.name.toLowerCase())
+                        );
+                        const count = subjectRecords.length;
+                        const avg = count > 0 ? Math.round(subjectRecords.reduce((acc: number, r: ProgressRecord) => acc + r.score, 0) / count) : null;
+                        const letter = avg === null ? '—' : avg >= 93 ? 'A' : avg >= 85 ? 'B' : avg >= 77 ? 'C' : avg >= 70 ? 'D' : 'F';
+                        const color = avg === null ? 'text-slate-600' : avg >= 93 ? 'text-emerald-400' : avg >= 85 ? 'text-blue-400' : avg >= 77 ? 'text-yellow-400' : avg >= 70 ? 'text-orange-400' : 'text-rose-400';
+                        return { name: subj.name, icon: subj.icon || '📖', count, avg, letter, color };
+                    });
+
+                    const overallAvg = studentRecords.length > 0
+                        ? Math.round(studentRecords.reduce((acc, r) => acc + r.score, 0) / studentRecords.length)
+                        : 0;
+                    const gpa = overallAvg >= 93 ? '4.0' : overallAvg >= 85 ? '3.0' : overallAvg >= 77 ? '2.0' : overallAvg >= 70 ? '1.0' : '0.0';
+
+                    return (
+                        <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-xl overflow-hidden print:shadow-none print:border-black" id="report-card-printable">
+                            {/* Report Card Header */}
+                            <div className="bg-gradient-to-r from-indigo-900/60 to-purple-900/60 p-8 border-b border-slate-800 print:bg-white print:text-black">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h4 className="text-2xl font-black text-white print:text-black">Jaxon Academy — Official Report Card</h4>
+                                        <p className="text-indigo-200 font-medium mt-1 print:text-gray-600">{gradeData?.label || 'Unassigned'} • Academic Year {new Date().getFullYear()}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-4xl font-black text-white print:text-black">{reportStudent}</p>
+                                        <p className="text-indigo-300 font-bold text-sm print:text-gray-500">GPA: {gpa} / 4.0</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Grade Table */}
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-950 border-b border-slate-800 print:bg-gray-100">
+                                        <th className="p-5 font-bold text-slate-400 tracking-widest uppercase text-xs print:text-black">Subject</th>
+                                        <th className="p-5 font-bold text-slate-400 tracking-widest uppercase text-xs text-center print:text-black">Modules</th>
+                                        <th className="p-5 font-bold text-slate-400 tracking-widest uppercase text-xs text-center print:text-black">Average</th>
+                                        <th className="p-5 font-bold text-slate-400 tracking-widest uppercase text-xs text-center print:text-black">Grade</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-800/50">
+                                    {subjectGrades.map((sg: any) => (
+                                        <tr key={sg.name} className="hover:bg-slate-800/50 transition-colors print:hover:bg-transparent">
+                                            <td className="p-5 font-bold text-white print:text-black flex items-center gap-3">
+                                                <span className="text-lg">{sg.icon}</span> {sg.name}
+                                            </td>
+                                            <td className="p-5 text-center text-slate-400 font-medium print:text-gray-600">{sg.count}</td>
+                                            <td className="p-5 text-center">
+                                                {sg.avg !== null ? (
+                                                    <span className={`font-bold ${sg.color} print:text-black`}>{sg.avg}%</span>
+                                                ) : (
+                                                    <span className="text-slate-600">—</span>
+                                                )}
+                                            </td>
+                                            <td className="p-5 text-center">
+                                                <span className={`text-2xl font-black ${sg.color} print:text-black`}>{sg.letter}</span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot>
+                                    <tr className="bg-slate-950 border-t-2 border-slate-700 print:bg-gray-100">
+                                        <td className="p-5 font-black text-white text-lg print:text-black">Overall</td>
+                                        <td className="p-5 text-center font-bold text-white print:text-black">{studentRecords.length}</td>
+                                        <td className="p-5 text-center font-black text-white text-lg print:text-black">{overallAvg}%</td>
+                                        <td className="p-5 text-center">
+                                            <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400 print:text-black">
+                                                {overallAvg >= 93 ? 'A' : overallAvg >= 85 ? 'B' : overallAvg >= 77 ? 'C' : overallAvg >= 70 ? 'D' : studentRecords.length > 0 ? 'F' : '—'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+
+                            {/* Footer */}
+                            <div className="p-6 bg-slate-950 border-t border-slate-800 text-slate-500 text-xs font-medium flex justify-between print:bg-white print:text-gray-400">
+                                <span>Generated {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                                <span>Jaxon Academy • Accredited Home Education Program</span>
+                            </div>
+                        </div>
+                    );
+                })()}
             </div>
         )}
 

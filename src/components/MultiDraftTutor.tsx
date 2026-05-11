@@ -8,7 +8,7 @@ import { supabase } from '../supabaseClient';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
 import { SoundManager } from '../utils/SoundManager';
-import pdfList from '../data/pdf-list.json';
+import curriculumData from '../data/curriculum-structure.json';
 
 interface Message {
     role: 'student' | 'tutor';
@@ -165,49 +165,45 @@ export const MultiDraftTutor: React.FC<MultiDraftTutorProps> = ({ onExit, studen
         });
     };
 
-    // We also need pdfList imported if not already. Wait, let me add import!
-    if (activeAssignmentId === 'Open Writing Module') {
-        const categories = Object.keys(pdfList) as Array<keyof typeof pdfList>;
-        const [selectedCategory, setSelectedCategory] = useState<string>("Grade Specific");
-        const activeFiles = pdfList[selectedCategory as keyof typeof pdfList] || [];
+    // Writing topic picker using curriculum subjects
+    if (activeAssignmentId === 'Writing Practice') {
+        const allSubjects = curriculumData.grades.flatMap(g => g.subjects);
+        const uniqueSubjects = allSubjects.filter((s, i, arr) => arr.findIndex(t => t.name === s.name) === i);
 
         return (
             <div className="w-full max-w-5xl mx-auto animate-in fade-in duration-700 pb-20 pt-8">
                 <div className="text-center mb-12">
-                    <h2 className="text-5xl font-extrabold text-white tracking-widest uppercase mb-4 drop-shadow-md">Writing Tutor</h2>
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-rose-500/20 text-rose-300 font-black text-xs rounded-full uppercase tracking-widest mb-6 border border-rose-500/30">
+                        <span>✍️</span> Writing Lab
+                    </div>
+                    <h2 className="text-5xl font-extrabold text-white tracking-tighter mb-4">Writing Tutor</h2>
                     <p className="text-xl text-slate-400 font-light max-w-2xl mx-auto">
-                        Select a curriculum document to serve as the source material for your writing assignment.
+                        Choose a subject to write about. Professor Grace will review your draft and provide feedback.
                     </p>
                 </div>
 
-                <div className="flex flex-wrap justify-center gap-3 mb-10">
-                    {categories.map(cat => (
-                        <button
-                            key={cat}
-                            onClick={() => {
-                                SoundManager.playClick();
-                                setSelectedCategory(cat);
-                            }}
-                            className={`px-5 py-2 rounded-full font-bold transition-all ${selectedCategory === cat ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
-                        >
-                            {cat}
-                        </button>
-                    ))}
+                <div className="flex justify-end mb-6">
+                    <button
+                        onClick={onExit}
+                        className="px-4 py-2 bg-slate-800 hover:bg-rose-900/50 hover:text-rose-400 text-slate-300 rounded-lg font-bold transition-all border border-transparent hover:border-rose-500/30 shadow-lg text-sm"
+                    >
+                        Close Writing Lab
+                    </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {activeFiles.map((file: any) => (
+                    {uniqueSubjects.slice(0, 18).map((subj) => (
                         <div 
-                            key={file.id}
-                            className="bg-slate-800/80 border border-slate-700 hover:border-amber-500 rounded-2xl p-6 cursor-pointer group hover:scale-[1.02] transition-transform"
+                            key={subj.id}
+                            className="bg-slate-800/80 border border-slate-700 hover:border-amber-500/60 rounded-2xl p-6 cursor-pointer group hover:scale-[1.02] transition-all hover:shadow-lg hover:shadow-amber-900/20"
                             onClick={() => {
                                 SoundManager.playClick();
-                                setActiveAssignmentId(file.id.replace('.pdf', ''));
+                                setActiveAssignmentId(subj.name);
                             }}
                         >
-                            <div className="text-3xl mb-4 group-hover:scale-110 transition-transform">✍️</div>
-                            <h3 className="font-bold text-white text-lg leading-tight mb-2">{file.name}</h3>
-                            <p className="text-sm text-slate-400">Write an essay based on this document.</p>
+                            <div className="text-3xl mb-4 group-hover:scale-110 transition-transform">{subj.icon || '✍️'}</div>
+                            <h3 className="font-bold text-white text-lg leading-tight mb-2 group-hover:text-amber-300 transition-colors">{subj.name}</h3>
+                            <p className="text-sm text-slate-400">Write an essay or report on this subject.</p>
                         </div>
                     ))}
                 </div>

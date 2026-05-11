@@ -221,43 +221,29 @@ class SoundManagerClass {
         });
     }
 
-    public playCharacterVoice(text: string, voiceType: 'narrator' | 'professor' | 'hero' = 'narrator') {
-        if (!this.audioEnabled || !('speechSynthesis' in window)) return;
+    /**
+     * Plays character dialogue using the tiered VoiceService.
+     * Falls through: ElevenLabs → Kokoro TTS → Web Speech API.
+     * The voice type parameter is kept for API compatibility but
+     * ElevenLabs/Kokoro use their own voice selection internally.
+     */
+    public playCharacterVoice(text: string, _voiceType: 'narrator' | 'professor' | 'hero' = 'narrator') {
+        if (!this.audioEnabled) return;
         
-        // Stop any currently playing speech so it doesn't overlap messily
-        window.speechSynthesis.cancel();
-        
-        const utterance = new SpeechSynthesisUtterance(text);
-        
-        // Try to load voices
-        const voices = window.speechSynthesis.getVoices();
-        
-        // Pitch and rate modifiers based on character
-        if (voiceType === 'professor') {
-            utterance.pitch = 1.0; // Natural female pitch
-            utterance.rate = 0.9;  // Slower, storytelling pacing
-            // Professor Grace is female, grab the absolute best available voices.
-            // Google UK English Female is an amazing storytelling voice on Chrome. Samantha is great on Apple.
-            const premiumVoices = ['Google UK English Female', 'Samantha', 'Karen', 'Tessa', 'Microsoft Zira'];
-            let profVoice = null;
-            for (const vName of premiumVoices) {
-                profVoice = voices.find(v => v.name === vName);
-                if (profVoice) break;
-            }
-            if (!profVoice) profVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Woman'));
-            if (profVoice) utterance.voice = profVoice;
-        } else if (voiceType === 'hero') {
-            utterance.pitch = 1.2; // higher and energetic
-            utterance.rate = 1.1;  // slightly faster
-            const heroVoice = voices.find(v => v.name.includes('Samantha') || v.name.includes('Female'));
-            if (heroVoice) utterance.voice = heroVoice;
-        } else {
-            // Narrator defaults
-            utterance.pitch = 1.0;
-            utterance.rate = 1.0;
-        }
-        
-        window.speechSynthesis.speak(utterance);
+        // Dynamically import VoiceService to avoid circular deps
+        import('./VoiceService').then(({ speak }) => {
+            speak(text);
+        });
+    }
+
+    /**
+     * Pre-loads the Kokoro TTS WASM model in the background.
+     * Call early (e.g. on app mount) so it's ready when ElevenLabs budget runs out.
+     */
+    public preloadVoiceModels() {
+        import('./VoiceService').then(({ preloadKokoro }) => {
+            preloadKokoro();
+        });
     }
 }
 
