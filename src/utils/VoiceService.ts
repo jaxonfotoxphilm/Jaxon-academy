@@ -99,6 +99,7 @@ async function speakElevenLabs(text: string): Promise<boolean> {
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
+        trackAudio(audio);
 
         addUsage(text.length);
 
@@ -147,6 +148,7 @@ async function speakKokoro(text: string): Promise<boolean> {
         const wav = audio.toBlob();
         const url = URL.createObjectURL(wav);
         const player = new Audio(url);
+        trackAudio(player);
         return new Promise((resolve) => {
             player.onended = () => { URL.revokeObjectURL(url); resolve(true); };
             player.onerror = () => { URL.revokeObjectURL(url); resolve(false); };
@@ -221,10 +223,26 @@ export async function speak(text: string): Promise<void> {
     speakWebSpeech(text);
 }
 
+/** Global registry of active audio elements across all tiers */
+const activeAudioElements: HTMLAudioElement[] = [];
+
+function trackAudio(audio: HTMLAudioElement) {
+    activeAudioElements.push(audio);
+    audio.addEventListener('ended', () => {
+        const idx = activeAudioElements.indexOf(audio);
+        if (idx !== -1) activeAudioElements.splice(idx, 1);
+    });
+}
+
 /** Stop all currently playing audio across all tiers */
 export function stopSpeaking(): void {
+    // Kill Web Speech
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    // ElevenLabs/Kokoro audio elements will be GC'd naturally
+    // Kill all tracked Audio elements (ElevenLabs / Kokoro)
+    while (activeAudioElements.length > 0) {
+        const a = activeAudioElements.pop();
+        if (a) { try { a.pause(); a.currentTime = 0; } catch {} }
+    }
 }
 
 /** Returns current month's ElevenLabs character usage info */
