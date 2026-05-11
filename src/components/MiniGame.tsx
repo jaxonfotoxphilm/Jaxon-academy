@@ -98,18 +98,55 @@ const CONTENT_BANK: Record<string, { words: string[], pairs: [string,string][], 
     }
 };
 
-/** Fallback content for topics not in the bank */
+const MORE_CONTENT: Record<string, { words: string[], pairs: [string,string][], sentences: [string,string][], trueFalse: [string,boolean][] }> = {
+    'Genetics': {
+        words: ['ALLELE', 'GENOTYPE', 'PHENOTYPE', 'DOMINANT', 'RECESSIVE'],
+        pairs: [['Genotype','Genetic makeup (e.g., Aa)'],['Phenotype','Physical appearance'],['Dominant','Trait expressed when present'],['Recessive','Trait hidden by dominant']],
+        sentences: [['An organism\'s physical appearance is its ___.','phenotype'],['A ___ allele is only expressed when two copies are present.','recessive'],['A Punnett ___ predicts offspring genotypes.','square']],
+        trueFalse: [['A dominant allele always masks a recessive allele.',true],['Two brown-eyed parents can never have a blue-eyed child.',false],['DNA contains the instructions for building proteins.',true],['Genotype and phenotype always match.',false]]
+    },
+    'Addition': {
+        words: ['ADDEND', 'TOTAL', 'CARRY', 'REGROUP', 'COLUMN'],
+        pairs: [['Addend','Number being added'],['Sum','Result of addition'],['Regrouping','Carrying to the next place'],['Commutative','Order doesn\'t matter']],
+        sentences: [['When adding 8 + 7, you get 15 so you write 5 and ___ the 1.','carry'],['The numbers you add together are called ___.','addends'],['Addition is ___ because 3+5 equals 5+3.','commutative']],
+        trueFalse: [['The order of addends does not change the sum.',true],['You can only add two numbers at a time.',false],['Regrouping means carrying to the next column.',true],['147 + 0 = 0.',false]]
+    },
+    'Subtraction': {
+        words: ['DIFFERENCE', 'BORROW', 'REGROUP', 'MINUEND', 'SUBTRAHEND'],
+        pairs: [['Minuend','Number being subtracted FROM'],['Subtrahend','Number being subtracted'],['Difference','Answer to subtraction'],['Borrowing','Regrouping from a higher place']],
+        sentences: [['The answer to a subtraction problem is called the ___.','difference'],['When the top digit is smaller, you must ___ from the next column.','borrow'],['In 15 - 7 = 8, the number 15 is the ___.','minuend']],
+        trueFalse: [['Subtraction is the inverse of addition.',true],['The order in subtraction does not matter.',false],['You sometimes need to borrow when subtracting.',true],['100 - 100 = 1.',false]]
+    },
+    'Counting': {
+        words: ['NUMBER', 'DIGIT', 'SEQUENCE', 'PATTERN', 'SKIP'],
+        pairs: [['Counting On','Starting from a number and adding'],['Skip Counting','Counting by 2s, 5s, 10s'],['Number Line','Visual tool for counting'],['Sequence','Numbers in order']],
+        sentences: [['Counting by 5s is called ___ counting.','skip'],['The numbers 2, 4, 6, 8 show a ___.','pattern'],['A ___ line helps you visualize number order.','number']],
+        trueFalse: [['The number after 99 is 100.',true],['Skip counting by 2 always gives odd numbers.',false],['Zero is a number.',true],['Counting backward means subtracting 1 each time.',true]]
+    },
+    'Mythology': {
+        words: ['OLYMPUS', 'ODYSSEY', 'ALLEGORY', 'TITAN', 'MORTAL'],
+        pairs: [['Zeus','King of the gods, lightning'],['Athena','Goddess of wisdom and war'],['Poseidon','God of the sea'],['Hades','God of the underworld']],
+        sentences: [['The Greek gods lived on Mount ___.','Olympus'],['A story with a hidden moral lesson is an ___.','allegory'],['The ___ were ancient beings who ruled before the Olympians.','Titans']],
+        trueFalse: [['Myths were only created for entertainment.',false],['The Minotaur lived in a labyrinth on Crete.',true],['Prometheus gave fire to humans.',true],['All Greek myths have happy endings.',false]]
+    },
+};
+
+// Merge all content banks
+const ALL_CONTENT = { ...CONTENT_BANK, ...MORE_CONTENT };
+
+/** Fallback content for topics not in the bank — still subject-aware */
 function getDefaultContent(topic: string) {
+    const t = topic.toUpperCase().slice(0, 8);
     return {
-        words: [topic.toUpperCase().slice(0,8), 'STUDY', 'LEARN', 'REVIEW', 'MASTER'],
-        pairs: [['Key Concept','The main idea of '+topic],['Example','A real-world application'],['Definition','The formal meaning'],['Practice','Hands-on learning']],
-        sentences: [['The main concept of this lesson is ___.', topic.toLowerCase()], ['Understanding ___ helps build stronger knowledge.', topic.toLowerCase()], ['Good students always ___ their work.', 'review']],
-        trueFalse: [['Studying regularly improves understanding.',true],['You only need to read material once to master it.',false],['Practice helps reinforce new concepts.',true],['Asking questions is a sign of weakness.',false]] as [string,boolean][]
+        words: [t, 'ANALYZE', 'EVIDENCE', 'COMPARE', 'CONCLUDE'],
+        pairs: [['Key Concept','Central idea that connects to broader knowledge'],['Evidence','Facts or data that support a conclusion'],['Analysis','Breaking down information to understand it'],['Synthesis','Combining ideas to form new understanding']],
+        sentences: [[`A strong understanding of ${topic} requires critical ___.`,'thinking'], [`The most important skill in studying ${topic} is finding ___.`,'evidence'], [`Scholars support their arguments with ___ and reasoning.`,'facts']],
+        trueFalse: [[`Understanding ${topic} requires analyzing relationships, not just memorizing facts.`,true],[`The best way to learn ${topic} is to read notes once and never review.`,false],[`Asking "why" and "how" deepens understanding more than just "what."`,true],[`${topic} has no connection to any other subject area.`,false]] as [string,boolean][]
     };
 }
 
 export const MiniGame: React.FC<MiniGameProps> = ({ gameType, topic, studentName, onComplete, onScoreChange }) => {
-    const content = CONTENT_BANK[topic] || getDefaultContent(topic);
+    const content = ALL_CONTENT[topic] || getDefaultContent(topic);
 
     switch (gameType) {
         case 'wordScramble': return <WordScrambleGame content={content} studentName={studentName} onComplete={onComplete} onScoreChange={onScoreChange} />;

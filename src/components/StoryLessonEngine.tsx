@@ -80,14 +80,16 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
         /**
          * Builds a rich 8-node interactive lesson locally when the AI backend is unavailable.
          * Uses the subjectId/dynamicQuery to extract subject name and topic,
-         * then generates: Hook → YouTube Video → Word Scramble → Practice → Quiz → Fill-Blank → True/False → Synthesis
+         * Builds a rigorous 11–12 node lesson using Bloom's taxonomy progression:
+         *   Hook → Video → Word Scramble → Quiz (Recall) → Teach → Match Pairs →
+         *   Quiz (Application) → [Math Input] → Fill-Blank → True/False → Quiz (Analysis) → Wrap-Up
          */
         const buildOfflineLesson = (rawSubject: string): DialogueNode[] => {
             const cleaned = rawSubject.replace('dynamic:', '').replace(/-/g, ' ');
             const words = cleaned.split(/\s+/);
             let topic = words[words.length - 1] || 'this subject';
             let subjectName = cleaned;
-            const prefixes = ['Language Arts', 'Science Biology', 'Science & Biology', 'Arithmetic Logic', 'Arithmetic & Logic', 'American History', 'World Geography', 'World Literature', 'Grammar Composition', 'Grammar & Composition', 'Vocabulary Spelling', 'Vocabulary & Spelling', 'Pre Algebra', 'Pre-Algebra / Algebra 1', 'Earth Space Science', 'Earth & Space Science', 'Life Science', 'World History', 'Civics Government', 'Civics & Government'];
+            const prefixes = ['Language Arts', 'Science Biology', 'Science & Biology', 'Arithmetic Logic', 'Arithmetic & Logic', 'American History', 'World Geography', 'World Literature', 'Grammar Composition', 'Grammar & Composition', 'Vocabulary Spelling', 'Vocabulary & Spelling', 'Pre Algebra', 'Pre-Algebra / Algebra 1', 'Earth & Space Science', 'Life Science', 'World History', 'Civics Government', 'Civics & Government'];
             for (const prefix of prefixes) {
                 if (cleaned.toLowerCase().startsWith(prefix.toLowerCase())) {
                     subjectName = prefix;
@@ -97,138 +99,144 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
             }
             if (topic.length < 2) topic = subjectName;
 
-            /** Subject-specific YouTube search queries for high-quality educational videos */
             const youtubeQueries: Record<string, string> = {
-                'Clauses': 'independent and dependent clauses grammar lesson middle school',
+                'Clauses': 'independent and dependent clauses grammar lesson',
                 'Phrases': 'types of phrases in English grammar explained',
                 'Essays': 'how to write a 5 paragraph essay middle school',
                 'Nouns': 'types of nouns proper common abstract grammar kids',
                 'Mythology': 'Greek mythology for kids educational documentary',
-                'Folklore': 'world folklore and fairy tales educational',
-                'Poetry Analysis': 'how to analyze poetry middle school English',
                 'Equations': 'solving one step equations algebra explained',
-                'Inequalities': 'solving inequalities algebra 1 step by step',
-                'Functions': 'what is a function in math explained simply',
                 'Polynomials': 'polynomials explained algebra 1 lesson',
                 'Graphing': 'graphing linear equations coordinate plane tutorial',
                 'Ecosystems': 'ecosystems and biomes science lesson for kids',
                 'Cells': 'parts of a cell biology lesson animated',
                 'Genetics': 'genetics and DNA explained for middle school',
-                'Geology': 'rocks and minerals earth science lesson',
-                'Astronomy': 'solar system and space science educational',
                 'Ancient Civilizations': 'ancient civilizations documentary for students',
-                'Middle Ages': 'medieval times history lesson for kids',
-                'Renaissance': 'the Renaissance period history explained',
-                'Constitution': 'US Constitution explained for students',
-                'Latin Roots': 'Latin and Greek roots vocabulary lesson',
-                'Synonyms': 'synonyms and antonyms vocabulary building lesson',
                 'Counting': 'counting and number recognition kindergarten',
                 'Addition': 'addition facts math lesson for kids',
                 'Subtraction': 'subtraction with regrouping explained',
             };
-
             const ytQuery = youtubeQueries[topic] || `${topic} ${subjectName} educational lesson ${gradeLevel}`;
 
-            /** Subject-aware lesson content templates */
-            const subjectHooks: Record<string, string> = {
-                'Grammar & Composition': `Today we're exploring ${topic} — these are the building blocks that make your writing powerful. Every great author, from Shakespeare to your favorite novelist, masters ${topic.toLowerCase()} to craft sentences that captivate readers.`,
-                'World Literature': `Get ready for an epic journey into ${topic}! The stories we'll explore today have been told for thousands of years, shaping cultures and inspiring generations. These tales are some of the most important in human history.`,
-                'Pre-Algebra / Algebra 1': `Math time! Today's topic is ${topic}. I know math can feel intimidating, but here's the secret — ${topic.toLowerCase()} is actually a puzzle, and once you see the pattern, you'll feel like a genius. Let's crack the code together!`,
-                'Earth & Space Science': `${studentName}, imagine you're an explorer charting unknown territory — that's exactly what we're doing today as we dive into ${topic}! Scientists spend their entire careers studying this, and you're about to learn the fundamentals that make it all click.`,
-                'Life Science': `Welcome to the incredible world of ${topic}! Biology is the study of life itself, and ${topic.toLowerCase()} is one of the most fascinating chapters. What you learn today connects directly to how your own body works.`,
-                'World History': `Step into the time machine, ${studentName}! Today we're traveling back to explore ${topic}. The events and people we'll learn about shaped the entire modern world — and some of it will absolutely blow your mind.`,
-                'Vocabulary & Spelling': `Words are power, ${studentName}! Today we're studying ${topic}, and these are the secret weapons that make you sound brilliant in conversations and essays. Once you master these, you'll start noticing them everywhere.`,
+            /**
+             * SUBJECT-SPECIFIC QUIZ BANKS — 3 difficulty tiers per topic:
+             * Tier 1 (Recall): Remember key facts
+             * Tier 2 (Application): Apply knowledge to real scenarios
+             * Tier 3 (Analysis): Compare, evaluate, explain WHY
+             */
+            type QI = { question: string; options: string[]; correctIndex: number; feedbackWrong?: string };
+            type QB = { recall: QI; apply: QI; analyze: QI; mathQ?: { question: string; answer: string } };
+            const QB: Record<string, QB> = {
+                'Clauses': {
+                    recall: { question: 'Which of the following is a dependent clause?', options: ['She ran to the store.', 'Because it was raining.', 'The dog barked loudly.', 'We finished homework.'], correctIndex: 1, feedbackWrong: 'A dependent clause starts with a subordinating conjunction (because, although, when) and cannot stand alone.' },
+                    apply: { question: 'In "Although she studied hard, she failed the test," which part is the independent clause?', options: ['Although she studied hard', 'she failed the test', 'Although she studied', 'hard, she failed'], correctIndex: 1, feedbackWrong: '"She failed the test" can stand alone — that makes it the independent clause.' },
+                    analyze: { question: 'Why would a writer begin a sentence with a dependent clause?', options: ['To confuse the reader', 'To create suspense or give context before the main idea', 'It is grammatically required', 'Dependent clauses must always come first'], correctIndex: 1, feedbackWrong: 'Starting with a dependent clause creates anticipation — the reader waits for the main point.' },
+                },
+                'Nouns': {
+                    recall: { question: 'Which word is an abstract noun?', options: ['Table', 'Courage', 'Dog', 'River'], correctIndex: 1, feedbackWrong: 'Abstract nouns name things you cannot touch — ideas, feelings, qualities. "Courage" is a feeling.' },
+                    apply: { question: '"The team celebrated their victory at the stadium." How many nouns are in this sentence?', options: ['2', '3', '4', '1'], correctIndex: 1, feedbackWrong: 'Three nouns: team (collective), victory (abstract), stadium (common).' },
+                    analyze: { question: 'Why must we distinguish between proper and common nouns when writing?', options: ['Proper nouns sound better', 'Proper nouns require capitalization and signal specific identities', 'Common nouns are always better', 'There is no real difference'], correctIndex: 1, feedbackWrong: '"City" vs "Chicago" — proper nouns name specific entities and MUST be capitalized for clarity.' },
+                },
+                'Equations': {
+                    recall: { question: 'What is the first step to solve 3x + 7 = 22?', options: ['Divide by 3', 'Subtract 7 from both sides', 'Add 7 to both sides', 'Multiply by 3'], correctIndex: 1, feedbackWrong: 'Undo addition first: 3x + 7 = 22 → 3x = 15 → x = 5.' },
+                    apply: { question: 'Notebooks cost $4 each plus $3 shipping. Total is $19. How many notebooks?', options: ['3', '4', '5', '6'], correctIndex: 1, feedbackWrong: '4n + 3 = 19 → 4n = 16 → n = 4 notebooks.' },
+                    analyze: { question: 'Which equation has NO solution?', options: ['x + 5 = 12', '2x = 2x + 1', '3x - 1 = 8', 'x/2 = 7'], correctIndex: 1, feedbackWrong: '2x = 2x + 1 simplifies to 0 = 1 — a contradiction. No value of x works.' },
+                    mathQ: { question: 'Solve for x: 5x - 12 = 23', answer: '7' },
+                },
+                'Polynomials': {
+                    recall: { question: 'What is the degree of 4x³ + 2x² - x + 9?', options: ['4', '2', '3', '9'], correctIndex: 2, feedbackWrong: 'The degree is the highest exponent. In 4x³, the exponent is 3.' },
+                    apply: { question: 'Simplify: (3x² + 5x) + (2x² - 3x + 1)', options: ['5x² + 2x + 1', '5x² + 8x + 1', '6x² + 2x + 1', '5x⁴ + 2x + 1'], correctIndex: 0, feedbackWrong: 'Combine like terms: 3x²+2x² = 5x², 5x+(-3x) = 2x, constant = 1.' },
+                    analyze: { question: 'A rectangle has length (x+3) and width (x-1). What is its area?', options: ['2x + 2', 'x² + 2x - 3', 'x² + 4x + 3', 'x² - 4x - 3'], correctIndex: 1, feedbackWrong: 'FOIL: (x+3)(x-1) = x² - x + 3x - 3 = x² + 2x - 3.' },
+                    mathQ: { question: 'Expand (x + 4)(x + 2). What is the coefficient of x?', answer: '6' },
+                },
+                'Ecosystems': {
+                    recall: { question: 'What role do decomposers play in an ecosystem?', options: ['Produce food from sunlight', 'Hunt other animals', 'Break down dead organisms and recycle nutrients', 'Compete with producers'], correctIndex: 2, feedbackWrong: 'Decomposers break down dead matter, returning nutrients to soil for producers.' },
+                    apply: { question: 'If all primary consumers were removed, what would most likely happen?', options: ['Producers decrease', 'Producers increase, secondary consumers decrease', 'Nothing changes', 'Secondary consumers increase'], correctIndex: 1, feedbackWrong: 'Without herbivores, plants overgrow. Predators that ate herbivores starve — a cascade effect.' },
+                    analyze: { question: 'Why is a food web more accurate than a food chain?', options: ['Food webs are newer', 'Most organisms eat multiple sources and have multiple predators', 'Food chains only exist in textbooks', 'Food webs are simpler'], correctIndex: 1, feedbackWrong: 'Real ecosystems are complex — a web captures interconnections a simple chain misses.' },
+                },
+                'Cells': {
+                    recall: { question: 'Which organelle converts glucose into ATP?', options: ['Nucleus', 'Ribosome', 'Mitochondria', 'Cell membrane'], correctIndex: 2, feedbackWrong: 'Mitochondria perform cellular respiration, converting glucose + oxygen into ATP energy.' },
+                    apply: { question: 'A cell has a cell wall, chloroplasts, and a large vacuole. It is most likely from a:', options: ['Human muscle', 'Plant leaf', 'Bacteria', 'Animal blood'], correctIndex: 1, feedbackWrong: 'Cell walls, chloroplasts, and large vacuoles are unique to plant cells.' },
+                    analyze: { question: 'Why do muscle cells have more mitochondria than skin cells?', options: ['Muscle cells are larger', 'Muscles need more energy for contraction', 'Skin cells use chloroplasts', 'Mitochondria are random'], correctIndex: 1, feedbackWrong: 'Muscles need massive ATP for contraction. More mitochondria = more energy.' },
+                },
+                'Genetics': {
+                    recall: { question: 'DNA is made up of building blocks called:', options: ['Amino acids', 'Nucleotides', 'Proteins', 'Lipids'], correctIndex: 1, feedbackWrong: 'DNA is a polymer of nucleotides — each has a sugar, phosphate, and nitrogenous base (A, T, C, G).' },
+                    apply: { question: 'Parent genotypes: Aa × Aa. What % of offspring could be aa?', options: ['0%', '25%', '50%', '100%'], correctIndex: 1, feedbackWrong: 'Punnett square: AA(25%), Aa(50%), aa(25%). So 25% homozygous recessive.' },
+                    analyze: { question: 'Why do siblings look different even with the same parents?', options: ['Completely different DNA', 'Random assortment and crossing over create unique combinations per gamete', 'Only one parent gives genes', 'They share no genetic material'], correctIndex: 1, feedbackWrong: 'During meiosis, chromosomes shuffle and swap segments, making each egg/sperm genetically unique.' },
+                },
+                'Ancient Civilizations': {
+                    recall: { question: 'Ancient Mesopotamian writing was called:', options: ['Hieroglyphics', 'Cuneiform', 'Latin script', 'Alphabet'], correctIndex: 1, feedbackWrong: 'Cuneiform used wedge-shaped marks in clay tablets, developed by Sumerians ~3400 BCE.' },
+                    apply: { question: 'How did the Nile\'s annual flooding benefit Egyptian farming?', options: ['Washed away crops', 'Deposited rich silt that fertilized farmland', 'Prevented farming', 'Only provided water'], correctIndex: 1, feedbackWrong: 'Floods left nutrient-rich silt — the "gift of the Nile" that sustained civilization.' },
+                    analyze: { question: 'Both Mesopotamia and Egypt grew near rivers. What does this suggest?', options: ['Deserts were preferred', 'Water access for irrigation and trade was essential for civilization', 'Rivers were only for transport', 'It was random'], correctIndex: 1, feedbackWrong: 'Rivers = irrigation + transport + fertile soil + freshwater — prerequisites for large settlements.' },
+                },
+                'Mythology': {
+                    recall: { question: 'In Greek mythology, who is king of the gods?', options: ['Poseidon', 'Hades', 'Zeus', 'Apollo'], correctIndex: 2, feedbackWrong: 'Zeus rules from Olympus. Poseidon has the seas, Hades the underworld.' },
+                    apply: { question: 'Icarus flies too close to the sun and his wings melt. What lesson does this teach?', options: ['Never fly', 'The sun is dangerous', 'Excessive pride and ignoring wise counsel leads to downfall', 'Wax is weak'], correctIndex: 2, feedbackWrong: 'The myth warns against hubris — excessive pride. Icarus ignored his father\'s warning.' },
+                    analyze: { question: 'Why did ancient Greeks use myths to explain storms and earthquakes?', options: ['They liked fiction', 'Without science, myths gave meaningful explanations for things they couldn\'t understand', 'Myths were only entertainment', 'They knew the science but preferred stories'], correctIndex: 1, feedbackWrong: 'Before science, myths made the unpredictable world feel ordered — Poseidon causing earthquakes gave meaning to chaos.' },
+                },
+                'Addition': {
+                    recall: { question: 'What is 47 + 28?', options: ['65', '75', '85', '55'], correctIndex: 1, feedbackWrong: 'Ones: 7+8=15, write 5 carry 1. Tens: 4+2+1=7. Answer: 75.' },
+                    apply: { question: 'Marcus has 36 marbles and finds 19 more. How many total?', options: ['45', '55', '65', '17'], correctIndex: 1, feedbackWrong: '36 + 19: 6+9=15, carry 1. 3+1+1=5. Total: 55.' },
+                    analyze: { question: 'What is the MOST efficient strategy for adding 98 + 47?', options: ['Count on fingers', 'Add 100 + 47 then subtract 2', 'Draw dots and count', 'Guess'], correctIndex: 1, feedbackWrong: 'Compensating: 98≈100. So 100+47=147, minus 2 = 145. Mental math!' },
+                    mathQ: { question: 'What is 156 + 287?', answer: '443' },
+                },
+                'Subtraction': {
+                    recall: { question: 'What is 83 - 47?', options: ['46', '36', '26', '44'], correctIndex: 1, feedbackWrong: 'Borrow: 13-7=6, 7-4=3. Answer: 36.' },
+                    apply: { question: 'A library has 215 books. Students check out 89. How many remain?', options: ['126', '136', '304', '116'], correctIndex: 0, feedbackWrong: '215 - 89 = 126. Borrow and subtract carefully.' },
+                    analyze: { question: 'If 64 + 29 = 93, what is 93 - 29 without calculating?', options: ['29', '64', '93', 'Must calculate'], correctIndex: 1, feedbackWrong: 'Subtraction is the inverse of addition! 64+29=93 means 93-29=64.' },
+                    mathQ: { question: 'What is 502 - 178?', answer: '324' },
+                },
+                'Counting': {
+                    recall: { question: 'What number comes after 29?', options: ['31', '28', '30', '20'], correctIndex: 2, feedbackWrong: 'When counting: 28, 29, 30!' },
+                    apply: { question: '3 groups of 5 apples — how many total?', options: ['8', '15', '10', '35'], correctIndex: 1, feedbackWrong: 'Count by 5s: 5, 10, 15! Or 5+5+5=15.' },
+                    analyze: { question: 'Why is counting by 10s faster than by 1s for large groups?', options: ['10 is bigger', 'You skip numbers and reach the total in fewer steps', 'It\'s not faster', 'Different answer'], correctIndex: 1, feedbackWrong: 'Skip counting = fewer steps. This is the foundation of multiplication!' },
+                },
             };
 
-            const hookText = subjectHooks[subjectName] || `Today we're diving into an exciting topic in ${subjectName}: ${topic}. This connects to everything you've been learning, and I promise — by the end of this lesson, you'll see the world a little differently!`;
+            const topicKey = Object.keys(QB).find(k => topic.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(topic.toLowerCase()));
+            const qb = topicKey ? QB[topicKey] : null;
 
-            return [
-                {
-                    id: "offline-1",
-                    characterName: "Professor Grace",
-                    text: `Good morning, ${studentName}! ${hookText} Your family would be so proud that you're tackling this today. Let's get started! 📚`,
-                    voiceType: "professor",
-                    visualType: "reading-book",
-                    isQuiz: false,
-                    itemReward: null as any
-                },
-                {
-                    id: "offline-2",
-                    characterName: "Professor Grace",
-                    text: `Before I teach you the details, let's watch a short video about ${topic}. Pay close attention — I'm going to quiz you on what you see! Take notes if you can. After the video, we'll dive into some hands-on activities. 🎬`,
-                    voiceType: "professor",
-                    visualType: "video-nature",
-                    isQuiz: false,
-                    youtubeSearchQuery: ytQuery,
-                    itemReward: null as any
-                },
-                {
-                    id: "offline-3",
-                    characterName: "Professor Grace",
-                    text: `Great video, right? Now let's test your vocabulary with a quick word scramble! Unscramble the letters to form a key term from our lesson on ${topic}. 🔤`,
-                    voiceType: "professor",
-                    visualType: "science-atom",
-                    isQuiz: false,
-                    miniGame: "wordScramble",
-                    itemReward: null as any
-                },
-                {
-                    id: "offline-4",
-                    characterName: "Professor Grace",
-                    text: `Excellent work on that scramble, ${studentName}! Now let's connect what you've learned to the bigger picture. Think about ${topic.toLowerCase()} — it's not just something in a textbook. It shows up in your daily life, in the news, in the world around you. The best scholars are the ones who can see these connections. Can you think of where you've seen ${topic.toLowerCase()} in action? 🤔`,
-                    voiceType: "professor",
-                    visualType: "history-scroll",
-                    isQuiz: false,
-                    itemReward: null as any
-                },
-                {
-                    id: "offline-5",
-                    characterName: "Professor Grace",
-                    text: `Time for a knowledge check! Let's see what you've learned about ${topic}. Read each option carefully — remember, the best answer isn't always the most obvious one. 🎯`,
-                    voiceType: "professor",
-                    visualType: "math-geometry",
-                    isQuiz: true,
-                    question: `Based on what you've learned, which statement about ${topic} is most accurate?`,
-                    options: [
-                        `${topic} is only relevant in academic settings and has no real-world application`,
-                        `Understanding ${topic} builds foundational knowledge that connects to advanced concepts across ${subjectName}`,
-                        `${topic} was only recently added to educational curricula and has limited importance`,
-                        `${topic} is mainly memorization and doesn't require critical thinking`,
-                        `I don't understand, break it down for me`
-                    ],
-                    correctIndex: 1,
-                    itemReward: null as any
-                },
-                {
-                    id: "offline-6",
-                    characterName: "Professor Grace",
-                    text: `Now let's fill in some blanks! Complete each sentence using what you've learned about ${topic}. This is how real scholars reinforce their knowledge — by putting concepts into their own words. ✍️`,
-                    voiceType: "professor",
-                    visualType: "reading-book",
-                    isQuiz: false,
-                    miniGame: "fillBlank",
-                    itemReward: null as any
-                },
-                {
-                    id: "offline-7",
-                    characterName: "Professor Grace",
-                    text: `Lightning round! True or false — how fast can you go? This tests your instincts and deep understanding of ${topic}. Trust what you've learned! ⚡`,
-                    voiceType: "professor",
-                    visualType: "science-atom",
-                    isQuiz: false,
-                    miniGame: "trueFalse",
-                    itemReward: null as any
-                },
-                {
-                    id: "offline-8",
-                    characterName: "Professor Grace",
-                    text: `Outstanding work today, ${studentName}! 🌟 You've watched an educational video, unscrambled vocabulary, answered quiz questions, filled in blanks, and crushed a lightning round — all on ${topic} in ${subjectName}. That's the kind of dedication that makes a true scholar. Your family would be so proud. Tomorrow, we'll build on everything you've learned today. Keep being amazing! 🎓`,
-                    voiceType: "professor",
-                    visualType: "video-space",
-                    isQuiz: false,
-                    itemReward: "Knowledge Star" as any
-                }
+            const fallbackR: QI = { question: `Which best describes a key principle of ${topic}?`, options: [`It is only memorization`, `It involves understanding relationships between concepts and applying them`, `It is unrelated to ${subjectName}`, `It has no practical use`], correctIndex: 1, feedbackWrong: `${topic} is about understanding connections — not just memorization.` };
+            const fallbackA: QI = { question: `How could you use knowledge of ${topic} outside school?`, options: [`You cannot — it is only academic`, `By applying its principles to solve real problems and make informed decisions`, `By memorizing definitions for tests`, `It is not useful outside class`], correctIndex: 1, feedbackWrong: `Every subject builds transferable problem-solving skills applicable in daily life.` };
+            const fallbackN: QI = { question: `If you taught a younger student about ${topic}, what approach works best?`, options: [`Read the textbook aloud`, `Test them immediately`, `Use real-world examples and ask questions to check understanding`, `Tell them to skip it`], correctIndex: 2, feedbackWrong: `Great teachers use examples + questions — not just lecture.` };
+
+            const q1 = qb?.recall || fallbackR;
+            const q2 = qb?.apply || fallbackA;
+            const q3 = qb?.analyze || fallbackN;
+
+            const hookMap: Record<string, string> = {
+                'Grammar & Composition': `Today we explore ${topic} — the building blocks of powerful writing.`,
+                'World Literature': `An epic journey into ${topic} — stories that shaped civilizations.`,
+                'Pre-Algebra / Algebra 1': `${topic} is a puzzle. See the pattern and you'll feel like a genius.`,
+                'Earth & Space Science': `You're a scientist exploring ${topic} today. Mind-blowing discoveries ahead.`,
+                'Life Science': `Welcome to ${topic}! This connects directly to how your own body works.`,
+                'World History': `Time machine activated! ${topic} shaped the entire modern world.`,
+                'Vocabulary & Spelling': `Words are power. ${topic} gives you precision in expression.`,
+            };
+            const hook = hookMap[subjectName] || `Today we study ${topic} in ${subjectName}. This will challenge you!`;
+
+            const nodes: DialogueNode[] = [
+                { id: "off-1", characterName: "Professor Grace", text: `Good morning, ${studentName}! ${hook} Today I want you to think critically — not just remember facts, but understand WHY. Ready? 📚`, voiceType: "professor", visualType: "reading-book", isQuiz: false, itemReward: null as any },
+                { id: "off-2", characterName: "Professor Grace", text: `First, let's watch a video on ${topic}. Take notes on: (1) the main idea, (2) one surprising fact, (3) one question you have. I WILL quiz you! 🎬`, voiceType: "professor", visualType: "video-nature", isQuiz: false, youtubeSearchQuery: ytQuery, itemReward: null as any },
+                { id: "off-3", characterName: "Professor Grace", text: `Let's test your vocabulary. Unscramble this critical term from ${topic}. Scholars who master vocabulary can explain concepts precisely. 🔤`, voiceType: "professor", visualType: "science-atom", isQuiz: false, miniGame: "wordScramble", itemReward: null as any },
+                { id: "off-4", characterName: "Professor Grace", text: `📝 COMPREHENSION CHECK #1 — Recall\nThis tests whether you absorbed the basic facts. Read ALL options carefully.`, voiceType: "professor", visualType: "math-geometry", isQuiz: true, question: q1.question, options: [...q1.options, "I don't understand, break it down for me"], correctIndex: q1.correctIndex, feedbackWrong: q1.feedbackWrong, itemReward: null as any },
+                { id: "off-5", characterName: "Professor Grace", text: `Good. Now let's go deeper. ${topic} isn't isolated — it connects to everything in ${subjectName}. The best students see these connections. Think about HOW and WHY, not just WHAT. 🧠`, voiceType: "professor", visualType: "history-scroll", isQuiz: false, itemReward: null as any },
+                { id: "off-6", characterName: "Professor Grace", text: `Match terms with definitions. This requires UNDERSTANDING, not just recognition. Each term connects to a core concept in ${topic}. 🔗`, voiceType: "professor", visualType: "reading-book", isQuiz: false, miniGame: "matchPairs", itemReward: null as any },
+                { id: "off-7", characterName: "Professor Grace", text: `📝 COMPREHENSION CHECK #2 — Application\nHarder now. I'm asking you to APPLY what you've learned to a new situation. Think it through! 🎯`, voiceType: "professor", visualType: "math-geometry", isQuiz: true, question: q2.question, options: [...q2.options, "I don't understand, break it down for me"], correctIndex: q2.correctIndex, feedbackWrong: q2.feedbackWrong, itemReward: null as any },
             ];
+
+            if (qb?.mathQ) {
+                nodes.push({ id: "off-7b", characterName: "Professor Grace", text: `✍️ Solve this problem. No multiple choice — work through the steps and type your answer.`, voiceType: "professor", visualType: "math-geometry", isQuiz: false, isMathInput: true, question: qb.mathQ.question, correctAnswer: qb.mathQ.answer, itemReward: null as any });
+            }
+
+            nodes.push(
+                { id: "off-8", characterName: "Professor Grace", text: `Complete each sentence with the exact correct term. No word bank. Prove you KNOW the material! ✍️`, voiceType: "professor", visualType: "reading-book", isQuiz: false, miniGame: "fillBlank", itemReward: null as any },
+                { id: "off-9", characterName: "Professor Grace", text: `⚡ Lightning True/False! These are tricky — some sound right but are wrong. Think carefully! ⚡`, voiceType: "professor", visualType: "science-atom", isQuiz: false, miniGame: "trueFalse", itemReward: null as any },
+                { id: "off-10", characterName: "Professor Grace", text: `📝 COMPREHENSION CHECK #3 — Analysis\nThe hardest question. ANALYZE and EVALUATE — the highest thinking level. WHY does it work? What if conditions changed? 🏆`, voiceType: "professor", visualType: "math-geometry", isQuiz: true, question: q3.question, options: [...q3.options, "I don't understand, break it down for me"], correctIndex: q3.correctIndex, feedbackWrong: q3.feedbackWrong, itemReward: null as any },
+                { id: "off-11", characterName: "Professor Grace", text: `Lesson complete, ${studentName}! 🌟\n\nToday you progressed through all levels:\n• RECALL — remembering facts\n• APPLICATION — using knowledge in new situations\n• ANALYSIS — evaluating and explaining WHY\n\nThat's what scholars do. Keep this momentum! 🎓`, voiceType: "professor", visualType: "video-space", isQuiz: false, itemReward: "Knowledge Star" as any },
+            );
+
+            return nodes;
         };
 
         const initializeCurriculum = async () => {
