@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Login } from './components/Login';
 import { ParentDashboard } from './components/ParentDashboard';
 import { SoundManager } from './utils/SoundManager';
 import curriculumData from './data/curriculum-structure.json';
-import { ParentManager } from './utils/ParentManager';
+import { ParentManager, type Assignment } from './utils/ParentManager';
 import { StoryLessonEngine } from './components/StoryLessonEngine';
 import { ConcentratedStudy } from './components/ConcentratedStudy';
 import { ExamEngine } from './components/ExamEngine';
@@ -35,7 +35,8 @@ export default function App() {
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [selectedExam, setSelectedExam] = useState<string | null>(null);
   const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null);
-  const [activeAssignments, setActiveAssignments] = useState<any[]>([]);
+  const [activeAssignments, setActiveAssignments] = useState<Assignment[]>([]);
+  const [completionToast, setCompletionToast] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const [lockedGradeId, setLockedGradeId] = useState<string | null>(null);
@@ -108,10 +109,10 @@ export default function App() {
   const currentGrade = curriculumData.grades.find(g => g.id === selectedGradeId);
 
   /** 
-   * Build the Daily Schedule — uses school day number to look up today's specific lesson
-   * for each subject in the student's enrolled grade.
+   * Build the Daily Schedule — memoized so it only recalculates when
+   * grade, school day, or assignments change (not on every render).
    */
-  const buildDailySchedule = () => {
+  const dailySchedule = useMemo(() => {
     // If Principal has dispatched assignments, those take priority
     if (activeAssignments.length > 0) {
         return activeAssignments.map(a => ({
@@ -130,7 +131,7 @@ export default function App() {
     const gradeData = curriculumData.grades.find(g => g.id === lockedGradeId) || curriculumData.grades[0];
     let subjects = gradeData.subjects;
     
-    // Filter adopted subjects
+    // Filter adopted subjects — read localStorage once outside the loop
     subjects = subjects.filter(s => localStorage.getItem(`adopted-${s.name}`) !== 'false');
 
     // Deduplicate subjects by name (keep first occurrence which has the lessons array)
@@ -171,9 +172,7 @@ export default function App() {
             examId: undefined
         };
     });
-  };
-
-  const dailySchedule = buildDailySchedule();
+  }, [lockedGradeId, schoolDay, activeAssignments]);
 
   // Navigation items configuration
   const navItems = [
@@ -194,7 +193,25 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-white font-sans flex flex-col relative overflow-x-hidden grain-overlay" style={{ fontFamily: 'Inter, Outfit, sans-serif' }}>
       
-
+      {/* ── Lesson Completion Toast ── */}
+      <AnimatePresence>
+        {completionToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 80, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 40, scale: 0.95 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 280 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-4 px-6 py-4 rounded-2xl bg-[hsl(228,40%,8%)] border border-emerald-500/30 shadow-[0_0_40px_rgba(16,185,129,0.25)] backdrop-blur-xl"
+          >
+            <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-xl">⭐</div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-400">Lesson Complete!</p>
+              <p className="text-white font-semibold text-sm">{completionToast} has been marked done</p>
+            </div>
+            <button onClick={() => setCompletionToast(null)} className="ml-2 text-slate-500 hover:text-white transition-colors text-xl">✕</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Header NavBar */}
       <header className="absolute top-0 w-full z-50 px-4 md:px-8 py-4 md:py-5 bg-[hsla(228,80%,3%,0.7)] backdrop-blur-2xl border-b border-[var(--border-subtle)] flex justify-between items-center transition-all">
@@ -325,20 +342,19 @@ export default function App() {
 
               <div className="space-y-5 animate-in slide-in-from-bottom-8 duration-700 delay-150 relative before:absolute before:inset-0 before:ml-8 md:before:ml-10 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-blue-500 before:via-indigo-500 before:to-transparent">
                 
-                {dailySchedule.map((subject, idx) => {
+                {(() => {
                   /**
                    * Lesson Locking System:
-                   * - Reads completed lessons from localStorage
-                   * - Only the FIRST incomplete lesson is unlocked (clickable)
-                   * - Completed lessons show a ✅ checkmark
-                   * - Future lessons show a 🔒 lock
+                   * Read localStorage ONCE per render, outside the map loop,
+                   * so we don't hit the storage API 6x per frame.
                    */
                   const completedKey = `jaxon-academy-completed-${currentUser}`;
                   const completedLessons: string[] = JSON.parse(localStorage.getItem(completedKey) || '[]');
+                  const firstIncompleteIdx = dailySchedule.findIndex(s => !completedLessons.includes(s.subjectId));
+
+                  return dailySchedule.map((subject, idx) => {
                   const isCompleted = completedLessons.includes(subject.subjectId);
 
-                  // Find the first incomplete lesson index
-                  const firstIncompleteIdx = dailySchedule.findIndex(s => !completedLessons.includes(s.subjectId));
                   const isUnlocked = isCompleted || idx === firstIncompleteIdx;
                   const isLocked = !isUnlocked;
 
@@ -403,7 +419,8 @@ export default function App() {
                     </div>
                   </div>
                   );
-                })}
+                  });  // end dailySchedule.map
+                })()} {/* end IIFE */}
               </div>
               
               <div className="mt-20 flex flex-col sm:flex-row justify-center gap-4 animate-in fade-in duration-1000 delay-500">
@@ -491,10 +508,13 @@ export default function App() {
                 gradeLevel={currentGrade?.label || 'Elementary School'}
                 studentName={currentUser}
                 onBack={() => {
-                    // Mark assignment complete if it exists
+                    // Mark assignment complete and show celebration toast
                     if (currentUser) {
+                        const subjectTitle = dailySchedule.find(s => s.subjectId === selectedSubject)?.title || 'Lesson';
                         ParentManager.completeAssignmentBySubject(currentUser, selectedSubject).then(() => {
                             navigate('menu');
+                            setCompletionToast(subjectTitle);
+                            setTimeout(() => setCompletionToast(null), 4000);
                         });
                     } else {
                         navigate('menu');

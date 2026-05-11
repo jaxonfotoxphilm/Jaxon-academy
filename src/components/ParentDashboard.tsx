@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import { ParentManager, type Assignment } from '../utils/ParentManager';
 import curriculumData from '../data/curriculum-structure.json';
@@ -54,6 +54,14 @@ export const ParentDashboard: React.FC = () => {
   const [assignNote, setAssignNote] = useState('');
   const [customSubjectOverride, setCustomSubjectOverride] = useState('');
   const [reportStudent, setReportStudent] = useState(STUDENTS[0]);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; title: string } | null>(null);
+
+  /** Show a brief toast notification (auto-dismisses in 3s) */
+  const showToast = useCallback((message: string, type: 'success' | 'info' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  }, []);
 
   const [assignDay, setAssignDay] = useState('Monday');
   const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -111,7 +119,12 @@ export const ParentDashboard: React.FC = () => {
   const handleGrantBadge = async (student: string, badgeId: string) => {
       SoundManager.playReward();
       await ParentManager.grantItem(student, badgeId);
-      alert(`Granted ${badgeId} to ${student}!`);
+      const badgeNames: Record<string, string> = {
+          badge_math: 'Math Master 🧮',
+          badge_science: 'Science Explorer 🔬',
+          badge_reading: 'Reading Champion 📚',
+      };
+      showToast(`${badgeNames[badgeId] || badgeId} granted to ${student}!`);
   };
 
   const handleGenerateReport = async () => {
@@ -153,8 +166,38 @@ export const ParentDashboard: React.FC = () => {
   })).sort((a, b) => b.average - a.average).slice(0, 5); // Top 5 subjects
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto min-h-[85vh] bg-[#0A0D18] rounded-2xl border border-slate-800 shadow-2xl flex overflow-hidden animate-in fade-in duration-500">
-      
+    <div className="w-full max-w-[1400px] mx-auto min-h-[85vh] bg-[#0A0D18] rounded-2xl border border-slate-800 shadow-2xl flex overflow-hidden animate-in fade-in duration-500 relative">
+
+      {/* ── In-App Toast Notification ── */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-[9999] flex items-center gap-3 px-5 py-3.5 rounded-xl border shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom-4 duration-300 ${
+          toast.type === 'success'
+            ? 'bg-[hsl(228,40%,8%)] border-emerald-500/30 text-emerald-300'
+            : 'bg-[hsl(228,40%,8%)] border-blue-500/30 text-blue-300'
+        }`}>
+          <span className="text-xl">{toast.type === 'success' ? '✅' : 'ℹ️'}</span>
+          <span className="text-white font-semibold text-sm">{toast.message}</span>
+          <button onClick={() => setToast(null)} className="ml-2 text-slate-500 hover:text-white text-lg transition-colors">✕</button>
+        </div>
+      )}
+
+      {/* ── Delete Confirmation Modal ── */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-[hsl(228,40%,7%)] border border-slate-700 rounded-2xl p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-black text-white mb-2">Remove Assignment?</h3>
+            <p className="text-slate-400 text-sm mb-6">Delete <span className="text-white font-semibold">{deleteConfirm.title}</span>? This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition-all">Cancel</button>
+              <button
+                onClick={() => { handleDeleteAssignment(deleteConfirm.id); setDeleteConfirm(null); }}
+                className="flex-1 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold transition-all"
+              >Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* --- SIDEBAR --- */}
       <div className="w-64 bg-[#05070D] border-r border-slate-800 flex flex-col shrink-0">
         <div className="p-6 border-b border-slate-800">
@@ -591,9 +634,7 @@ export const ParentDashboard: React.FC = () => {
                                 };
                             }}
                             onSelectEvent={(event) => {
-                                if(window.confirm(`Delete assignment for ${event.title}?`)) {
-                                    handleDeleteAssignment(event.id as string);
-                                }
+                                setDeleteConfirm({ id: event.id as string, title: event.title });
                             }}
                         />
                     </div>

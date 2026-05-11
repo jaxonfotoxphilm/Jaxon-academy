@@ -1,73 +1,100 @@
-# React + TypeScript + Vite
+# Jaxon Academy 🏛️
+### AI-Powered Personalized Homeschool Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A world-class, full-stack homeschool curriculum platform built for K–12 families. Powered by React, TypeScript, Vite, Supabase, and an AI tutoring engine with Bloom's Taxonomy lesson progression.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ✨ Features
 
-## React Compiler
+| Feature | Description |
+|---------|-------------|
+| 🎓 **Professor Grace** | AI-powered tutor delivering cinematic, story-driven lessons |
+| 📚 **K–12 Curriculum Engine** | 180-day curriculum with 12+ subjects per grade level |
+| 🧠 **Bloom's Taxonomy** | Lessons progress from Recall → Application → Analysis |
+| 📊 **Parent Dashboard** | Real-time progress tracking, report cards, GPA, scheduling |
+| 🏆 **Rewards System** | Digital badges and backpack for student achievements |
+| 🎯 **Daily Pathway** | Sequential lesson locking — complete today's work in order |
+| 🔬 **Exam Engine** | Subject-specific exams with AI-generated questions |
+| ✍️ **Writing Lab** | Multi-draft tutor with AI feedback |
+| 📅 **Calendar Scheduler** | Principal assigns lessons to specific days of the week |
+| 🎨 **Custom Avatars** | Netflix-style profile picker with 6 avatar collections |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🛠 Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18 + TypeScript + Vite |
+| Styling | Tailwind CSS v4 + Custom HSL Design System |
+| Animations | Framer Motion |
+| Backend | Supabase (Postgres + Edge Functions) |
+| AI | Google Gemini via Supabase Edge Functions |
+| TTS | Cloud TTS with browser SpeechSynthesis fallback |
+| Deployment | Vercel (auto-deploy on push to `main`) |
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🚀 Getting Started
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Environment Variables
+Copy `.env.example` to `.env.local` and fill in:
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
 ```
+
+---
+
+## 🏗 Architecture
+
+```
+src/
+├── components/
+│   ├── Login.tsx              # Netflix-style profile picker
+│   ├── StoryLessonEngine.tsx  # Core lesson runtime (Bloom's taxonomy)
+│   ├── LessonVisualizer.tsx   # Ambient YouTube background system
+│   ├── ParentDashboard.tsx    # Admin panel (progress, scheduling, reports)
+│   ├── Library.tsx            # Full curriculum browser (180 lessons/subject)
+│   ├── ExamEngine.tsx         # Adaptive exam runner
+│   ├── MultiDraftTutor.tsx    # Writing lab with AI feedback
+│   └── MiniGame.tsx           # Word scramble, match pairs, fill-blank, true/false
+├── utils/
+│   ├── SoundManager.ts        # Unified audio (TTS, SFX, UI sounds)
+│   └── ParentManager.ts       # Assignment & enrollment management
+├── hooks/
+│   └── useSchoolDay.ts        # Daily school day counter
+└── data/
+    └── curriculum-structure.json  # Full K–12 curriculum (grades + 180 lessons each)
+```
+
+---
+
+## 📋 Student Profiles
+
+The platform supports up to 6 student profiles + 1 Principal (parent) account:
+- **Principal** — Full admin access: enroll students, assign lessons, view reports
+- **Student** — Personalized dashboard locked to their enrolled grade level
+
+---
+
+## 🔒 Security Notes
+- Student data stored in Supabase with Row Level Security enabled
+- Edge Functions handle all AI API calls (keys never exposed to client)
+- Principal account is PIN-protected to prevent student access
+
+---
+
+*Built with ❤️ for home-educating families.*

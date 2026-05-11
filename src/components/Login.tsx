@@ -290,6 +290,12 @@ export const Login = ({ onLogin }: { onLogin: (name: string) => void }) => {
   const [selected, setSelected] = useState<string | null>(null);
   const [editingProfile, setEditingProfile] = useState<string | null>(null);
   const [avatars, setAvatars] = useState<Record<string, string>>({});
+  const [pinTarget, setPinTarget] = useState<string | null>(null);
+  const [pinValue, setPinValue] = useState('');
+  const [pinError, setPinError] = useState(false);
+
+  /** The Principal PIN — in production this would be stored securely in Supabase */
+  const PRINCIPAL_PIN = '1234';
 
   // Load saved avatars on mount
   useEffect(() => {
@@ -302,12 +308,20 @@ export const Login = ({ onLogin }: { onLogin: (name: string) => void }) => {
 
   const handleSelect = (name: string) => {
     SoundManager.playClick();
+    if (name === 'Principal') {
+      // Require PIN before granting Principal access
+      setPinTarget(name);
+      setPinValue('');
+      setPinError(false);
+      return;
+    }
     setSelected(name);
     setTimeout(() => {
       SoundManager.playCinematicChime();
       onLogin(name);
     }, 700);
   };
+
 
   const handleAvatarChange = (name: string, url: string) => {
     saveAvatar(name, url);
@@ -421,6 +435,84 @@ export const Login = ({ onLogin }: { onLogin: (name: string) => void }) => {
             onSelect={(url) => handleAvatarChange(editingProfile, url)}
             onClose={() => setEditingProfile(null)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* ── Principal PIN Modal ── */}
+      <AnimatePresence>
+        {pinTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4"
+            onClick={() => setPinTarget(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.85, y: 30 }}
+              animate={{ scale: 1, y: 0, x: pinError ? [-8, 8, -8, 8, 0] : 0 }}
+              exit={{ scale: 0.85, opacity: 0 }}
+              transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+              className="bg-[hsl(228,40%,6%)] border border-[var(--border-subtle)] rounded-3xl p-8 w-full max-w-xs shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)] text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-4xl mb-4">🏛️</div>
+              <h2 className="text-2xl font-black text-white mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                Principal Access
+              </h2>
+              <p className="text-[var(--text-secondary)] text-sm mb-6">Enter your admin PIN to continue</p>
+
+              {/* PIN dots */}
+              <div className="flex justify-center gap-4 mb-6">
+                {[0,1,2,3].map(i => (
+                  <div key={i} className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${
+                    pinValue.length > i
+                      ? pinError ? 'bg-rose-500 border-rose-400' : 'bg-white border-white'
+                      : 'bg-transparent border-slate-600'
+                  }`} />
+                ))}
+              </div>
+
+              {/* PIN Keypad */}
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                {[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map((key, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      if (key === '⌫') { setPinValue(v => v.slice(0, -1)); return; }
+                      if (key === '') return;
+                      const next = pinValue + String(key);
+                      setPinValue(next);
+                      if (next.length === 4) {
+                        setTimeout(() => {
+                          if (next === PRINCIPAL_PIN) {
+                            setPinTarget(null); setSelected('Principal');
+                            setTimeout(() => { SoundManager.playCinematicChime(); onLogin('Principal'); }, 500);
+                          } else {
+                            setPinError(true); setPinValue('');
+                            setTimeout(() => setPinError(false), 600);
+                          }
+                        }, 100);
+                      }
+                    }}
+                    className={`py-4 rounded-xl text-xl font-bold transition-all active:scale-95 ${
+                      key === '' ? 'cursor-default' :
+                      key === '⌫' ? 'bg-white/5 hover:bg-white/10 text-slate-400 text-base' :
+                      'bg-white/8 hover:bg-white/15 text-white border border-white/10'
+                    }`}
+                    style={{ background: key === '' ? 'transparent' : undefined }}
+                  >
+                    {key}
+                  </button>
+                ))}
+              </div>
+
+              {pinError && (
+                <p className="text-rose-400 text-sm font-bold animate-in fade-in duration-200">Incorrect PIN. Try again.</p>
+              )}
+              <button onClick={() => setPinTarget(null)} className="mt-4 text-slate-500 hover:text-white text-sm transition-colors">Cancel</button>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

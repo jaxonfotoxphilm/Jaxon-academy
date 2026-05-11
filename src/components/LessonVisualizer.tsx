@@ -1,5 +1,5 @@
 // src/components/LessonVisualizer.tsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { InteractiveVideo } from './InteractiveVideo';
 import { VIDEO_INTERACTIONS } from './VideoInteractions';
 
@@ -67,6 +67,14 @@ interface LessonVisualizerProps {
 
 export const LessonVisualizer: React.FC<LessonVisualizerProps> = ({ visualType, youtubeSearchQuery }) => {
     if (!visualType) return null;
+
+    // Delay background video mount so the first frame renders without lag
+    const [bgReady, setBgReady] = useState(false);
+    useEffect(() => {
+        setBgReady(false);
+        const t = setTimeout(() => setBgReady(true), 800);
+        return () => clearTimeout(t);
+    }, [visualType]);
 
     const renderVisual = () => {
         switch (visualType) {
@@ -187,9 +195,17 @@ export const LessonVisualizer: React.FC<LessonVisualizerProps> = ({ visualType, 
                     <div className="pointer-events-auto w-full h-full">
                         <InteractiveVideo videoUrl={getPexelsFallback()} subjectKey={visualType} interactionsMap={VIDEO_INTERACTIONS} />
                     </div>
-                ) : youtubeId ? (
-                    /* Contextual YouTube video as ambient background */
-                    renderYouTubeBackground()
+                ) : youtubeId && bgReady ? (
+                    /* Contextual YouTube video — only mounted after 800ms delay to prevent first-frame lag */
+                    <div
+                        className="w-full h-full absolute inset-0 overflow-hidden"
+                        style={{ opacity: bgReady ? 1 : 0, transition: 'opacity 1.2s ease-in' }}
+                    >
+                        {renderYouTubeBackground()}
+                    </div>
+                ) : !isVideoType && !bgReady ? (
+                    /* Placeholder while video loads — gradient shimmer */
+                    <div className="w-full h-full absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 animate-pulse" />
                 ) : (
                     /* Pexels stock fallback */
                     <video
@@ -199,7 +215,7 @@ export const LessonVisualizer: React.FC<LessonVisualizerProps> = ({ visualType, 
                     />
                 )}
                 {/* Dark overlay to keep text readable over video */}
-                <div className="absolute inset-0 bg-slate-900/70"></div>
+                <div className="absolute inset-0 bg-slate-900/70 pointer-events-none"></div>
             </div>
             <div className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none">
                 {!isVideoType && renderVisual()}
