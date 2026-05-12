@@ -9,56 +9,10 @@ import { ErrorBoundary } from './ErrorBoundary';
  * These play muted as ambient background visuals behind the lesson UI.
  * Each maps a visualType keyword → a YouTube video ID for contextual ambiance.
  */
-const BACKGROUND_YOUTUBE: Record<string, string> = {
-    // Science
-    'science':  'DkzQxoTMaJA',  // Beautiful science visuals
-    'atom':     'FSyAehMdpyI',  // Atoms & molecules animated
-    'biology':  'QnQe0xW_JY4',  // Biology cells animation
-    'cell':     'URUJD5NEXC8',  // Inside a cell
-    'space':    'libKVRa01L8',  // Space & galaxy footage
-    'nature':   'LXb3EKWsInQ',  // Nature documentary 4K
-    'eco':      'GlcmWsTR3OE',  // Ecosystem footage
-    'earth':    'HCDVN7DCzYE',  // Planet earth
-    // Math
-    'math':     'X9e3JhM5FY4',  // Math patterns and beauty
-    'geometry': 'WqzK3UAXaHc',  // Geometry visualization
-    'algebra':  'NybHckSEQBI',  // Algebra concepts
-    'arith':    'jQ-aWFYT_SU',  // Arithmetic for kids
-    'count':    'e0dJWfQHF8Y',  // Counting visuals
-    'add':      'jQ-aWFYT_SU',  // Addition
-    'subtract': 'aukMVFCxyQA',  // Subtraction
-    // History
-    'history':  'xuCn8ux2gbs',  // History documentary
-    'ancient':  'Yocja_N5s1I',  // Ancient civilizations
-    'civil':    'ONP5jv_EWTI',  // Civics / government
-    // Reading & Language Arts
-    'reading':  'S9FLl6r5vy0',  // Reading & learning
-    'book':     'S9FLl6r5vy0',  // Books & reading
-    'grammar':  'sDVH5MrAVao',  // Grammar concepts
-    'vocab':    'ZVPflMwMEYA',  // Vocabulary
-    'spell':    'ZVPflMwMEYA',  // Spelling
-    'essay':    'S9FLl6r5vy0',  // Essay writing
-    'writing':  'S9FLl6r5vy0',  // Writing
-    // Bible / Religious studies
-    'bible':    'ak06MSETeo4',  // Bible stories animated
-    'creation': 'teu7BCZTgDs',  // Creation story
-    'jesus':    'dqTwnElYAiM',  // Life of Jesus
-    'gospel':   'dqTwnElYAiM',  // Gospel stories
-    'psalm':    'j9phNEaPrv8',  // Psalms
-    'proverb':  'Gab04dPs_ZA',  // Proverbs
-};
-
-/**
- * Finds the best contextual YouTube video ID by matching keywords
- * from the visualType string against our curated background map.
- */
-const getBackgroundYouTubeId = (visualType: string): string | null => {
-    const lower = visualType.toLowerCase();
-    for (const [keyword, videoId] of Object.entries(BACKGROUND_YOUTUBE)) {
-        if (lower.includes(keyword)) return videoId;
-    }
-    // Fallback: relaxing educational ambient
-    return 'LXb3EKWsInQ';
+const getBackgroundYouTubeId = (_visualType: string): string | null => {
+    // YouTube embeds are highly unstable due to copyright and "embed blocked" errors.
+    // Returning null forces the robust Pexels stock video fallback for a premium experience.
+    return null;
 };
 
 interface LessonVisualizerProps {
