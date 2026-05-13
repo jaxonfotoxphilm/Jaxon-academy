@@ -61,8 +61,7 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
     const [hasProp3D, setHasProp3D] = useState(false);
     const [mathInputValue, setMathInputValue] = useState('');
     const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
-    const [videoWatched, setVideoWatched] = useState(false);
-    const [noteText, setNoteText] = useState('');
+
     /** Tracks all active Audio objects so we can force-stop them on navigation */
     const activeAudioRefs = useRef<HTMLAudioElement[]>([]);
 
@@ -519,8 +518,7 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
         if (!currentNode) return;
         if (currentNode.nextNodeId === 'end') { handleComplete(); return; }
         
-        // Reset video and note state for next node
-        setVideoWatched(false);
+        // Reset state for next node
         setShowQuizResult(null);
         setMathInputValue('');
         
@@ -542,7 +540,6 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
         SoundManager.playClick();
         killAllAudio();
         if (currentNodeIndex > 0) {
-            setVideoWatched(false);
             setShowQuizResult(null);
             setMathInputValue('');
             setCurrentNodeIndex(currentNodeIndex - 1);
@@ -757,97 +754,13 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
 
     if (!currentNode) return null;
 
-    /**
-     * Curated educational YouTube video IDs mapped by topic keyword.
-     * Uses standard /embed/{videoId} format which is fully supported.
-     * Falls back to a "Watch on YouTube" button for topics without a curated ID.
-     */
-    /**
-     * Curated educational YouTube video IDs mapped by topic keyword.
-     * Covers all subjects across the 14-grade curriculum.
-     * Falls back to a YouTube search link for uncovered topics.
-     */
-    const VIDEO_IDS: Record<string, string> = {
-        // Language Arts / ELA
-        'letter recognition': 'ezGcPMfH5qI', 'letter sounds': 'jvAYUvQsLWo',
-        'rhyming': 'PsBf3KuONaI', 'short vowels': 'hb9t3EurHfg',
-        'long vowels': 'xWHp2C558DI', 'blends': 'RSoHkMp-6jI',
-        'sight words': 'dyBKGazDhdI', 'phonics': 'YAsFCo9BGWY',
-        'reading strategies': 'YlEJkaOJ6yQ', 'nouns': '4E2e1FC3e10',
-        'verbs': 'DgZI5L4Eb60', 'verb tenses': 'LHmOQiQx3gI',
-        'adjectives': 'sHaOp5meuIU', 'adverbs': 'CmSf6E37PgE',
-        'clauses': 'PpSPFKAoFxo', 'sentences': 'dIxE7tCR5Lw',
-        'writing': 'dHdU_DTZlnc', 'essays': 'dHdU_DTZlnc',
-        'figurative language': 'X3acnKZLE0w', 'poetry': 'JwhouCNq_Ew',
-        'comprehension': 'YlEJkaOJ6yQ', 'vocabulary': 'vIEifRY3nAs',
-        'grammar': 'HpX9nndksSI', 'punctuation': 'J9_oKAgBLIA',
-        'spelling': 'hu1TiqiVqqs', 'prefixes': 'VLnH4-1fK_I',
-        'suffixes': 'VLnH4-1fK_I', 'root words': 'VLnH4-1fK_I',
-        // Math
-        'counting': 'bGetqbqYE4Q', 'number recognition': 'DR-cfDsz_FY',
-        'shapes': '6k0bKXhLH4A', 'patterns': 'K3tJVIGsDCA',
-        'addition': 'Fe8u4I8AUqo', 'subtraction': 'ug0FLEKAHAU',
-        'multiplication': 'qU6YnXkhGRk', 'division': 'rGx1QNl1Fk0',
-        'fractions': 'n0FZhQ_GkKw', 'decimals': 'do_IbHId2Os',
-        'place value': 'aR0WvQsOm_U', 'measurement': 'GnS47MUbEig',
-        'time': 'HrxZWNu72WI', 'money': 'dO3JBhoeeJI',
-        'area': 'xCIEBx3MwRg', 'perimeter': 'AAY1bBaCaIk',
-        'equations': 'l3XzepN03KQ', 'inequalities': 'xOxvyeSl0uA',
-        'functions': 'kvGsIo1TmsM', 'polynomials': 'ffLLmV4mZwU',
-        'graphing': 'T4jMLJRlsPM', 'algebra': 'NybHckSEQBI',
-        'geometry': 'H8gJpL1x4Q0', 'trigonometry': 'T6-U7UlBwsY',
-        'statistics': 'sxQaBpKfDRk', 'probability': 'KzfWUEJjG18',
-        'exponents': 'XZRQhkii0h0', 'quadratics': 'IlNAJl36-10',
-        // Science
-        'five senses': 'q1xNuU7gaAQ', 'living': 'GhBVhpGb7hU',
-        'weather': 'Uo8lbeVUGSg', 'seasons': 'VHR9pMqO2bE',
-        'plants': 'p3St51F4kE8', 'animals': 'oiyZaDxZsAg',
-        'life cycles': 'k7dIxdWfbGY', 'food chains': 'MuKs9o1s8FA',
-        'ecosystems': 'v5K_NOTaD4A', 'habitats': '9S2d3cj6IpI',
-        'cells': 'URUJD5NEXC8', 'genetics': 'CBezq1fFUEA',
-        'dna': 'zwibgNGe4aY', 'evolution': 'GhHOjC4oxh8',
-        'matter': 'IW0v6untlek', 'atoms': 'h6JNWP9CkaI',
-        'chemical reactions': '8m6RtOpqvtU', 'periodic table': 'rz4Dd1I_fX0',
-        'forces': 'VtyoEHE28sE', 'motion': 'VtyoEHE28sE',
-        'energy': 'CW0_S5YpYVo', 'electricity': 'mc979OhitAg',
-        'magnetism': 'MnhYy_JZGVY', 'waves': 'RNTbWymU0bI',
-        'light': 'bGfrYcOKp9c', 'sound': 'GkNHeBhlBRU',
-        'rocks': 'FD3FMKQfm6k', 'minerals': 'FD3FMKQfm6k',
-        'water cycle': 'al2GRvFbcJA', 'solar system': 'libKVRa01L8',
-        'earth': 'HCDVN7DCzYE', 'volcano': 'lAmqsMQG3RM',
-        'body systems': 'gEUu-A2wfSE', 'biology': '8IHU2JEbsAQ',
-        'chemistry': 'FSyAehMdpyI', 'physics': 'b1t41Q3xRM8',
-        'climate': 'SN5-DnOHQmE', 'environment': 'HBFk1EHmHJM',
-        // Social Studies / History
-        'community': '-ZzxMCMl0mw', 'maps': 'DO5J2sKRZEI',
-        'american symbols': 'MSvJ9SBIGok', 'holidays': 'F2L3T5trfDg',
-        'families': 'PKzJ9gH7Euo', 'government': 'bO7FQsCcbD8',
-        'constitution': 'bO7FQsCcbD8', 'bill of rights': 'yYEfLm5dLMQ',
-        'ancient civilizations': 'jchcA3GG-YY', 'mesopotamia': 'sohXPx_XZ6Y',
-        'ancient egypt': 'hO1tzmi1V5g', 'ancient greece': 'g2hDkDEa5PE',
-        'ancient rome': 'oPf27gAup9U', 'medieval': '12G0FhQ170w',
-        'middle ages': '12G0FhQ170w', 'renaissance': 'Vufba_ZDTas',
-        'reformation': 'IATyzSAjC1w', 'exploration': 'wOclF9eP5uM',
-        'colonial': 'o69TvGqyMOo', 'revolution': 'HlE7n-NxOcY',
-        'civil war': 'rY9zHNOjGrs', 'westward': 'q16RpV8aJFo',
-        'immigration': 'Fe79i1jN4s8', 'industrial': 'zhL5DCizj5c',
-        'world war': 'HUqy-OQvVGg', 'cold war': 'wVqziNV7dGY',
-        // Bible
-        'creation': 'teu7BCZTgDs', 'noah': 'dFSBU6cz1_o',
-        'moses': '4t2FAfwQaas', 'david': 'WGGhvUQGzIc',
-        'jesus': 'dqTwnElYAiM', 'parables': 'L8XYHO-mYMI',
-        'apostles': 'Dmqv0MFOHn0', 'psalms': 'j9phNEaPrv8',
-        'proverbs': 'Gab04dPs_ZA', 'gospel': 'dqTwnElYAiM',
-    };
-    const ytQuery = currentNode.youtubeSearchQuery?.toLowerCase() || '';
-    const youtubeVideoId = Object.entries(VIDEO_IDS).find(([key]) => ytQuery.includes(key))?.[1] || null;
 
     return (
         <div 
             className="w-full h-[80vh] rounded-3xl overflow-hidden relative flex flex-col justify-end border-2 border-white/20 shadow-2xl animate-in zoom-in duration-700"
             style={{ background: currentNode?.backgroundUrl || '#040714' }}
         >
-            <div className={`absolute inset-0 z-0 overflow-hidden ${currentNode.youtubeSearchQuery ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+            <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
                 {(hasEnv3D || hasProp3D) ? (
                     <Canvas camera={{ position: [0, 0, 5], fov: 45 }} className="w-full h-full">
                         <ambientLight intensity={1.5} />
@@ -857,100 +770,7 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                             {hasProp3D && <LearningProp3D url="/prop.glb" />}
                         </Suspense>
                     </Canvas>
-                ) : currentNode.youtubeSearchQuery ? (
-                    /* ─── Full-Screen Video Layout with Note-Taking ─── */
-                    <div className="w-full h-full flex flex-col md:flex-row bg-black">
-                        {/* Video Panel — takes most of the space */}
-                        <div className="flex-1 relative min-h-[40vh] md:min-h-0">
-                            {youtubeVideoId ? (
-                                <iframe 
-                                    width="100%" 
-                                    height="100%" 
-                                    src={`https://www.youtube.com/embed/${youtubeVideoId}?rel=0&modestbranding=1`} 
-                                    title="Educational Video" 
-                                    frameBorder="0" 
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                    allowFullScreen
-                                    className="absolute inset-0 w-full h-full"
-                                ></iframe>
-                            ) : (
-                                /* No curated video ID — open YouTube search in a new tab */
-                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-black gap-6 p-8 text-center">
-                                    <div className="text-6xl">🎬</div>
-                                    <h3 className="text-2xl font-bold text-white">Watch a Lesson Video</h3>
-                                    <p className="text-slate-400 text-lg max-w-md">
-                                        Search for a video on <strong className="text-white">{currentNode.youtubeSearchQuery}</strong> and take notes in the sidebar.
-                                    </p>
-                                    <a
-                                        href={`https://www.youtube.com/results?search_query=${encodeURIComponent((currentNode.youtubeSearchQuery || '') + ' educational for kids')}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-3 px-8 py-4 bg-red-600 hover:bg-red-500 text-white font-bold text-lg rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(239,68,68,0.5)]"
-                                        onClick={() => setVideoWatched(false)}
-                                    >
-                                        <svg className="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                                        </svg>
-                                        Search on YouTube
-                                    </a>
-                                    <p className="text-slate-500 text-sm">After watching, click "I finished watching" in the sidebar to continue.</p>
-                                </div>
-                            )}
-                            {/* Video timer overlay — unlocks Next after watching */}
-                            {!videoWatched && (
-                                <div className="absolute bottom-4 right-4 bg-black/70 backdrop-blur-sm text-amber-400 px-4 py-2 rounded-full text-sm font-bold border border-amber-400/30 animate-pulse z-20">
-                                    ⏳ Watch the video to continue
-                                </div>
-                            )}
-                        </div>
-                        {/* Note-Taking Sidebar */}
-                        <div className="w-full md:w-[380px] bg-[#0a0e1a] border-t md:border-t-0 md:border-l border-indigo-500/20 flex flex-col p-5 shrink-0">
-                            <div className="flex items-center gap-2 mb-3">
-                                <span className="text-xl">📝</span>
-                                <h4 className="text-lg font-bold text-white tracking-wide">My Notes</h4>
-                            </div>
-                            <p className="text-slate-400 text-xs mb-3 leading-relaxed">Write down key points from the video. Good notes help you remember what you learned!</p>
-                            <textarea
-                                value={noteText}
-                                onChange={e => setNoteText(e.target.value)}
-                                placeholder={`Take notes on what you learn, ${studentName}...\n\n• Key vocabulary\n• Important facts\n• Questions you have`}
-                                className="flex-1 bg-slate-900/60 border border-slate-700/50 rounded-xl p-4 text-slate-200 text-sm leading-relaxed resize-none focus:outline-none focus:border-indigo-400/50 placeholder-slate-600 pointer-events-auto"
-                            />
-                            <button
-                                onClick={() => { setVideoWatched(true); }}
-                                className={`mt-3 w-full py-3 rounded-xl font-bold text-sm tracking-wide transition-all pointer-events-auto ${
-                                    videoWatched
-                                        ? 'bg-emerald-600/30 border border-emerald-400/40 text-emerald-300 cursor-default'
-                                        : 'bg-indigo-600 hover:bg-indigo-500 text-white hover:scale-[1.02] active:scale-95'
-                                }`}
-                                disabled={videoWatched}
-                            >
-                                {videoWatched ? '✅ Video Complete' : '✓ I finished watching'}
-                            </button>
-                            {/* Navigation buttons for video page */}
-                            <div className="flex gap-3 mt-3 pointer-events-auto">
-                                {currentNodeIndex > 0 && (
-                                    <button 
-                                        onClick={handleBack}
-                                        className="flex-1 py-3 rounded-xl font-bold text-sm bg-white/10 text-slate-300 border border-white/20 hover:bg-white/20 transition-all"
-                                    >
-                                        ◀ Back
-                                    </button>
-                                )}
-                                <button 
-                                    onClick={handleNext}
-                                    disabled={!videoWatched}
-                                    className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${
-                                        videoWatched
-                                            ? 'bg-white text-black hover:bg-slate-200'
-                                            : 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                                    }`}
-                                >
-                                    Next ▶
-                                </button>
-                            </div>
-                        </div>
-                    </div>) : dynamicImageUrl ? (
+                ) : dynamicImageUrl ? (
                     <div className="w-full h-full p-12 flex items-center justify-center bg-slate-900/40">
                         <img 
                             src={dynamicImageUrl} 
@@ -970,13 +790,10 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                 ></div>
             </div>
             
-            {/* Dark gradient overlay — hidden on video pages so video stays visible */}
-            {!currentNode.youtubeSearchQuery && (
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10 pointer-events-none"></div>
-            )}
+            {/* Dark gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10 pointer-events-none"></div>
 
-            {/* Content Container (Avatar + Dialogue) — HIDDEN on video pages */}
-            {!currentNode.youtubeSearchQuery && (
+            {/* Content Container (Avatar + Dialogue) */}
             <div className="relative z-30 w-full mt-auto flex flex-col md:flex-row items-end pb-8 px-4 md:px-12 gap-8 max-w-7xl mx-auto">
                 
                 {/* Character Sprite */}
@@ -1194,15 +1011,10 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                                                 </button>
                                             )}
                                             <div className="flex-1" />
-                                            {/* Next button — disabled during video until watched */}
+                                            {/* Next button */}
                                             <button 
                                                 onClick={handleNext}
-                                                disabled={!!currentNode.youtubeSearchQuery && !videoWatched}
-                                                className={`shrink-0 px-8 py-4 font-bold text-lg rounded-full transition-colors shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95 ${
-                                                    currentNode.youtubeSearchQuery && !videoWatched
-                                                        ? 'bg-slate-700 text-slate-500 cursor-not-allowed shadow-none'
-                                                        : 'bg-white text-black hover:bg-slate-200'
-                                                }`}
+                                                className="shrink-0 px-8 py-4 font-bold text-lg rounded-full transition-colors bg-white text-black hover:bg-slate-200 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95"
                                             >
                                                 Next ▶
                                             </button>
@@ -1213,7 +1025,6 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                     </div>
                 </div>
             </div>
-            )}
 
             {/* Controls */}
             <div className="absolute top-6 left-6 z-40 flex gap-4">
