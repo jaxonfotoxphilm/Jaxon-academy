@@ -167,7 +167,7 @@ function WordScrambleGame({ content, studentName, onComplete, onScoreChange }: {
 
     // Each tile has an id so duplicates are tracked correctly
     const [tiles] = useState<{id: number, letter: string}[]>(() =>
-        shuffle(word.split('').map((letter, i) => ({ id: i, letter })))
+        shuffle(word.split('').map((letter: string, i: number) => ({ id: i, letter })))
     );
 
     // Which tile IDs the student has placed (in order)
