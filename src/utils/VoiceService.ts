@@ -208,8 +208,8 @@ export function preloadKokoro() {
 export async function speak(text: string): Promise<void> {
     if (!text?.trim()) return;
 
-    // Cancel any existing Web Speech audio
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    // Cancel any existing audio (Web Speech, ElevenLabs, Kokoro) to prevent overlap
+    stopSpeaking();
 
     // Tier 1: ElevenLabs
     const elevenlabsOk = await speakElevenLabs(text);

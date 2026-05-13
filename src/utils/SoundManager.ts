@@ -107,6 +107,7 @@ class SoundManagerClass {
 
     public stopAll() {
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        import('./VoiceService').then(({ stopSpeaking }) => stopSpeaking());
     }
 
     /** Soft crystalline tick — like tapping glass */

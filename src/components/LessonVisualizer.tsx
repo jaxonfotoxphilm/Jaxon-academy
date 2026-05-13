@@ -1,35 +1,15 @@
 // src/components/LessonVisualizer.tsx
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { InteractiveVideo } from './InteractiveVideo';
 import { VIDEO_INTERACTIONS } from './VideoInteractions';
-import { ErrorBoundary } from './ErrorBoundary';
-
-/**
- * Curated YouTube background videos keyed by subject keyword.
- * These play muted as ambient background visuals behind the lesson UI.
- * Each maps a visualType keyword → a YouTube video ID for contextual ambiance.
- */
-const getBackgroundYouTubeId = (_visualType: string): string | null => {
-    // YouTube embeds are highly unstable due to copyright and "embed blocked" errors.
-    // Returning null forces the robust Pexels stock video fallback for a premium experience.
-    return null;
-};
 
 interface LessonVisualizerProps {
     visualType?: string;
-    youtubeSearchQuery?: string;
+    youtubeSearchQuery?: string; // Kept for backwards compatibility if called elsewhere
 }
 
-export const LessonVisualizer: React.FC<LessonVisualizerProps> = ({ visualType, youtubeSearchQuery }) => {
+export const LessonVisualizer: React.FC<LessonVisualizerProps> = ({ visualType }) => {
     if (!visualType) return null;
-
-    // Delay background video mount so the first frame renders without lag
-    const [bgReady, setBgReady] = useState(false);
-    useEffect(() => {
-        setBgReady(false);
-        const t = setTimeout(() => setBgReady(true), 800);
-        return () => clearTimeout(t);
-    }, [visualType]);
 
     const renderVisual = () => {
         switch (visualType) {
@@ -110,78 +90,22 @@ export const LessonVisualizer: React.FC<LessonVisualizerProps> = ({ visualType, 
         }
     };
 
-    /** Pexels fallback URLs (only used if no YouTube match) */
-    const getPexelsFallback = () => {
-        if (visualType.includes('nature')) return "https://videos.pexels.com/video-files/3129671/3129671-hd_1920_1080_30fps.mp4";
-        if (visualType.includes('history')) return "https://videos.pexels.com/video-files/3163534/3163534-hd_1920_1080_30fps.mp4";
-        if (visualType.includes('science') || visualType.includes('space')) return "https://videos.pexels.com/video-files/1851190/1851190-hd_1920_1080_25fps.mp4";
-        return "https://videos.pexels.com/video-files/3129671/3129671-hd_1920_1080_30fps.mp4";
-    };
-
     const isVideoType = visualType.startsWith('video-');
 
-    // Resolve background video: prefer contextual YouTube, fall back to Pexels
-    const youtubeId = getBackgroundYouTubeId(youtubeSearchQuery || visualType);
-
-    /**
-     * Renders a muted, looping YouTube embed as ambient background.
-     * Uses YouTube's embed API params: autoplay=1, mute=1, controls=0, loop=1, playlist=ID
-     * The iframe is pointer-events-none so lesson buttons remain clickable.
-     */
-    const renderYouTubeBackground = () => {
-        if (!youtubeId) return null;
-        return (
-            <iframe
-                src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${youtubeId}&modestbranding=1&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&fs=0`}
-                title="Background Video"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
-                className="absolute inset-0 w-full h-full pointer-events-none"
-                style={{ transform: 'scale(1.2)', objectFit: 'cover' }}
-                tabIndex={-1}
-            />
-        );
-    };
-
     return (
-        <div className="absolute inset-0 w-full h-full flex items-center justify-center p-8 overflow-hidden pointer-events-none">
-            <div className="absolute inset-0 z-0">
-                {isVideoType ? (
-                    <div className="pointer-events-auto w-full h-full">
-                        {/* ErrorBoundary guards against WebGL/canvas crashes on unsupported browsers */}
-                        <ErrorBoundary label="Interactive Video" fallback={
-                            <video src={getPexelsFallback()} className="w-full h-full object-cover opacity-40 mix-blend-screen" autoPlay loop muted playsInline />
-                        }>
-                            <InteractiveVideo videoUrl={getPexelsFallback()} subjectKey={visualType} interactionsMap={VIDEO_INTERACTIONS} />
-                        </ErrorBoundary>
-                    </div>
-                ) : youtubeId && bgReady ? (
-                    /* Contextual YouTube video — only mounted after 800ms delay to prevent first-frame lag */
-                    <div
-                        className="w-full h-full absolute inset-0 overflow-hidden"
-                        style={{ opacity: bgReady ? 1 : 0, transition: 'opacity 1.2s ease-in' }}
-                    >
-                        {/* ErrorBoundary guards against YouTube being blocked by network/CSP */}
-                        <ErrorBoundary label="YouTube Background" fallback={
-                            <video src={getPexelsFallback()} className="w-full h-full object-cover opacity-40 mix-blend-screen" autoPlay loop muted playsInline />
-                        }>
-                            {renderYouTubeBackground()}
-                        </ErrorBoundary>
-                    </div>
-                ) : !isVideoType && !bgReady ? (
-                    /* Placeholder while video loads — gradient shimmer */
-                    <div className="w-full h-full absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 animate-pulse" />
-                ) : (
-                    /* Pexels stock fallback */
-                    <video
-                        src={getPexelsFallback()}
-                        className="w-full h-full object-cover opacity-40 mix-blend-screen"
-                        autoPlay loop muted playsInline
-                    />
-                )}
-                {/* Dark overlay to keep text readable over video */}
-                <div className="absolute inset-0 bg-slate-900/70 pointer-events-none"></div>
-            </div>
+        <div className="absolute inset-0 w-full h-full flex items-center justify-center p-8 overflow-hidden pointer-events-none bg-slate-900">
+            {/* Ambient background glow */}
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 z-0"></div>
+            
+            {/* Interactive Video (if applicable) */}
+            {isVideoType ? (
+                <div className="absolute inset-0 z-10 pointer-events-auto">
+                    {/* Replaced video URL with a clean dark fallback */}
+                    <InteractiveVideo videoUrl="" subjectKey={visualType} interactionsMap={VIDEO_INTERACTIONS} />
+                </div>
+            ) : null}
+
+            {/* CSS Render Visuals */}
             <div className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none">
                 {!isVideoType && renderVisual()}
             </div>
