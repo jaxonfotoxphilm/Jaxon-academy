@@ -153,6 +153,10 @@ export const MiniGame: React.FC<MiniGameProps> = ({ gameType, topic, studentName
         case 'matchPairs':   return <MatchPairsGame content={content} studentName={studentName} onComplete={onComplete} onScoreChange={onScoreChange} />;
         case 'fillBlank':    return <FillBlankGame content={content} studentName={studentName} onComplete={onComplete} onScoreChange={onScoreChange} />;
         case 'trueFalse':    return <TrueFalseGame content={content} studentName={studentName} onComplete={onComplete} onScoreChange={onScoreChange} />;
+        case 'countObjects': return <CountObjectsGame content={content} studentName={studentName} onComplete={onComplete} onScoreChange={onScoreChange} />;
+        case 'colorMatch':   return <ColorMatchGame content={content} studentName={studentName} onComplete={onComplete} onScoreChange={onScoreChange} />;
+        case 'rhymeMatch':   return <RhymeMatchGame content={content} studentName={studentName} onComplete={onComplete} onScoreChange={onScoreChange} />;
+        case 'letterTrace':  return <WordScrambleGame content={content} studentName={studentName} onComplete={onComplete} onScoreChange={onScoreChange} />;
         default:             return <WordScrambleGame content={content} studentName={studentName} onComplete={onComplete} onScoreChange={onScoreChange} />;
     }
 };
@@ -513,6 +517,194 @@ function TrueFalseGame({ content, studentName, onComplete, onScoreChange }: { co
                     {feedback === 'wrong' && <p className="text-rose-400 font-bold mt-4 text-center text-lg animate-pulse">The answer was {questions[currentIdx][1] ? 'True' : 'False'}. Keep going!</p>}
                 </motion.div>
             </AnimatePresence>
+        </div>
+    );
+}
+
+/* ─── Count Objects Game (PK/K — tap the number matching the count) ─── */
+function CountObjectsGame({ content, studentName, onComplete, onScoreChange }: { content: any, studentName: string, onComplete: () => void, onScoreChange: (d:number)=>void }) {
+    const items = content.items || [{ label: '⭐⭐⭐', answer: 3 }, { label: '🍎🍎🍎🍎🍎', answer: 5 }, { label: '🐟🐟', answer: 2 }];
+    const [currentIdx, setCurrentIdx] = useState(0);
+    const [feedback, setFeedback] = useState<'correct'|'wrong'|null>(null);
+    const [done, setDone] = useState(false);
+
+    const handlePick = (num: number) => {
+        if (feedback) return;
+        const correct = num === items[currentIdx].answer;
+        setFeedback(correct ? 'correct' : 'wrong');
+        if (correct) onScoreChange(5);
+        setTimeout(() => {
+            setFeedback(null);
+            if (currentIdx + 1 >= items.length) { setDone(true); setTimeout(onComplete, 1500); }
+            else setCurrentIdx(prev => prev + 1);
+        }, 1200);
+    };
+
+    const options = Array.from({ length: 6 }, (_, i) => i + 1);
+
+    return (
+        <div className="bg-gradient-to-br from-amber-950/80 to-orange-950/80 backdrop-blur-xl border border-amber-400/30 rounded-2xl p-6 mt-4 animate-in slide-in-from-bottom-4 duration-500">
+            <h4 className="text-lg font-bold text-amber-300 mb-1 tracking-widest uppercase">🔢 Count & Tap!</h4>
+            <p className="text-slate-400 text-sm mb-4">Count the items and tap the right number, {studentName}!</p>
+
+            {!done ? (
+                <AnimatePresence mode="wait">
+                    <motion.div key={currentIdx} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+                        <div className="text-center text-5xl mb-6 py-4 bg-white/5 rounded-xl border border-white/10">{items[currentIdx].label}</div>
+                        <div className="grid grid-cols-3 gap-3">
+                            {options.map(n => (
+                                <motion.button key={n} whileTap={{ scale: 0.9 }} onClick={() => handlePick(n)}
+                                    className={`py-4 text-3xl font-black rounded-xl border-2 transition-all
+                                        ${feedback === 'correct' && n === items[currentIdx].answer ? 'bg-emerald-600/60 border-emerald-400 text-white shadow-[0_0_15px_rgba(52,211,153,0.5)]' :
+                                          feedback === 'wrong' && n === items[currentIdx].answer ? 'bg-emerald-600/40 border-emerald-400 text-white' :
+                                          'bg-amber-600/40 border-amber-400/50 text-white hover:bg-amber-500/60 hover:scale-105'}`}
+                                >{n}</motion.button>
+                            ))}
+                        </div>
+                        {feedback === 'correct' && <p className="text-emerald-400 font-bold mt-4 text-center text-2xl">⭐ YES! That's right!</p>}
+                        {feedback === 'wrong' && <p className="text-rose-400 font-bold mt-4 text-center text-lg">Hmm, the answer is {items[currentIdx].answer}! Try the next one!</p>}
+                    </motion.div>
+                </AnimatePresence>
+            ) : (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-emerald-400 font-bold text-center text-2xl mt-3">
+                    🎉 Amazing counting, {studentName}! You're a number star! ⭐
+                </motion.p>
+            )}
+        </div>
+    );
+}
+
+/* ─── Color Match Game (PK/K — tap the correct color) ─── */
+function ColorMatchGame({ studentName, onComplete, onScoreChange }: { content: any, studentName: string, onComplete: () => void, onScoreChange: (d:number)=>void }) {
+    const colors = [
+        { name: 'Red', bg: 'bg-red-500', border: 'border-red-400', emoji: '🔴' },
+        { name: 'Blue', bg: 'bg-blue-500', border: 'border-blue-400', emoji: '🔵' },
+        { name: 'Green', bg: 'bg-green-500', border: 'border-green-400', emoji: '🟢' },
+        { name: 'Yellow', bg: 'bg-yellow-400', border: 'border-yellow-300', emoji: '🟡' },
+        { name: 'Purple', bg: 'bg-purple-500', border: 'border-purple-400', emoji: '🟣' },
+        { name: 'Orange', bg: 'bg-orange-500', border: 'border-orange-400', emoji: '🟠' },
+    ];
+    const [questions] = useState(() => shuffle(colors).slice(0, 4));
+    const [currentIdx, setCurrentIdx] = useState(0);
+    const [feedback, setFeedback] = useState<'correct'|'wrong'|null>(null);
+    const [done, setDone] = useState(false);
+
+    const handlePick = (colorName: string) => {
+        if (feedback) return;
+        const correct = colorName === questions[currentIdx].name;
+        setFeedback(correct ? 'correct' : 'wrong');
+        if (correct) onScoreChange(5);
+        setTimeout(() => {
+            setFeedback(null);
+            if (currentIdx + 1 >= questions.length) { setDone(true); setTimeout(onComplete, 1500); }
+            else setCurrentIdx(prev => prev + 1);
+        }, 1200);
+    };
+
+    return (
+        <div className="bg-gradient-to-br from-pink-950/80 to-fuchsia-950/80 backdrop-blur-xl border border-pink-400/30 rounded-2xl p-6 mt-4 animate-in slide-in-from-bottom-4 duration-500">
+            <h4 className="text-lg font-bold text-pink-300 mb-1 tracking-widest uppercase">🎨 Color Match!</h4>
+            <p className="text-slate-400 text-sm mb-4">Tap the right color, {studentName}!</p>
+
+            {!done ? (
+                <AnimatePresence mode="wait">
+                    <motion.div key={currentIdx} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                        <p className="text-3xl text-white font-black text-center mb-6">Find the color: <span className="text-amber-300">{questions[currentIdx].name}</span> {questions[currentIdx].emoji}</p>
+                        <div className="grid grid-cols-3 gap-4">
+                            {shuffle(colors).map(c => (
+                                <motion.button key={c.name} whileTap={{ scale: 0.85 }} onClick={() => handlePick(c.name)}
+                                    className={`h-20 rounded-xl border-4 ${c.bg} ${c.border} transition-all hover:scale-110 shadow-lg
+                                        ${feedback === 'correct' && c.name === questions[currentIdx].name ? 'ring-4 ring-white scale-110' : ''}`}
+                                />
+                            ))}
+                        </div>
+                        {feedback === 'correct' && <p className="text-emerald-400 font-bold mt-4 text-center text-2xl">🌈 YES! That's {questions[currentIdx].name}!</p>}
+                        {feedback === 'wrong' && <p className="text-rose-300 font-bold mt-4 text-center text-lg">Oops! Try again next round! 💪</p>}
+                    </motion.div>
+                </AnimatePresence>
+            ) : (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-emerald-400 font-bold text-center text-2xl mt-3">
+                    🎉 You know your colors, {studentName}! 🌈
+                </motion.p>
+            )}
+        </div>
+    );
+}
+
+/* ─── Rhyme Match Game (PK/K — match rhyming word pairs) ─── */
+function RhymeMatchGame({ content, studentName, onComplete, onScoreChange }: { content: any, studentName: string, onComplete: () => void, onScoreChange: (d:number)=>void }) {
+    const defaultPairs: [string, string][] = [['Cat 🐱', 'Hat 🎩'], ['Dog 🐕', 'Log 🪵'], ['Sun ☀️', 'Fun 🎉'], ['Star ⭐', 'Car 🚗']];
+    const pairs = (content.pairs && content.pairs.length > 0) ? content.pairs : defaultPairs;
+    const [leftItems] = useState<string[]>(() => shuffle(pairs.map((p: [string,string]) => p[0])));
+    const [rightItems] = useState<string[]>(() => shuffle(pairs.map((p: [string,string]) => p[1])));
+    const [selected, setSelected] = useState<string | null>(null);
+    const [matched, setMatched] = useState<Set<string>>(new Set());
+    const [wrong, setWrong] = useState(false);
+
+    const pairMap = new Map<string,string>(pairs.map((p: [string,string]) => [p[0], p[1]]));
+    const reversePairMap = new Map<string,string>(pairs.map((p: [string,string]) => [p[1], p[0]]));
+
+    const handleTap = (item: string, side: 'left' | 'right') => {
+        if (matched.has(item)) return;
+        if (!selected) { setSelected(item); return; }
+
+        let isMatch = false;
+        if (side === 'right' && pairMap.get(selected) === item) isMatch = true;
+        if (side === 'left' && reversePairMap.get(selected) === item) isMatch = true;
+        if (side === 'right' && reversePairMap.get(item) === selected) isMatch = true;
+        if (side === 'left' && pairMap.get(item) === selected) isMatch = true;
+
+        if (isMatch) {
+            const p0: string = pairMap.get(selected) ? selected : reversePairMap.get(selected)!;
+            const p1: string = pairMap.get(selected) ? pairMap.get(selected)! : selected;
+            const newMatched = new Set<string>(matched);
+            newMatched.add(p0);
+            newMatched.add(p1);
+            setMatched(newMatched);
+            onScoreChange(5);
+            setSelected(null);
+            if (matched.size + 2 >= pairs.length * 2) setTimeout(onComplete, 1500);
+        } else {
+            setWrong(true);
+            setTimeout(() => { setWrong(false); setSelected(null); }, 600);
+        }
+    };
+
+    return (
+        <div className="bg-gradient-to-br from-teal-950/80 to-cyan-950/80 backdrop-blur-xl border border-teal-400/30 rounded-2xl p-6 mt-4 animate-in slide-in-from-bottom-4 duration-500">
+            <h4 className="text-lg font-bold text-teal-300 mb-1 tracking-widest uppercase">🎵 Rhyme Match!</h4>
+            <p className="text-slate-400 text-sm mb-4">Match the words that RHYME, {studentName}! 🎶</p>
+
+            <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                    {leftItems.map((item: string) => (
+                        <motion.button key={item} onClick={() => handleTap(item, 'left')}
+                            animate={wrong && selected === item ? { x: [0, -4, 4, -4, 0] } : {}}
+                            className={`py-3 px-4 rounded-xl text-xl font-bold border-2 transition-all
+                                ${matched.has(item) ? 'bg-emerald-700/50 border-emerald-400 text-emerald-200 opacity-60' :
+                                  selected === item ? 'bg-teal-500/50 border-teal-300 text-white scale-105' :
+                                  'bg-white/10 border-white/20 text-white hover:bg-teal-600/40 hover:border-teal-400'}`}
+                        >{item}</motion.button>
+                    ))}
+                </div>
+                <div className="flex flex-col gap-2">
+                    {rightItems.map((item: string) => (
+                        <motion.button key={item} onClick={() => handleTap(item, 'right')}
+                            animate={wrong && selected === item ? { x: [0, -4, 4, -4, 0] } : {}}
+                            className={`py-3 px-4 rounded-xl text-xl font-bold border-2 transition-all
+                                ${matched.has(item) ? 'bg-emerald-700/50 border-emerald-400 text-emerald-200 opacity-60' :
+                                  selected === item ? 'bg-teal-500/50 border-teal-300 text-white scale-105' :
+                                  'bg-white/10 border-white/20 text-white hover:bg-teal-600/40 hover:border-teal-400'}`}
+                        >{item}</motion.button>
+                    ))}
+                </div>
+            </div>
+
+            {matched.size >= pairs.length * 2 && (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-emerald-400 font-bold text-center text-2xl mt-4">
+                    🎉 All rhymes matched! You're a rhyming superstar! 🎵
+                </motion.p>
+            )}
         </div>
     );
 }
