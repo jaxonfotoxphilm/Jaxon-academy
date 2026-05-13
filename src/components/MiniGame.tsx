@@ -10,7 +10,7 @@
  * Each game automatically awards points on completion and calls onComplete().
  */
 
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface MiniGameProps {
@@ -175,6 +175,19 @@ function WordScrambleGame({ content, studentName, onComplete, onScoreChange }: {
     const [solved, setSolved] = useState(false);
     const [wrong, setWrong] = useState(false);
 
+    // Hint feature states
+    const [showHintPrompt, setShowHintPrompt] = useState(false);
+    const [hintUsed, setHintUsed] = useState(false);
+
+    // Prompt the student if they take too long
+    useEffect(() => {
+        if (solved) return;
+        const timer = setTimeout(() => {
+            setShowHintPrompt(true);
+        }, 12000); // 12 seconds
+        return () => clearTimeout(timer);
+    }, [solved]);
+
     const handleTilePick = (id: number) => {
         if (solved || placed.includes(id)) return;
         const next = [...placed, id];
@@ -185,6 +198,7 @@ function WordScrambleGame({ content, studentName, onComplete, onScoreChange }: {
             const attempt = next.map(tid => tiles.find(t => t.id === tid)!.letter).join('');
             if (attempt === word) {
                 setSolved(true);
+                setShowHintPrompt(false);
                 onScoreChange(5);
                 setTimeout(onComplete, 1800);
             } else {
@@ -246,6 +260,27 @@ function WordScrambleGame({ content, studentName, onComplete, onScoreChange }: {
                     );
                 })}
             </div>
+
+            {/* Hint Section */}
+            {!solved && (
+                <div className="mt-4 flex flex-col items-center min-h-[40px] justify-center">
+                    {!hintUsed ? (
+                        <button 
+                            onClick={() => { setHintUsed(true); setShowHintPrompt(false); }}
+                            className={`px-4 py-1.5 text-sm font-bold rounded-lg border transition-all
+                                ${showHintPrompt 
+                                    ? 'bg-amber-500/20 text-amber-300 border-amber-400/50 animate-pulse shadow-[0_0_10px_rgba(251,191,36,0.2)]' 
+                                    : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-300'}`}
+                        >
+                            {showHintPrompt ? "💡 Need a hint?" : "💡 Hint"}
+                        </button>
+                    ) : (
+                        <p className="text-amber-300 text-sm animate-in fade-in zoom-in duration-300 bg-amber-500/10 px-4 py-2 rounded-lg border border-amber-500/20">
+                            💡 Hint: The word starts with "<strong>{word[0]}</strong>" and ends with "<strong>{word[word.length - 1]}</strong>"
+                        </p>
+                    )}
+                </div>
+            )}
 
             {solved && (
                 <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-emerald-400 font-bold text-center text-lg mt-3">
