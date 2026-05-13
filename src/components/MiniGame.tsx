@@ -45,46 +45,46 @@ function shuffle<T>(arr: T[]): T[] {
 const CONTENT_BANK: Record<string, { words: string[], pairs: [string,string][], sentences: [string,string][], trueFalse: [string,boolean][] }> = {
     // Language Arts / Grammar
     'Clauses': {
-        words: ['CLAUSE', 'PHRASE', 'SUBJECT', 'PREDICATE', 'DEPENDENT'],
+        words: ['CLAUSE', 'PHRASE', 'VERB', 'NOUN', 'IDEA'],
         pairs: [['Independent Clause','Can stand alone as a sentence'],['Dependent Clause','Cannot stand alone'],['Subordinating Conjunction','Introduces a dependent clause'],['Relative Clause','Starts with who, which, that']],
         sentences: [['A ___ clause can stand alone as a complete sentence.','independent'],['A dependent clause begins with a ___ conjunction.','subordinating'],['Every clause must contain a subject and a ___.','predicate']],
         trueFalse: [['A dependent clause can stand alone as a sentence.',false],['An independent clause expresses a complete thought.',true],['The word "because" is a subordinating conjunction.',true],['A clause never contains a verb.',false]]
     },
     'Nouns': {
-        words: ['PROPER', 'COMMON', 'ABSTRACT', 'PLURAL', 'PRONOUN'],
+        words: ['NOUN', 'PLACE', 'THING', 'IDEA', 'WORD'],
         pairs: [['Proper Noun','Names a specific person/place'],['Common Noun','Names a general category'],['Abstract Noun','Names an idea or feeling'],['Collective Noun','Names a group']],
         sentences: [['A ___ noun names a specific person, place, or thing.','proper'],['The plural of "child" is ___.','children'],['A noun that names an idea, like "freedom," is an ___ noun.','abstract']],
         trueFalse: [['A proper noun should always be capitalized.',true],['The word "happiness" is a concrete noun.',false],['Pronouns replace nouns in a sentence.',true],['All nouns are things you can touch.',false]]
     },
     // Math
     'Equations': {
-        words: ['VARIABLE', 'COEFFICIENT', 'CONSTANT', 'EXPRESSION', 'SOLVE'],
+        words: ['SOLVE', 'EQUAL', 'VALUE', 'PLUS', 'SIDE'],
         pairs: [['Variable','Unknown value (x, y)'],['Coefficient','Number multiplied by variable'],['Constant','Fixed number with no variable'],['Equation','Statement that two expressions are equal']],
         sentences: [['In 3x + 5, the number 3 is the ___.','coefficient'],['A letter that represents an unknown value is called a ___.','variable'],['To find the value of x, you must ___ the equation.','solve']],
         trueFalse: [['An equation always has an equals sign.',true],['5x means 5 plus x.',false],['A variable can represent different values.',true],['Constants change depending on x.',false]]
     },
     'Polynomials': {
-        words: ['MONOMIAL', 'BINOMIAL', 'TRINOMIAL', 'DEGREE', 'FACTOR'],
+        words: ['TERM', 'DEGREE', 'FACTOR', 'POWER', 'SUM'],
         pairs: [['Monomial','Polynomial with one term'],['Binomial','Polynomial with two terms'],['Trinomial','Polynomial with three terms'],['Degree','Highest exponent in polynomial']],
         sentences: [['A polynomial with exactly two terms is called a ___.','binomial'],['The ___ of a polynomial is the highest power of the variable.','degree'],['3x² + 2x + 1 is a ___ because it has three terms.','trinomial']],
         trueFalse: [['A monomial has exactly one term.',true],['The degree of 5x³ is 5.',false],['x² + 3x - 7 is a trinomial.',true],['Polynomials cannot have negative exponents in standard form.',true]]
     },
     // Science
     'Ecosystems': {
-        words: ['BIOME', 'HABITAT', 'NICHE', 'PRODUCER', 'CONSUMER'],
+        words: ['BIOME', 'NICHE', 'PLANT', 'FOOD', 'WEB'],
         pairs: [['Producer','Makes its own food (plants)'],['Consumer','Eats other organisms'],['Decomposer','Breaks down dead matter'],['Food Web','Interconnected food chains']],
         sentences: [['Plants are called ___ because they make their own food through photosynthesis.','producers'],['An animal\'s specific role in an ecosystem is called its ___.','niche'],['A ___ is a large region with specific climate and organisms.','biome']],
         trueFalse: [['All energy in an ecosystem originally comes from the sun.',true],['Decomposers are a type of producer.',false],['A habitat is where an organism lives.',true],['Consumers make their own food.',false]]
     },
     'Cells': {
-        words: ['NUCLEUS', 'MEMBRANE', 'CYTOPLASM', 'MITOSIS', 'ORGANELLE'],
+        words: ['CELL', 'WALL', 'CORE', 'GEL', 'SPLIT'],
         pairs: [['Nucleus','Control center of the cell'],['Cell Membrane','Controls what enters/exits'],['Mitochondria','Powerhouse of the cell'],['Ribosome','Makes proteins']],
         sentences: [['The ___ is often called the control center of the cell.','nucleus'],['Cell division in which one cell becomes two identical cells is called ___.','mitosis'],['The jelly-like substance inside a cell is called ___.','cytoplasm']],
         trueFalse: [['Plant cells have cell walls but animal cells do not.',true],['The mitochondria is called the powerhouse of the cell.',true],['All cells have a nucleus.',false],['Ribosomes are responsible for making proteins.',true]]
     },
     // History
     'Ancient Civilizations': {
-        words: ['PHARAOH', 'DYNASTY', 'EMPIRE', 'MESOPOTAMIA', 'REPUBLIC'],
+        words: ['KING', 'EMPIRE', 'LAW', 'TRADE', 'RIVER'],
         pairs: [['Mesopotamia','Land between Tigris & Euphrates'],['Egypt','Civilization along the Nile'],['Greece','Birthplace of democracy'],['Rome','Founded as a republic']],
         sentences: [['The rulers of ancient Egypt were called ___.','pharaohs'],['___ is often called the cradle of civilization.','Mesopotamia'],['Ancient Greece is known as the birthplace of ___.','democracy']],
         trueFalse: [['The pyramids were built in ancient Rome.',false],['Mesopotamia means "land between two rivers."',true],['Democracy originated in ancient Greece.',true],['The Roman Empire lasted only 50 years.',false]]
@@ -157,74 +157,105 @@ export const MiniGame: React.FC<MiniGameProps> = ({ gameType, topic, studentName
     }
 };
 
-/* ─── Word Scramble Game ─── */
+/* ─── Word Scramble Game (Tile-based — no typing required) ─── */
 function WordScrambleGame({ content, studentName, onComplete, onScoreChange }: { content: any, studentName: string, onComplete: () => void, onScoreChange: (d:number)=>void }) {
-    const word = content.words[Math.floor(Math.random() * content.words.length)];
-    const [scrambled] = useState(() => shuffle(word.split('')).join(''));
-    const [guess, setGuess] = useState('');
-    const [solved, setSolved] = useState(false);
-    const [attempts, setAttempts] = useState(0);
+    // Only use short words (≤6 letters) to keep it manageable
+    const shortWords = (content.words as string[]).filter(w => w.length <= 6);
+    const word = shortWords.length > 0
+        ? shortWords[Math.floor(Math.random() * shortWords.length)]
+        : content.words[0].slice(0, 6); // fallback: first 6 letters of any word
 
-    const handleSubmit = () => {
-        if (guess.toUpperCase().trim() === word) {
-            setSolved(true);
-            onScoreChange(5);
-            setTimeout(onComplete, 2000);
-        } else {
-            setAttempts(a => a + 1);
-            onScoreChange(-3);
+    // Each tile has an id so duplicates are tracked correctly
+    const [tiles] = useState<{id: number, letter: string}[]>(() =>
+        shuffle(word.split('').map((letter, i) => ({ id: i, letter })))
+    );
+
+    // Which tile IDs the student has placed (in order)
+    const [placed, setPlaced] = useState<number[]>([]);
+    const [solved, setSolved] = useState(false);
+    const [wrong, setWrong] = useState(false);
+
+    const handleTilePick = (id: number) => {
+        if (solved || placed.includes(id)) return;
+        const next = [...placed, id];
+        setPlaced(next);
+
+        // Auto-check when all letters placed
+        if (next.length === word.length) {
+            const attempt = next.map(tid => tiles.find(t => t.id === tid)!.letter).join('');
+            if (attempt === word) {
+                setSolved(true);
+                onScoreChange(5);
+                setTimeout(onComplete, 1800);
+            } else {
+                setWrong(true);
+                setTimeout(() => { setPlaced([]); setWrong(false); }, 800);
+            }
         }
+    };
+
+    const handleRemove = (placedIdx: number) => {
+        if (solved) return;
+        setPlaced(prev => prev.filter((_, i) => i !== placedIdx));
     };
 
     return (
         <div className="bg-gradient-to-br from-indigo-950/80 to-purple-950/80 backdrop-blur-xl border border-indigo-400/30 rounded-2xl p-6 mt-4 animate-in slide-in-from-bottom-4 duration-500">
             <h4 className="text-lg font-bold text-indigo-300 mb-1 tracking-widest uppercase">🔤 Word Scramble</h4>
-            <p className="text-slate-400 text-sm mb-4">Unscramble the letters to form the vocabulary word, {studentName}!</p>
-            
-            <div className="flex gap-2 justify-center mb-6">
-                {scrambled.split('').map((letter: string, i: number) => (
-                    <motion.div
-                        key={i}
-                        initial={{ rotateY: 180, opacity: 0 }}
-                        animate={{ rotateY: 0, opacity: 1 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="w-12 h-14 bg-white/10 border-2 border-indigo-400/50 rounded-lg flex items-center justify-center text-2xl font-black text-white shadow-[0_0_10px_rgba(99,102,241,0.3)]"
-                    >
-                        {letter}
-                    </motion.div>
-                ))}
+            <p className="text-slate-400 text-sm mb-4">Tap the letters in the right order to spell the word, {studentName}!</p>
+
+            {/* Answer slots — tap to remove */}
+            <div className="flex gap-2 justify-center mb-5 min-h-[56px]">
+                {Array.from({ length: word.length }).map((_, i) => {
+                    const tileId = placed[i];
+                    const letter = tileId !== undefined ? tiles.find(t => t.id === tileId)!.letter : null;
+                    return (
+                        <motion.div
+                            key={i}
+                            onClick={() => letter && handleRemove(i)}
+                            animate={wrong ? { x: [0, -6, 6, -4, 4, 0] } : {}}
+                            transition={{ duration: 0.4 }}
+                            className={`w-12 h-14 rounded-lg flex items-center justify-center text-2xl font-black cursor-pointer border-2 transition-all
+                                ${solved ? 'bg-emerald-700/60 border-emerald-400 text-white shadow-[0_0_15px_rgba(52,211,153,0.5)]' :
+                                  wrong ? 'bg-red-800/60 border-red-400 text-white' :
+                                  letter ? 'bg-white/20 border-indigo-400 text-white hover:border-red-400/80' :
+                                  'bg-white/5 border-white/20 text-transparent'}`}
+                        >
+                            {letter ?? '·'}
+                        </motion.div>
+                    );
+                })}
             </div>
 
-            {!solved ? (
-                <div className="flex gap-3">
-                    <input
-                        type="text"
-                        value={guess}
-                        onChange={e => setGuess(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') handleSubmit(); }}
-                        placeholder="Type the word..."
-                        className="flex-1 bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-lg focus:outline-none focus:border-indigo-400"
-                        autoFocus
-                    />
-                    <button onClick={handleSubmit} className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl font-bold text-white hover:scale-105 transition-transform">
-                        Check
-                    </button>
-                </div>
-            ) : (
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-center">
-                    <div className="text-5xl mb-2">🎉</div>
-                    <p className="text-emerald-400 font-bold text-xl">Correct! The word is {word}!</p>
-                </motion.div>
-            )}
+            {/* Scrambled tiles — tap to place */}
+            <div className="flex gap-2 justify-center flex-wrap mb-2">
+                {tiles.map(tile => {
+                    const isPlaced = placed.includes(tile.id);
+                    return (
+                        <motion.button
+                            key={tile.id}
+                            onClick={() => handleTilePick(tile.id)}
+                            whileTap={{ scale: 0.9 }}
+                            disabled={isPlaced || solved}
+                            className={`w-12 h-14 rounded-lg text-2xl font-black border-2 transition-all
+                                ${isPlaced ? 'opacity-20 bg-white/5 border-white/10 text-white cursor-default' :
+                                  'bg-indigo-600/60 border-indigo-400/70 text-white hover:bg-indigo-500/80 hover:scale-110 shadow-[0_0_10px_rgba(99,102,241,0.4)]'}`}
+                        >
+                            {tile.letter}
+                        </motion.button>
+                    );
+                })}
+            </div>
 
-            {attempts > 0 && !solved && (
-                <p className="text-amber-400 text-sm mt-3 animate-pulse">
-                    Not quite — try again! Hint: the word has {word.length} letters. {attempts >= 3 ? `It starts with "${word[0]}"` : ''}
-                </p>
+            {solved && (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-emerald-400 font-bold text-center text-lg mt-3">
+                    🎉 Correct! The word is <span className="text-white">{word}</span>!
+                </motion.p>
             )}
         </div>
     );
 }
+
 
 /* ─── Match Pairs Game ─── */
 function MatchPairsGame({ content, studentName, onComplete, onScoreChange }: { content: any, studentName: string, onComplete: () => void, onScoreChange: (d:number)=>void }) {
