@@ -44,8 +44,16 @@ export const InteractiveVideo: React.FC<InteractiveVideoProps> = ({ videoUrl, su
 
     const interactions = interactionsMap[subjectKey] || [];
 
-    // Monitor video time and trigger overlays
+    // Monitor video time and trigger overlays (or show sequentially if no video)
     useEffect(() => {
+        if (!videoUrl) {
+            // Quiz-only mode: show overlays sequentially without waiting
+            if (currentIdx < interactions.length) {
+                setShowOverlay(true);
+            }
+            return;
+        }
+
         const video = videoRef.current;
         if (!video) return;
         const handleTimeUpdate = () => {
@@ -58,7 +66,7 @@ export const InteractiveVideo: React.FC<InteractiveVideoProps> = ({ videoUrl, su
         };
         video.addEventListener('timeupdate', handleTimeUpdate);
         return () => video.removeEventListener('timeupdate', handleTimeUpdate);
-    }, [currentIdx, interactions]);
+    }, [currentIdx, interactions, videoUrl]);
 
     const proceed = () => {
         setShowOverlay(false);
@@ -128,8 +136,16 @@ export const InteractiveVideo: React.FC<InteractiveVideoProps> = ({ videoUrl, su
     };
 
     return (
-        <div className="relative w-full h-full">
-            {hasError ? (
+        <div className="relative w-full h-full flex items-center justify-center">
+            {/* Background elements */}
+            {!videoUrl ? (
+                // Clean background for quiz-only mode
+                <div className="absolute inset-0 bg-transparent flex items-center justify-center">
+                    {currentIdx >= interactions.length && (
+                        <p className="text-slate-400 text-lg font-medium animate-pulse">Quiz Complete! Great job. 🎉</p>
+                    )}
+                </div>
+            ) : hasError ? (
                 <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 text-white gap-4">
                     <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-indigo-400 opacity-60">
                         <path d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" />
@@ -151,6 +167,8 @@ export const InteractiveVideo: React.FC<InteractiveVideoProps> = ({ videoUrl, su
                     <source src={videoUrl} type="video/mp4" />
                 </video>
             )}
+            
+            {/* The interactive overlay itself */}
             {renderOverlay()}
         </div>
     );
