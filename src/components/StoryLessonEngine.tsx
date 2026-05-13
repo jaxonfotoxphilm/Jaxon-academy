@@ -874,17 +874,27 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                                     className="absolute inset-0 w-full h-full"
                                 ></iframe>
                             ) : (
-                                /* Fallback: use YouTube's embed search to find a relevant video */
-                                <iframe 
-                                    width="100%" 
-                                    height="100%" 
-                                    src={`https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(currentNode.youtubeSearchQuery || '')}`} 
-                                    title="Educational Video" 
-                                    frameBorder="0" 
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                    allowFullScreen
-                                    className="absolute inset-0 w-full h-full"
-                                ></iframe>
+                                /* No curated video ID — open YouTube search in a new tab */
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-black gap-6 p-8 text-center">
+                                    <div className="text-6xl">🎬</div>
+                                    <h3 className="text-2xl font-bold text-white">Watch a Lesson Video</h3>
+                                    <p className="text-slate-400 text-lg max-w-md">
+                                        Search for a video on <strong className="text-white">{currentNode.youtubeSearchQuery}</strong> and take notes in the sidebar.
+                                    </p>
+                                    <a
+                                        href={`https://www.youtube.com/results?search_query=${encodeURIComponent((currentNode.youtubeSearchQuery || '') + ' educational for kids')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-3 px-8 py-4 bg-red-600 hover:bg-red-500 text-white font-bold text-lg rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(239,68,68,0.5)]"
+                                        onClick={() => setVideoWatched(false)}
+                                    >
+                                        <svg className="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                                        </svg>
+                                        Search on YouTube
+                                    </a>
+                                    <p className="text-slate-500 text-sm">After watching, click "I finished watching" in the sidebar to continue.</p>
+                                </div>
                             )}
                             {/* Video timer overlay — unlocks Next after watching */}
                             {!videoWatched && (
