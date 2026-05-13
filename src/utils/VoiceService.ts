@@ -57,20 +57,18 @@ function hasElevenLabsBudget(textLength: number): boolean {
     return (usage.chars + textLength) < ELEVENLABS_MONTHLY_LIMIT;
 }
 
+// Global speak session ID to prevent race conditions
+let currentSpeakId = 0;
+
 /**
  * Attempt speech via ElevenLabs API.
  * Returns true if audio was played successfully.
  */
-async function speakElevenLabs(text: string): Promise<boolean> {
+async function speakElevenLabs(text: string, speakId: number): Promise<boolean> {
     const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
     if (!apiKey || !hasElevenLabsBudget(text.length)) return false;
 
     try {
-        /**
-         * ElevenLabs v1 TTS endpoint.
-         * Voice ID "EXAVITQu4vr4xnSDxMaL" = "Sarah" — a warm, natural female voice.
-         * Model "eleven_turbo_v2_5" provides the best quality-to-latency ratio.
-         */
         const response = await fetch(
             'https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL',
             {
@@ -97,6 +95,8 @@ async function speakElevenLabs(text: string): Promise<boolean> {
         }
 
         const blob = await response.blob();
+        if (currentSpeakId !== speakId) return true; // Abort if a new speak() was called
+
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
         trackAudio(audio);
@@ -139,12 +139,12 @@ async function loadKokoro() {
  * Attempt speech via Kokoro TTS (browser WASM).
  * Returns true if audio was played successfully.
  */
-async function speakKokoro(text: string): Promise<boolean> {
+async function speakKokoro(text: string, speakId: number): Promise<boolean> {
     if (!kokoroInstance) return false;
     try {
-        // "af_heart" is a warm, natural female voice
         const audio = await kokoroInstance.generate(text, { voice: 'af_heart' });
-        // Kokoro returns a RawAudio object — convert to playable blob
+        if (currentSpeakId !== speakId) return true; // Abort if canceled
+
         const wav = audio.toBlob();
         const url = URL.createObjectURL(wav);
         const player = new Audio(url);
@@ -210,17 +210,22 @@ export async function speak(text: string): Promise<void> {
 
     // Cancel any existing audio (Web Speech, ElevenLabs, Kokoro) to prevent overlap
     stopSpeaking();
+    
+    currentSpeakId++;
+    const mySpeakId = currentSpeakId;
 
     // Tier 1: ElevenLabs
-    const elevenlabsOk = await speakElevenLabs(text);
+    const elevenlabsOk = await speakElevenLabs(text, mySpeakId);
     if (elevenlabsOk) return;
 
     // Tier 2: Kokoro (if model is loaded)
-    const kokoroOk = await speakKokoro(text);
+    const kokoroOk = await speakKokoro(text, mySpeakId);
     if (kokoroOk) return;
 
     // Tier 3: Web Speech API (always available)
-    speakWebSpeech(text);
+    if (currentSpeakId === mySpeakId) {
+        speakWebSpeech(text);
+    }
 }
 
 /** Global registry of active audio elements across all tiers */

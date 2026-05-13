@@ -98,24 +98,6 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
             }
             if (topic.length < 2) topic = subjectName;
 
-            const youtubeQueries: Record<string, string> = {
-                'Clauses': 'independent and dependent clauses grammar lesson',
-                'Phrases': 'types of phrases in English grammar explained',
-                'Essays': 'how to write a 5 paragraph essay middle school',
-                'Nouns': 'types of nouns proper common abstract grammar kids',
-                'Mythology': 'Greek mythology for kids educational documentary',
-                'Equations': 'solving one step equations algebra explained',
-                'Polynomials': 'polynomials explained algebra 1 lesson',
-                'Graphing': 'graphing linear equations coordinate plane tutorial',
-                'Ecosystems': 'ecosystems and biomes science lesson for kids',
-                'Cells': 'parts of a cell biology lesson animated',
-                'Genetics': 'genetics and DNA explained for middle school',
-                'Ancient Civilizations': 'ancient civilizations documentary for students',
-                'Counting': 'counting and number recognition kindergarten',
-                'Addition': 'addition facts math lesson for kids',
-                'Subtraction': 'subtraction with regrouping explained',
-            };
-            const ytQuery = youtubeQueries[topic] || `${topic} ${subjectName} educational lesson ${gradeLevel}`;
 
             /**
              * SUBJECT-SPECIFIC QUIZ BANKS — 3 difficulty tiers per topic:
@@ -216,7 +198,7 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
 
             const nodes: DialogueNode[] = [
                 { id: "off-1", characterName: "Professor Grace", text: `Good morning, ${studentName}! ${hook} Today I want you to think critically — not just remember facts, but understand WHY. Ready? 📚`, voiceType: "professor", visualType: "reading-book", isQuiz: false, itemReward: null as any },
-                { id: "off-2", characterName: "Professor Grace", text: `First, let's watch a video on ${topic}. Take notes on: (1) the main idea, (2) one surprising fact, (3) one question you have. I WILL quiz you! 🎬`, voiceType: "professor", visualType: "video-nature", isQuiz: false, youtubeSearchQuery: ytQuery, itemReward: null as any },
+                
                 { id: "off-3", characterName: "Professor Grace", text: `Let's test your vocabulary. Unscramble this critical term from ${topic}. Scholars who master vocabulary can explain concepts precisely. 🔤`, voiceType: "professor", visualType: "science-atom", isQuiz: false, miniGame: "wordScramble", itemReward: null as any },
                 { id: "off-4", characterName: "Professor Grace", text: `📝 COMPREHENSION CHECK #1 — Recall\nThis tests whether you absorbed the basic facts. Read ALL options carefully.`, voiceType: "professor", visualType: "math-geometry", isQuiz: true, question: q1.question, options: [...q1.options, "I don't understand, break it down for me"], correctIndex: q1.correctIndex, feedbackWrong: q1.feedbackWrong, itemReward: null as any },
                 { id: "off-5", characterName: "Professor Grace", text: `Good. Now let's go deeper. ${topic} isn't isolated — it connects to everything in ${subjectName}. The best students see these connections. Think about HOW and WHY, not just WHAT. 🧠`, voiceType: "professor", visualType: "history-scroll", isQuiz: false, itemReward: null as any },
@@ -249,8 +231,8 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                 setStoryNodes(data.nodes);
             } catch(e) {
                 // Check for static lesson data first
-                const staticNodes = (lessonsData as Record<string, DialogueNode[]>)[subjectId];
-                if (staticNodes && staticNodes.length > 1) {
+                const staticNodes = (lessonsData as any)[subjectId];
+                if (staticNodes && Array.isArray(staticNodes) && staticNodes.length > 1) {
                     setStoryNodes(staticNodes);
                 } else {
                     // Build a proper curriculum-driven offline lesson
