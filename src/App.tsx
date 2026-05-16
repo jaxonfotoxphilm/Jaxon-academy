@@ -251,7 +251,7 @@ export default function App() {
 
   // Bypass paywall for the super-admin (you) or if there's an active subscription
   // Replace this email with your actual login email to bypass the paywall
-  const isSuperAdmin = user?.email === 'jaxon@example.com' || user?.email === 'test-school@example.com';
+  const isSuperAdmin = user?.email === 'jaxon@example.com' || user?.email === 'test-school@example.com' || user?.email === 'demo@jaxon.com';
   
   if (!hasActiveSubscription && !isSuperAdmin) {
       return <Pricing />;
