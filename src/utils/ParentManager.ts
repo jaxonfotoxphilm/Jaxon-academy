@@ -16,6 +16,11 @@ export interface StudentProfile {
 }
 
 class ParentManagerClass {
+    private async getAccountId(): Promise<string | null> {
+        const { data: { session } } = await supabase.auth.getSession();
+        return session?.user?.id || null;
+    }
+
     // --- Profiles (Enrollment) ---
     public async getStudentProfiles(): Promise<StudentProfile[]> {
         const { data, error } = await supabase.from('student_profiles').select('*');
@@ -30,8 +35,10 @@ class ParentManagerClass {
     }
 
     public async setStudentGrade(studentName: string, gradeId: string) {
-        // Upsert based on unique student_name
-        await supabase.from('student_profiles').upsert({ student_name: studentName, grade_id: gradeId }, { onConflict: 'student_name' });
+        const account_id = await this.getAccountId();
+        if (!account_id) return;
+        // Upsert based on unique (account_id, student_name)
+        await supabase.from('student_profiles').upsert({ account_id, student_name: studentName, grade_id: gradeId }, { onConflict: 'account_id,student_name' });
     }
 
     // --- Backpack / Inventory (Gamification) ---
@@ -42,8 +49,10 @@ class ParentManagerClass {
     }
 
     public async grantItem(studentName: string, itemId: string) {
-        // Upsert based on unique (student_name, item_id)
-        await supabase.from('student_inventory').upsert({ student_name: studentName, item_id: itemId }, { onConflict: 'student_name,item_id' });
+        const account_id = await this.getAccountId();
+        if (!account_id) return;
+        // Upsert based on unique (account_id, student_name, item_id)
+        await supabase.from('student_inventory').upsert({ account_id, student_name: studentName, item_id: itemId }, { onConflict: 'account_id,student_name,item_id' });
     }
 
     // --- Assignments ---
@@ -79,7 +88,10 @@ class ParentManagerClass {
     }
 
     public async assignLesson(studentName: string, subjectId: string, note: string, dayOfWeek?: string) {
+        const account_id = await this.getAccountId();
+        if (!account_id) return;
         await supabase.from('assignments').insert({
+            account_id,
             student_name: studentName,
             subject_id: subjectId,
             note: note,

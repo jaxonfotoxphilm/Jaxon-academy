@@ -10,6 +10,7 @@ import { enUS } from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { motion } from 'framer-motion';
 import { useBrand } from '../contexts/BrandContext';
+import { MigrationTool } from './MigrationTool';
 
 type Tab = 'overview' | 'progress' | 'assignments' | 'enrollment' | 'users' | 'rewards' | 'report-cards' | 'settings';
 
@@ -252,12 +253,16 @@ export const ParentDashboard: React.FC = () => {
       localStorage.setItem(storageKey, JSON.stringify(completed));
       
       // Update database
-      await supabase.from('student_progress').insert([{
-          student_name: controlStudent,
-          subject: nextToComplete.id,
-          score: 100,
-          topic: `Principal Autocomplete Override`
-      }]);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+          await supabase.from('Student_Progress').insert([{
+              account_id: user.id,
+              student_name: controlStudent,
+              subject: nextToComplete.id,
+              score: 100,
+              topic: `Principal Autocomplete Override`
+          }]);
+      }
       
       fetchProgress(); // Reload dashboard numbers
       showToast(`Successfully unlocked next lesson by auto-completing ${nextToComplete.name} for ${controlStudent}!`);
@@ -398,7 +403,8 @@ export const ParentDashboard: React.FC = () => {
         
         {/* --- OVERVIEW TAB --- */}
         {activeTab === 'overview' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <MigrationTool />
                 <h3 className="text-3xl font-extrabold text-white mb-8">Dashboard Overview</h3>
 
                 {/* Daily Lesson Controls */}
