@@ -3,18 +3,11 @@
  *
  * Priority chain:
  *   1. ElevenLabs API  — Ultra-realistic neural voice (limited monthly chars)
- *   2. Kokoro TTS      — High-quality neural voice running locally in browser via WASM
- *   3. Web Speech API  — Built-in browser TTS (least natural, always available)
+ *   2. Web Speech API  — Built-in browser TTS (least natural, always available)
  *
  * Character usage is tracked in localStorage. When ElevenLabs monthly budget
- * is exhausted, subsequent calls silently fall through to Kokoro. If Kokoro
- * hasn't finished loading its model yet, Web Speech API is used as final fallback.
+ * is exhausted, subsequent calls silently fall through to Web Speech API.
  */
-
-// Lazy-loaded Kokoro TTS instance (loaded on first fallback)
-let kokoroInstance: any = null;
-let kokoroLoading = false;
-let kokoroFailed = false;
 
 /** Monthly character budget for the ElevenLabs free tier */
 const ELEVENLABS_MONTHLY_LIMIT = 9500; // conservative buffer below 10k
@@ -60,11 +53,17 @@ function hasElevenLabsBudget(textLength: number): boolean {
 // Global speak session ID to prevent race conditions
 let currentSpeakId = 0;
 
+/** Optional callbacks for talking state sync */
+interface SpeakCallbacks {
+    onStart?: () => void;
+    onEnd?: () => void;
+}
+
 /**
  * Attempt speech via ElevenLabs API.
  * Returns true if audio was played successfully.
  */
-async function speakElevenLabs(text: string, speakId: number): Promise<boolean> {
+async function speakElevenLabs(text: string, speakId: number, cb?: SpeakCallbacks): Promise<boolean> {
     const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
     if (!apiKey || !hasElevenLabsBudget(text.length)) return false;
 
@@ -104,8 +103,9 @@ async function speakElevenLabs(text: string, speakId: number): Promise<boolean> 
         addUsage(text.length);
 
         return new Promise((resolve) => {
-            audio.onended = () => { URL.revokeObjectURL(url); resolve(true); };
-            audio.onerror = () => { URL.revokeObjectURL(url); resolve(false); };
+            audio.addEventListener('play', () => cb?.onStart?.());
+            audio.onended = () => { cb?.onEnd?.(); URL.revokeObjectURL(url); resolve(true); };
+            audio.onerror = () => { cb?.onEnd?.(); URL.revokeObjectURL(url); resolve(false); };
             audio.play().catch(() => resolve(false));
         });
     } catch (err) {
@@ -115,56 +115,61 @@ async function speakElevenLabs(text: string, speakId: number): Promise<boolean> 
 }
 
 /**
- * Lazy-load and initialize Kokoro TTS model in browser via WASM.
- * The model (~80MB) downloads once and is cached by the browser.
- */
-async function loadKokoro() {
-    if (kokoroInstance || kokoroLoading || kokoroFailed) return;
-    kokoroLoading = true;
-    try {
-        const { KokoroTTS } = await import('kokoro-js');
-        kokoroInstance = await KokoroTTS.from_pretrained(
-            'onnx-community/Kokoro-82M-v1.0-ONNX',
-            { dtype: 'q8', device: 'wasm' }
-        );
-        console.log('[VoiceService] Kokoro TTS loaded successfully');
-    } catch (err) {
-        console.warn('[VoiceService] Kokoro TTS failed to load:', err);
-        kokoroFailed = true;
-    }
-    kokoroLoading = false;
-}
-
-/**
- * Attempt speech via Kokoro TTS (browser WASM).
+ * Attempt speech via Gemini TTS (Supabase edge function).
  * Returns true if audio was played successfully.
+ * Uses the Gemini 2.5 Flash TTS model — realistic and free.
  */
-async function speakKokoro(text: string, speakId: number): Promise<boolean> {
-    if (!kokoroInstance) return false;
+async function speakGeminiTTS(text: string, speakId: number, cb?: SpeakCallbacks): Promise<boolean> {
     try {
-        const audio = await kokoroInstance.generate(text, { voice: 'af_heart' });
-        if (currentSpeakId !== speakId) return true; // Abort if canceled
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        if (!supabaseUrl || !supabaseKey) return false;
 
-        const wav = audio.toBlob();
-        const url = URL.createObjectURL(wav);
-        const player = new Audio(url);
-        trackAudio(player);
+        const response = await fetch(`${supabaseUrl}/functions/v1/tts`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${supabaseKey}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ text }),
+        });
+
+        if (!response.ok) {
+            const errBody = await response.text().catch(() => '');
+            console.warn('[VoiceService] Gemini TTS returned', response.status, errBody);
+            return false;
+        }
+
+        const rawBlob = await response.blob();
+        if (currentSpeakId !== speakId) return true; // Abort if a new speak() was called
+
+        // Force the correct MIME type — the edge function returns audio/wav
+        const wavBlob = new Blob([rawBlob], { type: 'audio/wav' });
+        console.log('[VoiceService] ✅ Gemini TTS audio received:', wavBlob.size, 'bytes');
+
+        const url = URL.createObjectURL(wavBlob);
+        const audio = new Audio(url);
+        trackAudio(audio);
+
         return new Promise((resolve) => {
-            player.onended = () => { URL.revokeObjectURL(url); resolve(true); };
-            player.onerror = () => { URL.revokeObjectURL(url); resolve(false); };
-            player.play().catch(() => resolve(false));
+            audio.addEventListener('play', () => { console.log('[VoiceService] ▶ Gemini audio playing'); cb?.onStart?.(); });
+            audio.onended = () => { cb?.onEnd?.(); URL.revokeObjectURL(url); resolve(true); };
+            audio.onerror = (e) => { console.error('[VoiceService] ❌ Gemini audio error:', e); cb?.onEnd?.(); URL.revokeObjectURL(url); resolve(false); };
+            audio.play().catch((e) => { console.error('[VoiceService] ❌ Play failed:', e); resolve(false); });
         });
     } catch (err) {
-        console.warn('[VoiceService] Kokoro error:', err);
+        console.warn('[VoiceService] Gemini TTS error:', err);
         return false;
     }
 }
+
+// --- Kokoro removed to prevent main thread blocking ---
 
 /**
  * Final fallback — browser's built-in Web Speech API.
  * Selects the best available voice (Apple Neural > Google > default).
  */
-function speakWebSpeech(text: string): void {
+function speakWebSpeech(text: string, cb?: SpeakCallbacks): void {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
 
@@ -187,44 +192,48 @@ function speakWebSpeech(text: string): void {
     ]) || voices.find(v => v.lang.startsWith('en'));
     if (voice) utterance.voice = voice;
 
+    utterance.onstart = () => cb?.onStart?.();
+    utterance.onend = () => cb?.onEnd?.();
+
     window.speechSynthesis.speak(utterance);
 }
 
 // ─── Public API ───
 
 /**
- * Begin pre-loading Kokoro in the background so it's ready when needed.
- * Call this early (e.g. on app mount) so the WASM model is warm.
+ * Pre-load resources if needed.
  */
 export function preloadKokoro() {
-    loadKokoro();
+    // Kokoro removed
 }
 
 /**
  * Speak text using the best available voice engine.
  * Automatically falls through the tier chain:
- *   ElevenLabs → Kokoro → Web Speech API
+ *   Gemini TTS → ElevenLabs → Web Speech API
  */
-export async function speak(text: string): Promise<void> {
+export async function speak(text: string, callbacks?: { onStart?: () => void; onEnd?: () => void }): Promise<void> {
     if (!text?.trim()) return;
 
-    // Cancel any existing audio (Web Speech, ElevenLabs, Kokoro) to prevent overlap
+    // Cancel any existing audio (Web Speech, ElevenLabs, Gemini) to prevent overlap
     stopSpeaking();
     
     currentSpeakId++;
     const mySpeakId = currentSpeakId;
 
-    // Tier 1: ElevenLabs
-    const elevenlabsOk = await speakElevenLabs(text, mySpeakId);
-    if (elevenlabsOk) return;
+    // Tier 1: Gemini TTS (unlimited, realistic)
+    const geminiOk = await speakGeminiTTS(text, mySpeakId, callbacks);
+    if (geminiOk) return;
 
-    // Tier 2: Kokoro (if model is loaded)
-    const kokoroOk = await speakKokoro(text, mySpeakId);
-    if (kokoroOk) return;
-
-    // Tier 3: Web Speech API (always available)
+    // Tier 2: ElevenLabs (limited monthly chars)
     if (currentSpeakId === mySpeakId) {
-        speakWebSpeech(text);
+        const elevenlabsOk = await speakElevenLabs(text, mySpeakId, callbacks);
+        if (elevenlabsOk) return;
+    }
+
+    // Tier 3: Web Speech API (always available fallback)
+    if (currentSpeakId === mySpeakId) {
+        speakWebSpeech(text, callbacks);
     }
 }
 

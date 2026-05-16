@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PdfViewer } from './PdfViewer';
+
 import { GeminiService } from '../services/GeminiService';
 import { CopyleaksService, type CopyleaksReport } from '../services/CopyleaksService';
 import { SpeechService } from '../services/SpeechService';
@@ -221,7 +221,11 @@ export const MultiDraftTutor: React.FC<MultiDraftTutorProps> = ({ onExit, studen
                         <button onClick={onExit} className="px-4 py-2 bg-slate-800 hover:bg-rose-900/50 hover:text-rose-400 text-slate-300 rounded-lg font-bold transition-all border border-transparent hover:border-rose-500/30 shadow-lg">Close Tutor</button>
                     </div>
                     <div className="flex-1 rounded-xl overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)] border border-slate-700 relative bg-slate-900">
-                        <PdfViewer fileUrl={pdfUrl} />
+                        <iframe
+                            src={pdfUrl}
+                            title="Lesson PDF"
+                            className="w-full h-full border-0"
+                        />
                     </div>
                 </div>
             )}

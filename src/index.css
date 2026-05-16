@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
 
 @tailwind base;
 @tailwind components;
@@ -208,3 +208,91 @@ body {
 .timeline-dot-active {
   animation: dot-pulse 2s ease-in-out infinite;
 }
+
+/* ─── Professor Grace: Breathing Idle ─── */
+@keyframes grace-breathe {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50% { transform: scale(1.03) translateY(-4px); }
+}
+
+.animate-grace-idle {
+  animation: grace-breathe 4s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+}
+
+/* ─── Professor Grace: Talking (enhanced for visibility) ─── */
+@keyframes grace-talk {
+  0%   { transform: scaleY(1) translateY(0); }
+  15%  { transform: scaleY(1.04) translateY(-3px); }
+  30%  { transform: scaleY(0.98) translateY(1px); }
+  50%  { transform: scaleY(1.05) translateY(-4px); }
+  70%  { transform: scaleY(0.97) translateY(2px); }
+  85%  { transform: scaleY(1.03) translateY(-2px); }
+  100% { transform: scaleY(1) translateY(0); }
+}
+
+.animate-grace-talk {
+  animation: grace-talk 0.6s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* ─── Professor Grace: Entrance ─── */
+@keyframes grace-entrance {
+  0% { opacity: 0; transform: scale(0.8) translateY(40px); filter: blur(8px); }
+  60% { opacity: 1; transform: scale(1.05) translateY(-5px); filter: blur(0px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
+}
+
+.animate-grace-entrance {
+  animation: grace-entrance 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ─── Speech Wave Visualizer ─── */
+@keyframes speech-bar {
+  0%, 100% { height: 20%; }
+  50% { height: 85%; }
+}
+
+.speech-wave-bar {
+  animation: speech-bar 0.4s ease-in-out infinite;
+}
+
+.speech-wave-bar:nth-child(1) { animation-delay: 0s; }
+.speech-wave-bar:nth-child(2) { animation-delay: 0.1s; }
+.speech-wave-bar:nth-child(3) { animation-delay: 0.2s; }
+.speech-wave-bar:nth-child(4) { animation-delay: 0.05s; }
+.speech-wave-bar:nth-child(5) { animation-delay: 0.15s; }
+
+/* ─── Pulsing Glow Ring (for avatar when speaking) ─── */
+@keyframes glow-ring-pulse {
+  0%, 100% { box-shadow: 0 0 15px 2px hsla(246, 60%, 55%, 0.3), inset 0 0 10px hsla(246, 60%, 55%, 0.1); }
+  50% { box-shadow: 0 0 35px 6px hsla(246, 60%, 55%, 0.5), inset 0 0 20px hsla(246, 60%, 55%, 0.2); }
+}
+
+.animate-glow-ring {
+  animation: glow-ring-pulse 1.2s ease-in-out infinite;
+}
+
+/* ─── Dialogue Box Glow ─── */
+@keyframes dialogue-shimmer {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.dialogue-glow {
+  box-shadow:
+    0 0 60px -15px hsla(246, 60%, 55%, 0.15),
+    0 0 100px -20px hsla(224, 76%, 58%, 0.1),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.03);
+}
+
+/* ─── Name Badge Gradient Pulse ─── */
+@keyframes badge-glow {
+  0%, 100% { background-size: 100% 100%; }
+  50% { background-size: 150% 150%; }
+}
+
+.animate-badge-glow {
+  animation: badge-glow 3s ease-in-out infinite;
+  background-position: center;
+}
+

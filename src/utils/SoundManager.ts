@@ -349,6 +349,97 @@ class SoundManagerClass {
     public preloadVoiceModels() {
         import('./VoiceService').then(({ preloadKokoro }) => { preloadKokoro(); });
     }
+
+    /** Soft directional whoosh — page/view transitions */
+    public playPageTransition() {
+        if (!this.audioEnabled) return;
+        this.unlockAudio(); this.init();
+        if (!this.audioCtx) return;
+        const ctx = this.audioCtx;
+        const t = ctx.currentTime;
+
+        // White noise burst shaped into a swoosh
+        const bufferSize = ctx.sampleRate * 0.15;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * 0.3;
+        }
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+
+        // Bandpass filter for a warm swoosh tone
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(800, t);
+        filter.frequency.exponentialRampToValueAtTime(2000, t + 0.08);
+        filter.frequency.exponentialRampToValueAtTime(400, t + 0.15);
+        filter.Q.setValueAtTime(1.5, t);
+
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.06, t + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+
+        source.connect(filter);
+        filter.connect(g);
+        g.connect(ctx.destination);
+        source.start(t);
+        source.stop(t + 0.15);
+    }
+
+    /** Warm welcoming tone — lesson start */
+    public playLessonStart() {
+        if (!this.audioEnabled) return;
+        this.unlockAudio(); this.init();
+        if (!this.audioCtx) return;
+        const ctx = this.audioCtx;
+        const t = ctx.currentTime;
+        const bus = this.createReverbBus(1.5, 0.2);
+
+        // D4 → F#4 → A4 (D major — warm, inviting)
+        const notes = [293.66, 369.99, 440];
+        notes.forEach((freq, i) => {
+            const delay = i * 0.15;
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, t + delay);
+            g.gain.setValueAtTime(0, t + delay);
+            g.gain.linearRampToValueAtTime(0.1, t + delay + 0.04);
+            g.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.8);
+            osc.connect(g);
+            g.connect(bus);
+            osc.start(t + delay);
+            osc.stop(t + delay + 0.8);
+        });
+    }
+
+    /** Quick celebratory trill — streak/consecutive correct answers */
+    public playStreakNotification() {
+        if (!this.audioEnabled) return;
+        this.unlockAudio(); this.init();
+        if (!this.audioCtx) return;
+        const ctx = this.audioCtx;
+        const t = ctx.currentTime;
+        const bus = this.createReverbBus(0.4, 0.15);
+
+        // Rapid ascending: E5 → G#5 → B5 → E6
+        const notes = [659.25, 830.61, 987.77, 1318.51];
+        notes.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, t + i * 0.05);
+            g.gain.setValueAtTime(0, t + i * 0.05);
+            g.gain.linearRampToValueAtTime(0.1, t + i * 0.05 + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.05 + 0.2);
+            osc.connect(g);
+            g.connect(bus);
+            osc.start(t + i * 0.05);
+            osc.stop(t + i * 0.05 + 0.2);
+        });
+    }
 }
 
 export const SoundManager = new SoundManagerClass();

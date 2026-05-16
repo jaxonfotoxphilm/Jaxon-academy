@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient';
 import { ParentManager, type Assignment } from '../utils/ParentManager';
 import curriculumData from '../data/curriculum-structure.json';
 import { SoundManager } from '../utils/SoundManager';
+import { UserManager, type UserProfile } from '../utils/UserManager';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { enUS } from 'date-fns/locale/en-US';
@@ -33,7 +34,7 @@ interface ProgressRecord {
 const STUDENTS = ["Ayla", "Aria", "Ana", "Donyale", "Aiko", "Ace"];
 
 export const ParentDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'progress' | 'enrollment' | 'assignments' | 'rewards' | 'report-cards'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'progress' | 'enrollment' | 'assignments' | 'rewards' | 'report-cards' | 'users'>('overview');
   
   // Progress State
   const [records, setRecords] = useState<ProgressRecord[]>([]);
@@ -54,9 +55,15 @@ export const ParentDashboard: React.FC = () => {
   const [assignNote, setAssignNote] = useState('');
   const [customSubjectOverride, setCustomSubjectOverride] = useState('');
   const [reportStudent, setReportStudent] = useState(STUDENTS[0]);
+  const [controlStudent, setControlStudent] = useState(STUDENTS[0]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; title: string } | null>(null);
 
+  // User Management State
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserRole, setNewUserRole] = useState<'student' | 'teacher'>('student');
+  const [newUserGrade, setNewUserGrade] = useState(curriculumData.grades[0].id);
   /** Show a brief toast notification (auto-dismisses in 3s) */
   const showToast = useCallback((message: string, type: 'success' | 'info' = 'success') => {
     setToast({ message, type });
@@ -86,6 +93,7 @@ export const ParentDashboard: React.FC = () => {
     setEnrollments(map);
     
     setAssignments(await ParentManager.getAllAssignments());
+    setUsers(await UserManager.getProfiles());
     setLoading(false);
   };
 
@@ -127,6 +135,34 @@ export const ParentDashboard: React.FC = () => {
       showToast(`${badgeNames[badgeId] || badgeId} granted to ${student}!`);
   };
 
+  const handleAddUser = async () => {
+      if (!newUserName.trim()) {
+          showToast('Please enter a name.', 'info');
+          return;
+      }
+      SoundManager.playClick();
+      
+      const seed = newUserName.trim();
+      const newAvatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&backgroundColor=ffdfbf,c0aede,b6e3f4`;
+      
+      const newProfile: UserProfile = {
+          name: seed,
+          role: newUserRole,
+          gradeLevel: newUserRole === 'student' ? newUserGrade : undefined,
+          avatarUrl: newAvatarUrl,
+          themeColor: 'hsl(200, 65%, 58%)'
+      };
+      
+      await UserManager.saveProfile(newProfile);
+      if (newUserRole === 'student') {
+          await ParentManager.setStudentGrade(seed, newUserGrade);
+      }
+      
+      setNewUserName('');
+      setUsers(await UserManager.getProfiles());
+      showToast(`${newUserRole === 'teacher' ? 'Teacher' : 'Student'} ${seed} added successfully!`);
+  };
+
   const handleGenerateReport = async () => {
       setIsGeneratingReport(true);
       SoundManager.playClick();
@@ -141,6 +177,52 @@ export const ParentDashboard: React.FC = () => {
           setAiReport("Failed to generate AI insights. Please check your connection.");
       }
       setIsGeneratingReport(false);
+  };
+
+  const handleRefreshLessons = () => {
+      SoundManager.playClick();
+      const storageKey = `jaxon-academy-completed-${controlStudent}`;
+      localStorage.removeItem(storageKey);
+      showToast(`Daily lessons refreshed for ${controlStudent}. They will start from the beginning today.`);
+  };
+
+  const handleUnlockLesson = async () => {
+      SoundManager.playClick();
+      // To unlock the NEXT lesson, we need to artificially complete the FIRST incomplete lesson for them.
+      // We look up their grade and find what lessons they should have today.
+      const studentGradeId = enrollments[controlStudent];
+      const gradeData = curriculumData.grades.find(g => g.id === studentGradeId) || curriculumData.grades[0];
+      
+      // We don't have access to the specific schoolDay here, so we will just blindly pop the first available subject into localStorage.
+      const storageKey = `jaxon-academy-completed-${controlStudent}`;
+      const completedStr = localStorage.getItem(storageKey);
+      const completed: string[] = completedStr ? JSON.parse(completedStr) : [];
+      
+      // Filter out unadopted
+      const subjects = gradeData.subjects.filter(s => localStorage.getItem(`adopted-${s.name}`) !== 'false');
+      const uniqueSubjects = subjects.filter((s, i, a) => a.findIndex(t => t.name === s.name) === i).slice(0, 6);
+      
+      const nextToComplete = uniqueSubjects.find(s => !completed.includes(s.id));
+      
+      if (!nextToComplete) {
+          showToast(`${controlStudent} has already completed all lessons for today!`, 'info');
+          return;
+      }
+      
+      // Update local storage
+      completed.push(nextToComplete.id);
+      localStorage.setItem(storageKey, JSON.stringify(completed));
+      
+      // Update database
+      await supabase.from('student_progress').insert([{
+          student_name: controlStudent,
+          subject: nextToComplete.id,
+          score: 100,
+          topic: `Principal Autocomplete Override`
+      }]);
+      
+      fetchProgress(); // Reload dashboard numbers
+      showToast(`Successfully unlocked next lesson by auto-completing ${nextToComplete.name} for ${controlStudent}!`);
   };
 
   // Metrics
@@ -244,6 +326,12 @@ export const ParentDashboard: React.FC = () => {
             >
                 <span>📄</span> Report Cards
             </button>
+            <button 
+                onClick={() => { SoundManager.playClick(); setActiveTab('users'); }}
+                className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${activeTab === 'users' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+            >
+                <span>👥</span> Manage Users
+            </button>
         </div>
 
         <div className="p-6 border-t border-slate-800">
@@ -260,6 +348,36 @@ export const ParentDashboard: React.FC = () => {
         {activeTab === 'overview' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <h3 className="text-3xl font-extrabold text-white mb-8">Dashboard Overview</h3>
+
+                {/* Daily Lesson Controls */}
+                <div className="bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-xl mb-8">
+                    <h4 className="text-xl font-extrabold text-white mb-4 flex items-center gap-2"><span>⚙️</span> Daily Lesson Override</h4>
+                    <div className="flex flex-col md:flex-row gap-4 items-center">
+                        <select 
+                            value={controlStudent} 
+                            onChange={(e) => setControlStudent(e.target.value)}
+                            className="bg-slate-950 border border-slate-800 rounded-xl p-3 text-white font-medium focus:border-blue-500 outline-none min-w-[200px]"
+                        >
+                            {STUDENTS.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                        <button 
+                            onClick={handleRefreshLessons}
+                            className="w-full md:w-auto px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition-colors border border-slate-700"
+                        >
+                            🔄 Refresh Today's Lessons
+                        </button>
+                        <button 
+                            onClick={handleUnlockLesson}
+                            className="w-full md:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-colors border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                        >
+                            🔓 Autocomplete & Unlock Next
+                        </button>
+                    </div>
+                    <p className="text-slate-500 text-sm mt-4">
+                        <strong className="text-slate-400">Refresh:</strong> Wipes today's local completion cache so the student starts at Subject 1.<br/>
+                        <strong className="text-slate-400">Autocomplete:</strong> Forces the currently locked subject to 100% complete, immediately unlocking the next subject for the student.
+                    </p>
+                </div>
                 
                 {records.filter(r => r.subject === 'Placement Test').length > 0 && (
                     <div className="bg-indigo-900/50 border border-indigo-500 p-6 rounded-2xl shadow-xl mb-8 flex items-center justify-between">
@@ -332,15 +450,22 @@ export const ParentDashboard: React.FC = () => {
                             ) : (
                                 records.slice(0, 10).map((r, idx) => (
                                     <div key={idx} className="flex gap-4 items-start pb-4 border-b border-slate-800/50 last:border-0 last:pb-0">
-                                        <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center shrink-0 border border-slate-700">
-                                            {r.subject.includes('[EXAM]') ? '📝' : '📖'}
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border ${r.subject.includes('[ALERT]') ? 'bg-red-900/50 border-red-500' : 'bg-slate-800 border-slate-700'}`}>
+                                            {r.subject.includes('[ALERT]') ? '🚨' : r.subject.includes('[EXAM]') ? '📝' : '📖'}
                                         </div>
                                         <div>
                                             <p className="text-slate-300 font-medium">
-                                                <span className="font-bold text-white">{r.student_name}</span> completed <span className="text-indigo-300">{r.subject.replace('[EXAM] ', '')}</span>
+                                                <span className="font-bold text-white">{r.student_name}</span> 
+                                                {r.subject.includes('[ALERT]') ? (
+                                                    <span className="text-red-400 ml-1">triggered an anti-skip alert!</span>
+                                                ) : (
+                                                    <span> completed <span className="text-indigo-300">{r.subject.replace('[EXAM] ', '')}</span></span>
+                                                )}
                                             </p>
-                                            <p className="text-xs text-slate-500 font-bold tracking-widest mt-1">
-                                                SCORE: <span className={r.score >= 80 ? 'text-emerald-400' : 'text-yellow-400'}>{r.score}%</span>
+                                            <p className={`text-xs font-bold tracking-widest mt-1 ${r.subject.includes('[ALERT]') ? 'text-red-500' : 'text-slate-500'}`}>
+                                                {r.subject.includes('[ALERT]') ? `MESSAGE: ${r.topic}` : (
+                                                    <>SCORE: <span className={r.score >= 80 ? 'text-emerald-400' : 'text-yellow-400'}>{r.score}%</span></>
+                                                )}
                                             </p>
                                         </div>
                                     </div>
@@ -807,7 +932,80 @@ export const ParentDashboard: React.FC = () => {
             </div>
         )}
 
+        {activeTab === 'users' && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl">
+                        <h3 className="text-2xl font-black text-white mb-6 tracking-tight">Manage Users</h3>
+                        
+                        {/* Add User Form */}
+                        <div className="bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-xl mb-8">
+                            <h4 className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-4">Add New Profile</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                                <div className="lg:col-span-2">
+                                    <input 
+                                        type="text" 
+                                        value={newUserName}
+                                        onChange={e => setNewUserName(e.target.value)}
+                                        placeholder="Name (e.g. Jaxon)" 
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                                    />
+                                </div>
+                                <select 
+                                    value={newUserRole}
+                                    onChange={e => setNewUserRole(e.target.value as 'student' | 'teacher')}
+                                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                                >
+                                    <option value="student">Student</option>
+                                    <option value="teacher">Teacher (Admin)</option>
+                                </select>
+                                
+                                {newUserRole === 'student' && (
+                                    <select 
+                                        value={newUserGrade}
+                                        onChange={e => setNewUserGrade(e.target.value)}
+                                        className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                                    >
+                                        {curriculumData.grades.map(g => (
+                                            <option key={g.id} value={g.id}>{g.label}</option>
+                                        ))}
+                                    </select>
+                                )}
+                                
+                                <button 
+                                    onClick={handleAddUser}
+                                    className="lg:col-span-1 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)]"
+                                >
+                                    + Add
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Existing Users List */}
+                        <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-xl overflow-hidden">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-950 border-b border-slate-800">
+                                    <tr>
+                                        <th className="p-4 font-bold text-slate-400 tracking-widest uppercase text-xs">Profile</th>
+                                        <th className="p-4 font-bold text-slate-400 tracking-widest uppercase text-xs">Role</th>
+                                        <th className="p-4 font-bold text-slate-400 tracking-widest uppercase text-xs">Grade</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-800/50">
+                                    {users.map(u => (
+                                        <tr key={u.name} className="hover:bg-slate-800/50 transition-colors">
+                                            <td className="p-4 font-bold text-white flex items-center gap-3">
+                                                <img src={u.avatarUrl} alt={u.name} className="w-10 h-10 rounded-full bg-slate-800" />
+                                                {u.name}
+                                            </td>
+                                            <td className="p-4 text-slate-300 capitalize">{u.role}</td>
+                                            <td className="p-4 text-slate-400">{u.gradeLevel || '—'}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+            </div>
       </div>
-    </div>
   );
 };

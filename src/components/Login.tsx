@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { validatePrincipalPin } from '../utils/Auth';
 import { SoundManager } from '../utils/SoundManager';
 import { AnimatePresence, motion } from 'framer-motion';
+import { UserManager, type UserProfile } from '../utils/UserManager';
 
 /**
  * Avatar collection system — Netflix/Disney+ style profile picker.
@@ -92,56 +94,17 @@ function getCollectionAvatars(collection: AvatarCollection): AvatarOption[] {
   }));
 }
 
-/** localStorage key for custom avatar per profile */
-const AVATAR_KEY = 'jaxon-academy-custom-avatar';
-
-function getSavedAvatar(name: string): string | null {
-  try {
-    const data = JSON.parse(localStorage.getItem(AVATAR_KEY) || '{}');
-    return data[name] || null;
-  } catch { return null; }
-}
-
-function saveAvatar(name: string, url: string) {
-  try {
-    const data = JSON.parse(localStorage.getItem(AVATAR_KEY) || '{}');
-    data[name] = url;
-    localStorage.setItem(AVATAR_KEY, JSON.stringify(data));
-  } catch { /* ignore */ }
-}
-
-/** Default avatar per family member (fallback when none is chosen) */
-const DEFAULT_AVATARS: Record<string, string> = {
-  'Principal': '/assets/avatar_knight.png',
-  'Ayla': buildAvatarUrl('avataaars', 'Ayla'),
-  'Aria': buildAvatarUrl('avataaars', 'Aria'),
-  'Ana': buildAvatarUrl('avataaars', 'Ana'),
-  'Donyale': buildAvatarUrl('avataaars', 'Donyale'),
-  'Aiko': buildAvatarUrl('avataaars', 'Aiko'),
-  'Ace': buildAvatarUrl('avataaars', 'Ace'),
-};
-
-const PROFILE_COLORS: Record<string, string> = {
-  'Principal': 'hsl(224, 76%, 58%)',
-  'Ayla': 'hsl(340, 65%, 60%)',
-  'Aria': 'hsl(160, 50%, 55%)',
-  'Ana': 'hsl(246, 60%, 65%)',
-  'Donyale': 'hsl(30, 70%, 55%)',
-  'Aiko': 'hsl(90, 45%, 55%)',
-  'Ace': 'hsl(200, 65%, 58%)',
-};
-
-const FamilyMembers = ['Principal', 'Ayla', 'Aria', 'Ana', 'Donyale', 'Aiko', 'Ace'];
-
 // ─── Avatar Picker Modal ───
 const AvatarPickerModal = ({ 
   profileName, 
   currentAvatar,
+  themeColor,
   onSelect, 
   onClose 
 }: { 
   profileName: string;
   currentAvatar: string;
+  themeColor: string;
   onSelect: (url: string) => void; 
   onClose: () => void;
 }) => {
@@ -172,7 +135,7 @@ const AvatarPickerModal = ({
             {/* Live preview */}
             <div 
               className="w-16 h-16 rounded-full p-[2px] profile-ring shrink-0"
-              style={{ '--ring-color': PROFILE_COLORS[profileName] } as React.CSSProperties}
+              style={{ '--ring-color': themeColor } as React.CSSProperties}
             >
               <div className="w-full h-full rounded-full overflow-hidden bg-[hsl(228,40%,10%)]">
                 <img src={hoveredAvatar || previewUrl} alt="Preview" className="w-full h-full object-cover" />
@@ -286,46 +249,42 @@ const AvatarPickerModal = ({
 };
 
 // ─── Main Login Component ───
-export const Login = ({ onLogin }: { onLogin: (name: string) => void }) => {
+export const Login = ({ onLogin }: { onLogin: (profile: string) => void }) => {
   const [selected, setSelected] = useState<string | null>(null);
+  const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [editingProfile, setEditingProfile] = useState<string | null>(null);
-  const [avatars, setAvatars] = useState<Record<string, string>>({});
   const [pinTarget, setPinTarget] = useState<string | null>(null);
   const [pinValue, setPinValue] = useState('');
   const [pinError, setPinError] = useState(false);
 
-  /** The Principal PIN — in production this would be stored securely in Supabase */
-  const PRINCIPAL_PIN = '1234';
+  // The Principal PIN is read from the environment via Auth utility
+  // Validation will be performed with Auth.validatePrincipalPin
 
-  // Load saved avatars on mount
+  // Load saved profiles on mount
   useEffect(() => {
-    const loaded: Record<string, string> = {};
-    FamilyMembers.forEach(name => {
-      loaded[name] = getSavedAvatar(name) || DEFAULT_AVATARS[name] || buildAvatarUrl('avataaars', name);
-    });
-    setAvatars(loaded);
+    UserManager.getProfiles().then(setProfiles);
   }, []);
 
-  const handleSelect = (name: string) => {
+  const handleSelect = (profile: UserProfile) => {
     SoundManager.playClick();
-    if (name === 'Principal') {
-      // Require PIN before granting Principal access
-      setPinTarget(name);
+    if (profile.role === 'principal' || profile.role === 'teacher') {
+      // Require PIN before granting Admin access
+      setPinTarget(profile.name);
       setPinValue('');
       setPinError(false);
       return;
     }
-    setSelected(name);
+    setSelected(profile.name);
     setTimeout(() => {
       SoundManager.playCinematicChime();
-      onLogin(name);
+      onLogin(profile.name);
     }, 700);
   };
 
-
-  const handleAvatarChange = (name: string, url: string) => {
-    saveAvatar(name, url);
-    setAvatars(prev => ({ ...prev, [name]: url }));
+  const handleAvatarChange = async (name: string, url: string) => {
+    await UserManager.updateAvatar(name, url);
+    const updatedProfiles = await UserManager.getProfiles();
+    setProfiles(updatedProfiles);
     setEditingProfile(null);
   };
 
@@ -356,18 +315,18 @@ export const Login = ({ onLogin }: { onLogin: (name: string) => void }) => {
         </p>
         
         <div className="flex flex-wrap justify-center gap-6 md:gap-10 max-w-5xl">
-          {FamilyMembers.map(name => {
-            const isSelected = selected === name;
-            const color = PROFILE_COLORS[name] || 'hsl(224, 76%, 58%)';
-            const avatar = avatars[name] || DEFAULT_AVATARS[name] || '';
+          {profiles.map(profile => {
+            const isSelected = selected === profile.name;
+            const color = profile.themeColor;
+            const avatar = profile.avatarUrl;
             return (
               <div 
-                key={name} 
+                key={profile.name} 
                 className={`flex flex-col items-center group cursor-pointer transition-all duration-500 ${
                   selected && !isSelected ? 'opacity-30 scale-90 blur-sm' : ''
                 }`}
                 onMouseEnter={() => SoundManager.playHover()}
-                onClick={() => !selected && !editingProfile && handleSelect(name)}
+                onClick={() => !selected && !editingProfile && handleSelect(profile)}
               >
                 {/* Avatar with ring */}
                 <div className={`relative transition-all duration-500 ${
@@ -383,7 +342,7 @@ export const Login = ({ onLogin }: { onLogin: (name: string) => void }) => {
                     <div className="w-full h-full rounded-full overflow-hidden bg-[var(--bg-primary)]">
                       <img 
                         src={avatar} 
-                        alt={`${name}'s Avatar`} 
+                        alt={`${profile.name}'s Avatar`} 
                         className={`w-full h-full object-cover transition-all duration-500 ${
                           isSelected ? 'scale-105' : 'grayscale-[20%] group-hover:grayscale-0'
                         }`}
@@ -397,7 +356,7 @@ export const Login = ({ onLogin }: { onLogin: (name: string) => void }) => {
                       onClick={e => {
                         e.stopPropagation();
                         SoundManager.playClick();
-                        setEditingProfile(name);
+                        setEditingProfile(profile.name);
                       }}
                       className="absolute -bottom-1 -right-1 w-8 h-8 md:w-9 md:h-9 rounded-full bg-[hsl(228,40%,15%)] border-2 border-[var(--border-subtle)] flex items-center justify-center text-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 hover:bg-[var(--accent-indigo)] hover:border-[var(--accent-indigo)] shadow-lg z-10"
                       title="Change avatar"
@@ -418,7 +377,7 @@ export const Login = ({ onLogin }: { onLogin: (name: string) => void }) => {
                 <span className={`mt-4 text-lg md:text-xl font-bold tracking-wide transition-all duration-300 ${
                   isSelected ? 'text-white' : 'text-[var(--text-secondary)] group-hover:text-white'
                 }`}>
-                  {name}
+                  {profile.name} {profile.role !== 'student' && <span className="text-xs uppercase tracking-widest text-indigo-400 block text-center">({profile.role})</span>}
                 </span>
               </div>
             );
@@ -431,7 +390,8 @@ export const Login = ({ onLogin }: { onLogin: (name: string) => void }) => {
         {editingProfile && (
           <AvatarPickerModal
             profileName={editingProfile}
-            currentAvatar={avatars[editingProfile] || DEFAULT_AVATARS[editingProfile] || ''}
+            themeColor={profiles.find(p => p.name === editingProfile)?.themeColor || 'hsl(224, 76%, 58%)'}
+            currentAvatar={profiles.find(p => p.name === editingProfile)?.avatarUrl || ''}
             onSelect={(url) => handleAvatarChange(editingProfile, url)}
             onClose={() => setEditingProfile(null)}
           />
@@ -485,7 +445,7 @@ export const Login = ({ onLogin }: { onLogin: (name: string) => void }) => {
                       setPinValue(next);
                       if (next.length === 4) {
                         setTimeout(() => {
-                          if (next === PRINCIPAL_PIN) {
+                          if (validatePrincipalPin(next)) {
                             setPinTarget(null); setSelected('Principal');
                             setTimeout(() => { SoundManager.playCinematicChime(); onLogin('Principal'); }, 500);
                           } else {

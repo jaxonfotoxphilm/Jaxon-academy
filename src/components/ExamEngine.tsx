@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { SoundManager } from '../utils/SoundManager';
 import examData from '../data/exam-data.json';
-import { VisionGrader } from './VisionGrader';
+// import { VisionGrader } from './VisionGrader';
 import { ParentManager } from '../utils/ParentManager';
 
 interface ExamEngineProps {
@@ -19,7 +19,7 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({ examId, currentUser, onE
     const [answers, setAnswers] = useState<number[]>([]);
     const [isComplete, setIsComplete] = useState(false);
     const [finalScore, setFinalScore] = useState(0);
-    const [showVisionGrader, setShowVisionGrader] = useState(false);
+    const [_showVisionGrader, setShowVisionGrader] = useState(false);
 
     if (!exam) return <div>Exam not found</div>;
 
@@ -149,12 +149,12 @@ export const ExamEngine: React.FC<ExamEngineProps> = ({ examId, currentUser, onE
                 Abandon Exam
             </button>
 
-            {showVisionGrader && (
+            {/*showVisionGrader && (
                 <VisionGrader 
                     questionText={currentQuestion.question}
                     onClose={() => setShowVisionGrader(false)}
                 />
-            )}
+            )*/}
         </div>
     );
 };

@@ -1,20 +1,13 @@
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { HelpCircle } from 'lucide-react';
-import { LessonVisualizer } from './LessonVisualizer';
 import { SoundManager } from '../utils/SoundManager';
-import { Canvas } from '@react-three/fiber';
-import { Avatar3D } from './Avatar3D';
-import { Environment3D } from './Environment3D';
-import { LearningProp3D } from './LearningProp3D';
-import { TransparentSprite } from './TransparentSprite';
+import { speak as voiceSpeak, stopSpeaking } from '../utils/VoiceService';
+// import { Canvas } from '@react-three/fiber';
 import { supabase } from '../supabaseClient';
 import { ParentManager } from '../utils/ParentManager';
 import { MultiDraftTutor } from './MultiDraftTutor';
 import { AnimatePresence, motion } from 'framer-motion';
-import lessonsData from '../data/lessons.json';
 import { MiniGame } from './MiniGame';
-import { ALL_LESSON_PLANS, findPlanByQuery } from '../data/lesson-plans';
-import type { LessonPlan } from '../data/lesson-plan-types';
 
 interface DialogueNode {
     id: string;
@@ -40,7 +33,14 @@ interface DialogueNode {
     feedbackWrong?: string;
 }
 
-export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }: { subjectId: string, gradeLevel: string, studentName: string, onBack: () => void }) => {
+// ─── Background Music URLs (free, royalty-free children's music) ───
+const BG_MUSIC_TRACKS = [
+    'https://cdn.pixabay.com/audio/2024/11/28/audio_3e58a0a1c5.mp3', // happy kids
+    'https://cdn.pixabay.com/audio/2022/10/14/audio_7573fce2fb.mp3', // playful 
+    'https://cdn.pixabay.com/audio/2024/02/07/audio_53aefc055c.mp3', // gentle learning
+];
+
+export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack, teacherGuideUrl }: { subjectId: string, gradeLevel: string, studentName: string, onBack: () => void, teacherGuideUrl?: string }) => {
     const [storyNodes, setStoryNodes] = useState<DialogueNode[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [currentNodeIndex, setCurrentNodeIndex] = useState(0);
@@ -58,31 +58,61 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
     const [isAsking, setIsAsking] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [isTalking, setIsTalking] = useState(false);
-    const [has3DModel, setHas3DModel] = useState(false);
-    const [hasEnv3D, setHasEnv3D] = useState(false);
-    const [hasProp3D, setHasProp3D] = useState(false);
     const [mathInputValue, setMathInputValue] = useState('');
-    const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
+    const [correctStreak, setCorrectStreak] = useState(0);
+    const [lessonPdfs, setLessonPdfs] = useState<{ label: string; url: string }[]>([]);
+    const [isMaterialsOpen, setIsMaterialsOpen] = useState(false);
+    const [activePdfIndex, setActivePdfIndex] = useState(0);
+    const [lessonInfo, setLessonInfo] = useState<{ unitName: string; unitNumber: string; totalLessons: number | null; chapterHint: string } | null>(null);
+
+    // Skip Protection State
+    const [timeSpent, setTimeSpent] = useState(0);
+    const [skipAttempts, setSkipAttempts] = useState(0);
+    const [skipQuizData, setSkipQuizData] = useState<{ question: string; options: string[]; correctIndex: number } | null>(null);
+    const [isSkipQuizActive, setIsSkipQuizActive] = useState(false);
+    const [isSkipQuizLoading, setIsSkipQuizLoading] = useState(false);
+
+    // Background music
+    const bgMusicRef = useRef<HTMLAudioElement | null>(null);
+    const [musicEnabled, setMusicEnabled] = useState(true);
 
     /** Tracks all active Audio objects so we can force-stop them on navigation */
     const activeAudioRefs = useRef<HTMLAudioElement[]>([]);
 
-
+    // Background music loop
     useEffect(() => {
-        fetch('/grace.vrm', { method: 'HEAD' })
-            .then(res => { if (res.ok && !res.headers.get('content-type')?.includes('text/html')) setHas3DModel(true); }).catch(() => {});
-        fetch('/lab.glb', { method: 'HEAD' })
-            .then(res => { if (res.ok && !res.headers.get('content-type')?.includes('text/html')) setHasEnv3D(true); }).catch(() => {});
-        fetch('/prop.glb', { method: 'HEAD' })
-            .then(res => { if (res.ok && !res.headers.get('content-type')?.includes('text/html')) setHasProp3D(true); }).catch(() => {});
-    }, []);
+        if (isLoading || storyNodes.length === 0 || !musicEnabled) {
+            if (bgMusicRef.current) bgMusicRef.current.pause();
+            return;
+        }
+
+        if (!bgMusicRef.current) {
+            const track = BG_MUSIC_TRACKS[Math.floor(Math.random() * BG_MUSIC_TRACKS.length)];
+            const audio = new Audio(track);
+            audio.loop = true;
+            audio.volume = 0.12; // soft background music
+            bgMusicRef.current = audio;
+            audio.play().catch(e => console.log("Autoplay blocked for BG music:", e));
+        } else {
+            bgMusicRef.current.play().catch(e => console.log("Autoplay blocked for BG music:", e));
+        }
+
+        return () => {
+            if (bgMusicRef.current) {
+                bgMusicRef.current.pause();
+            }
+        };
+    }, [isLoading, storyNodes.length, musicEnabled]);
+
+
 
     useEffect(() => {
         /**
          * Builds a structured lesson from the lesson plan data system.
          * Converts a LessonPlan into DialogueNode[] for the story engine.
          */
-        const buildLessonFromPlan = (plan: LessonPlan): DialogueNode[] => {
+        // @ts-expect-error — reserved for future lesson plan data system integration
+        const _buildLessonFromPlan = (plan: any): DialogueNode[] => {
             const nodes: DialogueNode[] = [];
             const isEarlyEd = plan.grade === 'PK' || plan.grade === 'K';
 
@@ -103,7 +133,7 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
             }
 
             // Agenda-driven nodes
-            plan.agenda.forEach((item, i) => {
+            plan.agenda.forEach((item: any, i: number) => {
                 if (item.phase === 'exit-ticket') return; // handled separately
                 const transition = plan.teacherScript.transitions[i] || '';
                 nodes.push({
@@ -116,7 +146,7 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
             });
 
             // Checks for understanding as quiz nodes
-            plan.checksForUnderstanding.forEach((check, i) => {
+            plan.checksForUnderstanding.forEach((check: any, i: number) => {
                 if (check.type === 'quiz' && check.question && check.options) {
                     nodes.push({
                         id: `lp-check-${i}`, characterName: 'Professor Grace',
@@ -130,7 +160,7 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
             });
 
             // Mini-games (remaining ones after the first)
-            plan.miniGames.slice(1).forEach((game, i) => {
+            plan.miniGames.slice(1).forEach((game: any, i: number) => {
                 const checkIn = plan.teacherScript.checkIns[i] || '';
                 nodes.push({
                     id: `lp-game-${i}`, characterName: 'Professor Grace',
@@ -164,20 +194,45 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
         };
 
         /**
-         * Fallback: builds a generic lesson when no structured plan exists.
+         * Fallback: builds a content-rich lesson aligned to the Core Knowledge unit title.
+         * Follows Teacher Guide Architecture: Scope → Hook → Activities → Comprehension Checks.
          */
         const buildFallbackLesson = (rawSubject: string): DialogueNode[] => {
             const cleaned = rawSubject.replace('dynamic:', '').replace(/-/g, ' ');
-            const topic = cleaned.split(/\s+/).pop() || 'this subject';
-            const subjectName = cleaned;
+            // Extract a meaningful topic from the full unit title
+            const unitMatch = cleaned.match(/(?:Unit \d+:?\s*)?(.*)/i);
+            const topic = unitMatch ? unitMatch[1].trim() : cleaned;
 
             const nodes: DialogueNode[] = [
-                { id: "fb-1", characterName: "Professor Grace", text: `Good morning, ${studentName}! Today we're exploring ${topic} in ${subjectName}. Let's think critically — not just remember facts, but understand WHY. 📚`, voiceType: "professor", visualType: "reading-book", isQuiz: false, miniGame: undefined, itemReward: null as any },
-                { id: "fb-2", characterName: "Professor Grace", text: `Let's build vocabulary for ${topic}. Unscramble the letters below to reveal a key term! 🔤`, voiceType: "professor", visualType: "science-atom", isQuiz: false, miniGame: "wordScramble", itemReward: null as any },
-                { id: "fb-3", characterName: "Professor Grace", text: `Match the terms with their definitions. Each connects to a core concept in ${topic}. 🔗`, voiceType: "professor", visualType: "reading-book", isQuiz: false, miniGame: "matchPairs", itemReward: null as any },
-                { id: "fb-4", characterName: "Professor Grace", text: `Complete each sentence with the correct term. ✍️`, voiceType: "professor", visualType: "reading-book", isQuiz: false, miniGame: "fillBlank", itemReward: null as any },
-                { id: "fb-5", characterName: "Professor Grace", text: `⚡ True or False? Think carefully! ⚡`, voiceType: "professor", visualType: "science-atom", isQuiz: false, miniGame: "trueFalse", itemReward: null as any },
-                { id: "fb-6", characterName: "Professor Grace", text: `Lesson complete, ${studentName}! 🌟 Great work today! 🎓`, voiceType: "professor", visualType: "reading-book", isQuiz: false, itemReward: "Knowledge Star" as any },
+                // Node 1 — Welcome
+                { id: "fb-1", characterName: "Professor Grace",
+                  text: `Hey ${studentName}! 👋 Today we're exploring "${topic}" — this is going to be really cool. Let's jump in!`,
+                  voiceType: "professor", visualType: "reading-book", isQuiz: false, miniGame: undefined, itemReward: null as any },
+
+                // Node 2 — Hook
+                { id: "fb-2", characterName: "Professor Grace",
+                  text: `Here's something interesting about "${topic}" — did you know this connects to things you see every single day?\n\nThink about it for a second. What do you already know about this? Hold that thought — I'm about to blow your mind! 🤯`,
+                  voiceType: "professor", visualType: "reading-book", isQuiz: false, miniGame: undefined, itemReward: null as any },
+
+                // Node 3 — Vocabulary Building
+                { id: "fb-3", characterName: "Professor Grace",
+                  text: `Let's learn some key words for "${topic}". Strong readers are strong word-learners! Unscramble the letters to reveal an important term.`,
+                  voiceType: "professor", visualType: "science-atom", isQuiz: false, miniGame: "wordScramble", itemReward: null as any },
+
+                // Node 4 — Guided Practice / Matching
+                { id: "fb-4", characterName: "Professor Grace",
+                  text: `Nice work! Now let's connect the dots. Match each term with its meaning — you've got this! 💪`,
+                  voiceType: "professor", visualType: "reading-book", isQuiz: false, miniGame: "matchPairs", itemReward: null as any },
+
+                // Node 5 — Fill in the Blanks
+                { id: "fb-5", characterName: "Professor Grace",
+                  text: `Almost there! Fill in the blanks to complete these sentences about "${topic}". Use what you just learned.`,
+                  voiceType: "professor", visualType: "reading-book", isQuiz: false, miniGame: "fillBlank", itemReward: null as any },
+
+                // Node 6 — Closing
+                { id: "fb-6", characterName: "Professor Grace",
+                  text: `🎓 You did it, ${studentName}!\n\nToday you learned about "${topic}" — and you crushed it.\n\nRemember: every lesson builds on the last one. The more you learn, the more connections you'll see everywhere. Your family is going to be SO proud! ⭐`,
+                  voiceType: "professor", visualType: "reading-book", isQuiz: false, itemReward: "Knowledge Star" as any },
             ];
             return nodes;
         };
@@ -185,34 +240,35 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
         const initializeCurriculum = async () => {
             setIsLoading(true);
             try {
-                // 1. Try structured lesson plan system first
-                const plan = findPlanByQuery(ALL_LESSON_PLANS, gradeLevel, subjectId);
-                if (plan) {
-                    setStoryNodes(buildLessonFromPlan(plan));
-                    setIsLoading(false);
-                    return;
-                }
-
-                // 2. Try Supabase AI backend
+                /**
+                 * Pass the teacher guide URL alongside the subject so the AI can
+                 * scrape real Core Knowledge content instead of making things up.
+                 */
                 const { data, error } = await supabase.functions.invoke('generate-lesson', {
-                    body: { subject: subjectId.replace('dynamic:', '').replace(/-/g, ' '), gradeLevel, studentName }
+                    body: {
+                        subject: subjectId.replace('dynamic:', '').replace(/-/g, ' '),
+                        gradeLevel,
+                        studentName,
+                        teacherGuideUrl: teacherGuideUrl || undefined,
+                    }
                 });
-                if (error || !data || !data.nodes) throw new Error("Fallback");
+                if (error || !data || !data.nodes) throw new Error('Fallback');
                 setStoryNodes(data.nodes);
-            } catch(e) {
-                // 3. Check static lesson data
-                const staticNodes = (lessonsData as any)[subjectId];
-                if (staticNodes && Array.isArray(staticNodes) && staticNodes.length > 1) {
-                    setStoryNodes(staticNodes);
-                } else {
-                    // 4. Generic fallback lesson
-                    setStoryNodes(buildFallbackLesson(subjectId));
+                // Extract lesson-level PDF resources (Activity Book, Study Guide)
+                if (data.pdfResources && Array.isArray(data.pdfResources)) {
+                    setLessonPdfs(data.pdfResources);
                 }
+                if (data.lessonInfo) {
+                    setLessonInfo(data.lessonInfo);
+                }
+            } catch(e) {
+                // Fallback: content-rich lesson from unit title
+                setStoryNodes(buildFallbackLesson(subjectId));
             }
             setIsLoading(false);
         };
         initializeCurriculum();
-    }, [subjectId, gradeLevel, studentName]);
+    }, [subjectId, gradeLevel, studentName, teacherGuideUrl]);
 
     const currentNode = storyNodes && storyNodes.length > 0 ? storyNodes[currentNodeIndex] : undefined;
 
@@ -220,34 +276,17 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
         if (isComplete) return;
         let cancelled = false;
         
-        const playDynamicAudio = async (text: string, voiceType: string) => {
-            // Stop any previous audio first
+        /**
+         * Speak text using the unified VoiceService (ElevenLabs → Kokoro → Web Speech).
+         * The isTalking state is synced via callbacks so Professor Grace animates correctly.
+         */
+        const playDynamicAudio = async (text: string, _voiceType: string) => {
             killAllAudio();
-            
-            // Try cloud TTS with a fast timeout — fall back to local browser TTS immediately
-            try {
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 3000); // 3s max
-                const { data, error } = await supabase.functions.invoke('generate-tts', { 
-                    body: { text },
-                });
-                clearTimeout(timeout);
-                if (cancelled) return;
-                if (error || !data || !data.audioContent) throw new Error("TTS Fallback");
-                const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
-                activeAudioRefs.current.push(audio);
-                audio.addEventListener('play', () => setIsTalking(true));
-                audio.addEventListener('ended', () => { setIsTalking(false); activeAudioRefs.current = activeAudioRefs.current.filter(a => a !== audio); });
-                audio.addEventListener('pause', () => setIsTalking(false));
-                audio.play();
-            } catch(e) {
-                if (cancelled) return;
-                console.warn("Cloud TTS unavailable, using local browser TTS.");
-                setIsTalking(true);
-                SoundManager.playCharacterVoice(text, voiceType as any);
-                // Rough estimate for lip sync timing
-                setTimeout(() => { if (!cancelled) setIsTalking(false); }, text.length * 60);
-            }
+            if (cancelled) return;
+            await voiceSpeak(text, {
+                onStart: () => { if (!cancelled) setIsTalking(true); },
+                onEnd: () => { if (!cancelled) setIsTalking(false); },
+            });
         };
 
         const loadDynamicImage = async (query: string) => {
@@ -285,24 +324,12 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
         setIsAsking(true);
         SoundManager.playClick();
         
+        /** Speak via unified VoiceService (ElevenLabs → Kokoro → Web Speech) */
         const speakText = async (text: string) => {
-            try {
-                const tts = await supabase.functions.invoke('generate-tts', { body: { text } });
-                if (tts.data && tts.data.audioContent) {
-                    const audio = new Audio("data:audio/mp3;base64," + tts.data.audioContent);
-                    askAudioRef.current = audio;
-                    audio.addEventListener('play', () => setIsTalking(true));
-                    audio.addEventListener('ended', () => setIsTalking(false));
-                    audio.addEventListener('pause', () => setIsTalking(false));
-                    audio.play();
-                } else {
-                    throw new Error("TTS API Error");
-                }
-            } catch(e) {
-                setIsTalking(true);
-                SoundManager.playCharacterVoice(text, 'professor');
-                setTimeout(() => setIsTalking(false), text.length * 50);
-            }
+            await voiceSpeak(text, {
+                onStart: () => setIsTalking(true),
+                onEnd: () => setIsTalking(false),
+            });
         };
 
         try {
@@ -323,40 +350,7 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
         setIsAsking(false);
     };
 
-    const handlePopQuiz = async () => {
-        if (!currentNode) return;
-        setIsLoadingQuiz(true);
-        SoundManager.playClick();
-        try {
-            const { data, error } = await supabase.functions.invoke('generate-lesson', {
-                body: { 
-                    subject: `Pop Quiz on: ${currentNode.text.substring(0, 100)}`, 
-                    gradeLevel: gradeLevel, 
-                    studentName: studentName 
-                }
-            });
-            if (error || !data || !data.nodes) throw new Error("Failed to generate pop quiz");
-            
-            const quizNodes = data.nodes;
-            if (quizNodes && quizNodes.length > 0) {
-                const newNodeId = quizNodes[0].id;
-                const lastQuizNode = quizNodes[quizNodes.length - 1];
-                lastQuizNode.nextNodeId = currentNode.nextNodeId || (storyNodes[currentNodeIndex + 1]?.id) || 'end';
 
-                const newStoryNodes = [...storyNodes];
-                newStoryNodes[currentNodeIndex] = { ...currentNode, nextNodeId: newNodeId };
-                newStoryNodes.splice(currentNodeIndex + 1, 0, ...quizNodes);
-                setStoryNodes(newStoryNodes);
-                
-                setTimeout(() => handleNext(), 100);
-                SoundManager.playCharacterVoice("Let's see what you remember. Pop quiz time!", "professor");
-            }
-        } catch(e) {
-            console.error(e);
-            alert("Professor Grace is too busy grading papers to make a quiz right now!");
-        }
-        setIsLoadingQuiz(false);
-    };
 
     const handleListen = () => {
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -418,13 +412,11 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
             
             setAskHistory(prev => [...prev, { role: 'tutor', text: data.response }]);
             
-            // Speak text directly
-            const tts = await supabase.functions.invoke('generate-tts', { body: { text: data.response } });
-            if (tts.data && tts.data.audioContent) {
-                const audio = new Audio("data:audio/mp3;base64," + tts.data.audioContent);
-                askAudioRef.current = audio;
-                audio.play();
-            }
+            // Speak via unified VoiceService
+            await voiceSpeak(data.response, {
+                onStart: () => setIsTalking(true),
+                onEnd: () => setIsTalking(false),
+            });
         } catch(e) {
             console.error("Hint failed", e);
         }
@@ -451,23 +443,79 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
         }
     }, [currentNodeIndex, storyNodes]);
 
+    // Timer effect for skip protection
+    useEffect(() => {
+        setTimeSpent(0);
+        setSkipAttempts(0);
+        setSkipQuizData(null);
+        setIsSkipQuizActive(false);
+
+        const interval = setInterval(() => {
+            setTimeSpent(prev => prev + 1);
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [currentNodeIndex]);
+
     /** Force-stop ALL audio: Web Speech, ElevenLabs Audio elements, Kokoro Audio elements */
     const killAllAudio = () => {
-        // Stop Web Speech API
-        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-        // Stop all tracked Audio elements (ElevenLabs / Kokoro / Cloud TTS)
+        // Stop all VoiceService audio (handles Web Speech, ElevenLabs, Kokoro)
+        stopSpeaking();
+        // Stop any legacy tracked Audio elements
         activeAudioRefs.current.forEach(a => { try { a.pause(); a.currentTime = 0; } catch {} });
         activeAudioRefs.current = [];
-        // Also stop VoiceService audio
-        import('../utils/VoiceService').then(({ stopSpeaking }) => stopSpeaking());
         setIsTalking(false);
     };
 
-    const handleNext = () => {
+    const handleNext = async () => {
         SoundManager.playClick();
-        killAllAudio();
         
         if (!currentNode) return;
+        
+        // --- Skip Protection Logic ---
+        if (!currentNode.isQuiz && !currentNode.miniGame && !isSkipQuizActive && currentNode.id !== 'lp-closing') {
+            const wordCount = currentNode.text.split(' ').length;
+            // 3 words per second, min 5 seconds
+            const minimumTime = Math.max(5, Math.floor(wordCount * 0.33));
+            
+            if (timeSpent < minimumTime) {
+                if (skipAttempts === 0) {
+                    setSkipAttempts(1);
+                    alert("Actually read the lesson! You are trying to skip too fast.");
+                    try {
+                        await supabase.from('student_progress').insert([{
+                            student_name: studentName,
+                            subject: '[ALERT] Skipped Reading',
+                            topic: `Tried to skip page ${currentNodeIndex + 1} (${wordCount} words) after only ${timeSpent}s.`,
+                            score: 0,
+                            completed_at: new Date().toISOString()
+                        }]);
+                    } catch (e) {}
+                    return; // Block skipping
+                } else {
+                    // Second offense -> lock them into a quiz
+                    setIsSkipQuizLoading(true);
+                    try {
+                        const { data, error } = await supabase.functions.invoke('generate-skip-quiz', {
+                            body: { text: currentNode.text }
+                        });
+                        if (!error && data && data.question) {
+                            setSkipQuizData(data);
+                            setIsSkipQuizActive(true);
+                        } else {
+                            alert("Actually read the lesson! (No skip-quiz fallback)");
+                        }
+                    } catch (e) {
+                        alert("Actually read the lesson!");
+                    }
+                    setIsSkipQuizLoading(false);
+                    return; // Block skipping
+                }
+            }
+        }
+        // --- End Skip Protection Logic ---
+
+        killAllAudio();
         if (currentNode.nextNodeId === 'end') { handleComplete(); return; }
         
         // Reset state for next node
@@ -517,15 +565,23 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
             }
         } else if (currentNode.correctIndex !== undefined) {
             if (index === currentNode.correctIndex) {
+                SoundManager.playReward();
                 SoundManager.playCharacterVoice("Correct! Excellent job.", "professor");
                 setShowQuizResult('correct');
+                const newStreak = correctStreak + 1;
+                setCorrectStreak(newStreak);
+                if (newStreak >= 3) {
+                    SoundManager.playStreakNotification();
+                }
                 setTimeout(() => {
                     setShowQuizResult(null);
                     handleNext();
                 }, 2000);
             } else {
+                SoundManager.playError();
                 SoundManager.playCharacterVoice("That is incorrect. Let's think about this carefully.", "narrator");
                 setScore(prev => Math.max(0, prev - 10));
+                setCorrectStreak(0);
                 setShowQuizResult('incorrect');
                 
                 try {
@@ -583,23 +639,26 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
         if (isCorrect) {
             setScore(prev => Math.min(100, prev + 5));
             setShowQuizResult('correct');
-            SoundManager.playClick();
+            SoundManager.playReward();
+            setCorrectStreak(prev => prev + 1);
             setTimeout(() => {
                 setShowQuizResult(null);
                 setMathInputValue('');
                 handleNext();
             }, 2000);
         } else {
-            SoundManager.playClick();
+            SoundManager.playError();
             setShowQuizResult('incorrect');
             setScore(prev => Math.max(0, prev - 10));
+            setCorrectStreak(0);
             setTimeout(() => setShowQuizResult(null), 2000);
         }
     };
 
     const handleComplete = async () => {
+        if (bgMusicRef.current) bgMusicRef.current.pause();
         setIsComplete(true);
-        SoundManager.playClick();
+        SoundManager.playLevelUp();
         
         const cleanSubject = subjectId.replace('dynamic:', '');
         const isPassed = score >= 70;
@@ -706,74 +765,196 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
 
     if (!currentNode) return null;
 
+    /** Build chapter entries for the lesson jump list */
+    const chapterEntries = lessonInfo?.totalLessons
+        ? Array.from({ length: lessonInfo.totalLessons }, (_, i) => ({
+            label: `Lesson ${i + 1}`,
+            page: Math.max(1, Math.round((i / lessonInfo.totalLessons!) * 100) + 3),
+        }))
+        : [];
 
     return (
-        <div 
-            className="w-full h-[80vh] rounded-3xl overflow-hidden relative flex flex-col justify-end border-2 border-white/20 shadow-2xl animate-in zoom-in duration-700"
-            style={{ background: currentNode?.backgroundUrl || '#040714' }}
-        >
-            <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-                {(hasEnv3D || hasProp3D) ? (
-                    <Canvas camera={{ position: [0, 0, 5], fov: 45 }} className="w-full h-full">
-                        <ambientLight intensity={1.5} />
-                        <directionalLight position={[2, 2, 2]} intensity={2} />
-                        <Suspense fallback={null}>
-                            {hasEnv3D && <Environment3D url="/lab.glb" />}
-                            {hasProp3D && <LearningProp3D url="/prop.glb" />}
-                        </Suspense>
-                    </Canvas>
-                ) : dynamicImageUrl ? (
-                    <div className="w-full h-full p-12 flex items-center justify-center bg-slate-900/40">
-                        <img 
-                            src={dynamicImageUrl} 
-                            alt="Lesson Illustration" 
-                            className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl border-4 border-slate-700/50 pointer-events-none animate-in zoom-in duration-1000" 
-                        />
-                    </div>
-                ) : (
-                    <LessonVisualizer visualType={currentNode.visualType} youtubeSearchQuery={currentNode.youtubeSearchQuery} />
+        <div className={`w-full h-[80vh] flex gap-0 transition-all duration-500 ease-out`}>
+            {/* ──── LEFT: Materials Panel (only when open) ──── */}
+            <AnimatePresence>
+                {isMaterialsOpen && lessonPdfs.length > 0 && (
+                    <motion.div
+                        initial={{ width: 0, opacity: 0 }}
+                        animate={{ width: '55%', opacity: 1 }}
+                        exit={{ width: 0, opacity: 0 }}
+                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                        className="h-full flex flex-col bg-[#0a0e1a] border-2 border-indigo-500/30 rounded-l-3xl overflow-hidden shrink-0"
+                    >
+                        {/* Panel Header */}
+                        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-indigo-500/20 bg-[#0d1225] shrink-0">
+                            <span className="text-base">📚</span>
+                            <h3 className="text-sm font-bold text-white flex-1 truncate">Lesson Materials</h3>
+                            <button
+                                onClick={() => setIsMaterialsOpen(false)}
+                                className="w-7 h-7 flex items-center justify-center rounded-full bg-white/10 hover:bg-rose-500/80 text-slate-400 hover:text-white text-sm transition-all"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Chapter Jump List */}
+                        {chapterEntries.length > 0 && (
+                            <div className="px-3 py-2 border-b border-indigo-500/20 bg-amber-500/5 shrink-0">
+                                <div className="flex items-center gap-2 mb-1.5">
+                                    <span className="text-xs">📖</span>
+                                    <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider">
+                                        Jump to Lesson {lessonInfo?.totalLessons ? `(${lessonInfo.totalLessons} total)` : ''}
+                                    </span>
+                                </div>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {chapterEntries.map((ch, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => {
+                                                // Reload iframe with page anchor
+                                                const pdf = lessonPdfs[activePdfIndex];
+                                                if (pdf) {
+                                                    const iframe = document.getElementById('materials-pdf-viewer') as HTMLIFrameElement;
+                                                    if (iframe) {
+                                                        iframe.src = `${pdf.url}#page=${ch.page}`;
+                                                    }
+                                                }
+                                            }}
+                                            className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-indigo-500/15 border border-indigo-400/25 text-indigo-300 hover:bg-indigo-500/30 hover:text-indigo-200 transition-all hover:scale-105 active:scale-95"
+                                        >
+                                            {ch.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* PDF Tabs (Activity Book / Study Guide) */}
+                        {lessonPdfs.length > 1 && (
+                            <div className="flex border-b border-indigo-500/20 shrink-0">
+                                {lessonPdfs.map((pdf, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setActivePdfIndex(idx)}
+                                        className={`flex-1 px-3 py-2 text-xs font-semibold transition-all ${
+                                            activePdfIndex === idx
+                                                ? 'text-indigo-300 border-b-2 border-indigo-400 bg-indigo-500/10'
+                                                : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                                        }`}
+                                    >
+                                        📄 {pdf.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* PDF Viewer — direct embed for native controls (zoom, search, page nav) */}
+                        <div className="flex-1 min-h-0">
+                            <iframe
+                                id="materials-pdf-viewer"
+                                key={lessonPdfs[activePdfIndex]?.url}
+                                src={lessonPdfs[activePdfIndex]?.url || ''}
+                                className="w-full h-full bg-white"
+                                title={lessonPdfs[activePdfIndex]?.label || 'Materials'}
+                            />
+                        </div>
+                    </motion.div>
                 )}
-            </div>
+            </AnimatePresence>
 
-            <div className="absolute top-0 left-0 w-full h-2 bg-white/10 z-50">
-                <div 
-                    className="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 transition-all duration-700 ease-out shadow-[0_0_15px_rgba(74,222,128,0.5)]" 
-                    style={{ width: `${Math.max(5, (currentNodeIndex / storyNodes.length) * 100)}%` }}
-                ></div>
-            </div>
-            
-            {/* Dark gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10 pointer-events-none"></div>
-
-            {/* Content Container (Avatar + Dialogue) */}
-            <div className="relative z-30 w-full mt-auto flex flex-col md:flex-row items-end pb-8 px-4 md:px-12 gap-8 max-w-7xl mx-auto">
-                
-                {/* Character Sprite */}
-                <div className="hidden md:block w-1/3 max-w-[350px] relative pointer-events-none drop-shadow-2xl flex-shrink-0 h-[60vh]">
-                    {has3DModel ? (
-                        <div className="w-full h-full absolute inset-0">
-                            <Canvas camera={{ position: [0, -0.2, 2.2], fov: 45 }}>
-                                <ambientLight intensity={1.5} />
-                                <directionalLight position={[2, 2, 2]} intensity={2} />
-                                <Avatar3D url="/grace.vrm" isTalking={isTalking} />
-                            </Canvas>
+            {/* ──── RIGHT: Lesson Container (shrinks when materials are open) ──── */}
+            <div 
+                className={`h-full rounded-3xl overflow-hidden relative flex flex-col justify-end border-2 border-white/20 shadow-2xl animate-in zoom-in duration-700 transition-all duration-500 ${
+                    isMaterialsOpen && lessonPdfs.length > 0 ? 'flex-1 rounded-l-none border-l-0' : 'w-full'
+                }`}
+                style={{ background: currentNode?.backgroundUrl || '#040714' }}
+            >
+                <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                    {dynamicImageUrl ? (
+                        <div className="w-full h-full p-12 flex items-center justify-center bg-slate-900/40">
+                            <img
+                                src={dynamicImageUrl}
+                                alt="Lesson Illustration"
+                                className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl border-4 border-slate-700/50 pointer-events-none animate-in zoom-in duration-1000"
+                            />
                         </div>
                     ) : (
-                        <TransparentSprite 
-                            src="/grace_idle.png" 
-                            alt="Professor Grace" 
-                            className={`w-full h-full absolute bottom-0 object-bottom object-contain origin-bottom filter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] ${isTalking ? 'animate-talk' : 'animate-float'} ${currentNode.isQuiz ? 'animate-pose-think' : ''}`}
-                        />
+                        <div className="w-full h-full bg-gradient-to-br from-slate-900 to-[#040714]" />
                     )}
                 </div>
 
+                <div className="absolute top-0 left-0 w-full h-2 bg-white/10 z-50">
+                    <div 
+                        className="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 transition-all duration-700 ease-out shadow-[0_0_15px_rgba(74,222,128,0.5)]" 
+                        style={{ width: `${Math.max(5, (currentNodeIndex / storyNodes.length) * 100)}%` }}
+                    ></div>
+                </div>
+                
+                {/* Dark gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10 pointer-events-none"></div>
+
+                {/* Open Materials Button — inside the lesson area */}
+                {lessonPdfs.length > 0 && !isMaterialsOpen && (
+                    <button
+                        onClick={() => setIsMaterialsOpen(true)}
+                        className="absolute bottom-6 left-6 z-40 px-5 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 transition-all shadow-lg hover:scale-105 active:scale-95 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white shadow-[0_0_15px_rgba(245,158,11,0.3)]"
+                    >
+                        📚 Open Materials
+                    </button>
+                )}
+
+                {/* Content Container (Avatar + Dialogue) */}
+                <div className="relative z-30 w-full mt-auto flex flex-col md:flex-row items-end pb-8 px-4 md:px-12 gap-8 max-w-7xl mx-auto">
+                    
+                    {/* Character Sprite — hidden when materials panel is open to save space */}
+                    {!isMaterialsOpen && (
+                        <div className="hidden md:flex w-1/3 max-w-[350px] items-end justify-center shrink-0 h-[60vh] relative pointer-events-none">
+                            <div className="flex flex-col items-center gap-4 animate-grace-entrance">
+                                {/* Avatar with animated glow ring */}
+                                <div className={`relative w-52 h-52 rounded-full flex items-center justify-center transition-all duration-500 ${
+                                    isTalking ? 'animate-grace-talk animate-glow-ring' : 'animate-grace-idle'
+                                }`}>
+                                    {/* Outer glow ring */}
+                                    <div className={`absolute inset-0 rounded-full transition-all duration-500 ${
+                                        isTalking 
+                                            ? 'bg-gradient-to-br from-indigo-500/30 to-violet-500/30 shadow-[0_0_80px_rgba(99,102,241,0.4)]' 
+                                            : 'bg-gradient-to-br from-indigo-900/40 to-purple-900/40 shadow-[0_0_40px_rgba(99,102,241,0.15)]'
+                                    }`} />
+                                    {/* Inner avatar */}
+                                    <div className="relative z-10 w-44 h-44 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-indigo-400/40 flex items-center justify-center overflow-hidden">
+                                        <span className="text-8xl select-none" style={{ filter: isTalking ? 'drop-shadow(0 0 20px rgba(129,140,248,0.6))' : 'none' }}>🎓</span>
+                                    </div>
+                                    {/* Rotating accent ring */}
+                                    <div className="absolute inset-[-4px] rounded-full border-2 border-transparent profile-ring" style={{
+                                        opacity: isTalking ? 0.8 : 0.3,
+                                        transition: 'opacity 0.5s',
+                                    }} />
+                                </div>
+
+                                {/* Speech wave visualizer — only visible when talking */}
+                                <div className={`flex items-end gap-1 h-6 transition-all duration-300 ${isTalking ? 'opacity-100' : 'opacity-0'}`}>
+                                    {[1,2,3,4,5].map(i => (
+                                        <div key={i} className="w-1 bg-gradient-to-t from-indigo-500 to-violet-400 rounded-full speech-wave-bar" style={{ minHeight: '4px' }} />
+                                    ))}
+                                </div>
+
+                                {/* Status indicator */}
+                                <div className={`text-xs font-bold uppercase tracking-[0.2em] transition-all duration-300 ${
+                                    isTalking ? 'text-indigo-400' : 'text-slate-600'
+                                }`}>
+                                    {isTalking ? '● Speaking' : '○ Listening'}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                 {/* Dialogue Box */}
-                <div className="w-full md:flex-1 bg-[#02040A]/80 backdrop-blur-3xl border border-indigo-500/20 p-8 md:p-12 rounded-[2.5rem] shadow-[0_0_80px_rgba(0,0,0,0.9)] relative flex flex-col max-h-[65vh]">
+                <div className="w-full md:flex-1 bg-[#02040A]/80 backdrop-blur-3xl border border-indigo-500/20 p-8 md:p-12 rounded-[2.5rem] dialogue-glow relative flex flex-col max-h-[65vh]">
                     {/* Shimmer border effect */}
                     <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-70"></div>
                     
                     {/* Character Name Badge */}
-                    <div className="absolute -top-6 left-12 bg-gradient-to-r from-indigo-600 to-violet-700 px-10 py-2 rounded-full font-black text-xl tracking-[0.1em] text-white shadow-[0_0_30px_rgba(79,70,229,0.6)] border border-indigo-400/50">
+                    <div className="absolute -top-6 left-12 bg-gradient-to-r from-indigo-600 to-violet-700 px-10 py-2 rounded-full font-black text-xl tracking-[0.1em] text-white shadow-[0_0_30px_rgba(79,70,229,0.6)] border border-indigo-400/50 animate-badge-glow">
                         {currentNode.characterName}
                     </div>
 
@@ -786,16 +967,6 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                         Ask Professor
                     </button>
 
-                    {/* Pop Quiz Trigger */}
-                    <button
-                        onClick={handlePopQuiz}
-                        disabled={isLoadingQuiz}
-                        className="absolute -top-5 right-56 bg-rose-500/20 hover:bg-rose-500/40 border border-rose-400/50 text-rose-100 px-6 py-1.5 rounded-full font-medium tracking-wide flex items-center gap-2 transition-all hover:scale-105 disabled:opacity-50 shadow-[0_0_15px_rgba(244,63,94,0.3)]"
-                        title="Generate an instant knowledge check!"
-                    >
-                        {isLoadingQuiz ? <span className="animate-spin">🔄</span> : <span>⚡</span>}
-                        Pop Quiz!
-                    </button>
 
                     <div className="flex-1 overflow-y-auto pt-4 pr-2 flex flex-col justify-start custom-scrollbar relative">
                         <AnimatePresence mode="wait">
@@ -994,9 +1165,64 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                         </div>
                     )}
                 </div>
+                <button
+                    onClick={() => setMusicEnabled(!musicEnabled)}
+                    className="w-10 h-10 rounded-full bg-slate-800/80 hover:bg-slate-700 border border-slate-600 flex items-center justify-center text-white transition-colors"
+                    title={musicEnabled ? "Mute Background Music" : "Play Background Music"}
+                >
+                    {musicEnabled ? "🎵" : "🔇"}
+                </button>
             </div>
 
             {/* Ask Modal */}
+            <AnimatePresence>
+                {isSkipQuizActive && skipQuizData && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md p-4"
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.9, y: 50 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 50 }}
+                            className="bg-slate-900 border border-red-500/50 rounded-3xl p-8 max-w-2xl w-full shadow-[0_0_50px_rgba(239,68,68,0.3)] relative overflow-hidden flex flex-col"
+                        >
+                            <h3 className="text-3xl font-bold text-red-400 mb-2 shrink-0">Hold on a second...</h3>
+                            <p className="text-slate-300 mb-6 italic">You're skipping through the reading! Prove you read it by answering this question to continue:</p>
+                            
+                            <div className="bg-white/5 p-6 rounded-2xl border border-white/10 mb-6">
+                                <h4 className="text-2xl text-white font-medium mb-6">{skipQuizData.question}</h4>
+                                <div className="grid grid-cols-1 gap-3">
+                                    {skipQuizData.options.map((opt, idx) => (
+                                        <button 
+                                            key={idx}
+                                            disabled={isSkipQuizLoading}
+                                            onClick={() => {
+                                                setIsSkipQuizLoading(true);
+                                                if (idx === skipQuizData.correctIndex) {
+                                                    // Pass! Let them move on
+                                                    SoundManager.playReward();
+                                                    setIsSkipQuizActive(false);
+                                                    setTimeSpent(9999); // bypass timer for this page next click
+                                                    setIsSkipQuizLoading(false);
+                                                } else {
+                                                    // Fail!
+                                                    SoundManager.playError();
+                                                    alert("See, you should have read to understand! Now try again. Nice try, you ain't slick.");
+                                                    setIsSkipQuizActive(false); // Close quiz, send them back to reading
+                                                    setIsSkipQuizLoading(false);
+                                                }
+                                            }}
+                                            className="p-4 rounded-xl text-left font-bold text-lg transition-all border border-white/10 bg-white/5 hover:bg-white/20 text-white shadow-md disabled:opacity-50"
+                                        >
+                                            {opt}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <AnimatePresence>
                 {isAskModalOpen && (
                     <motion.div 
@@ -1055,6 +1281,7 @@ export const StoryLessonEngine = ({ subjectId, gradeLevel, studentName, onBack }
                     </motion.div>
                 )}
             </AnimatePresence>
+            </div>
         </div>
     );
 };

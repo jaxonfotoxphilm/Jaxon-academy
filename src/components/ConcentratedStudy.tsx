@@ -67,24 +67,7 @@ export const ConcentratedStudy: React.FC<ConcentratedStudyProps> = ({ onLaunchEx
                 ))}
             </div>
 
-            {/* Standardized Tests Section */}
-            <div className="mb-12">
-                <h3 className="text-lg font-bold text-slate-300 uppercase tracking-widest mb-6 flex items-center gap-3">
-                    <span className="w-8 h-0.5 bg-gradient-to-r from-indigo-500 to-transparent"></span>
-                    Standardized Assessments
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        className="bg-gradient-to-br from-indigo-900/50 to-blue-900/50 border border-indigo-500/30 hover:border-indigo-400/60 rounded-2xl p-6 cursor-pointer group transition-all shadow-lg hover:shadow-indigo-500/20"
-                        onClick={() => { SoundManager.playClick(); onLaunchExam('placement_test_friday'); }}
-                    >
-                        <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">🎓</div>
-                        <h3 className="font-bold text-white text-lg mb-1">Placement Test</h3>
-                        <p className="text-sm text-indigo-200/70">Comprehensive grade-level assessment across all core subjects.</p>
-                    </motion.div>
-                </div>
-            </div>
+
 
             {/* Subject Exams Grid */}
             <h3 className="text-lg font-bold text-slate-300 uppercase tracking-widest mb-6 flex items-center gap-3">
