@@ -17,15 +17,33 @@ export const MigrationTool: React.FC = () => {
             if (!user) throw new Error('You must be logged in to migrate data.');
             const accountId = user.id;
 
-            setProgress('Migrating users...');
-            const usersStr = localStorage.getItem('jaxon-academy-users');
-            const localUsers: UserProfile[] = usersStr ? JSON.parse(usersStr) : [];
-            
-            for (const u of localUsers) {
-                await UserManager.saveProfile(u);
-                if (u.role === 'student' && u.gradeLevel) {
-                    await ParentManager.setStudentGrade(u.name, u.gradeLevel);
-                }
+            setProgress('Migrating legacy student profiles...');
+            const hardcodedStudents = [
+                { name: 'Ayla', grade: 'grade-8' },
+                { name: 'Aria', grade: 'grade-K' },
+                { name: 'Ana', grade: 'grade-K' },
+                { name: 'Donyale', grade: 'grade-K' },
+                { name: 'Aiko', grade: 'grade-PK' },
+                { name: 'Ace', grade: 'grade-K' }
+            ];
+
+            const avatarsStr = localStorage.getItem('jaxon-academy-avatars');
+            const localAvatars = avatarsStr ? JSON.parse(avatarsStr) : {};
+
+            for (const student of hardcodedStudents) {
+                const avatarUrl = localAvatars[student.name] || `https://api.dicebear.com/9.x/bottts/svg?seed=${student.name}`;
+                
+                // Save to profiles table
+                await UserManager.saveProfile({
+                    name: student.name,
+                    role: 'student',
+                    gradeLevel: student.grade,
+                    avatarUrl: avatarUrl,
+                    themeColor: 'hsl(142, 71%, 45%)' // Default green theme for students
+                });
+
+                // Assign to student_profiles table
+                await ParentManager.setStudentGrade(student.name, student.grade);
             }
 
             setProgress('Migrating progress and adopted subjects...');
