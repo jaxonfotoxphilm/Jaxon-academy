@@ -2,6 +2,10 @@
 CREATE TABLE IF NOT EXISTS public.accounts (
     id uuid references auth.users not null primary key, -- The parent's Auth ID is their Account ID
     stripe_customer_id text,
+    app_name text default 'Jaxon Academy',
+    logo_url text default '',
+    brand_color_primary text default 'hsl(224, 76%, 58%)',
+    custom_domain text,
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 

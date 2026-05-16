@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { AuthProvider } from './contexts/AuthContext.tsx'
+import { BrandProvider } from './contexts/BrandContext.tsx'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 
 /**
@@ -52,7 +53,9 @@ createRoot(document.getElementById('root')!).render(
       }
     >
       <AuthProvider>
-        <App />
+        <BrandProvider>
+          <App />
+        </BrandProvider>
       </AuthProvider>
     </ErrorBoundary>
   </StrictMode>,

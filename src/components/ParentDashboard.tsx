@@ -9,6 +9,9 @@ import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { enUS } from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { motion } from 'framer-motion';
+import { useBrand } from '../contexts/BrandContext';
+
+type Tab = 'overview' | 'progress' | 'assignments' | 'enrollment' | 'users' | 'rewards' | 'report-cards' | 'settings';
 
 const locales = {
   'en-US': enUS,
@@ -34,7 +37,7 @@ interface ProgressRecord {
 const STUDENTS = ["Ayla", "Aria", "Ana", "Donyale", "Aiko", "Ace"];
 
 export const ParentDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'progress' | 'enrollment' | 'assignments' | 'rewards' | 'report-cards' | 'users'>('overview');
+  const [activeTab, setActiveTab] = useState<Tab>('overview');
   
   // Progress State
   const [records, setRecords] = useState<ProgressRecord[]>([]);
@@ -43,6 +46,13 @@ export const ParentDashboard: React.FC = () => {
   // AI Analytics State
   const [aiReport, setAiReport] = useState<string | null>(null);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const { brand, setBrand } = useBrand();
+
+  const [brandForm, setBrandForm] = useState({
+      appName: brand.appName,
+      logoUrl: brand.logoUrl || '',
+      colorPrimary: brand.colorPrimary
+  });
 
   // Enrollment State
   const [enrollments, setEnrollments] = useState<Record<string, string>>({});
@@ -161,6 +171,34 @@ export const ParentDashboard: React.FC = () => {
       setNewUserName('');
       setUsers(await UserManager.getProfiles());
       showToast(`${newUserRole === 'teacher' ? 'Teacher' : 'Student'} ${seed} added successfully!`);
+  };
+
+  const handleSaveBranding = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('accounts')
+        .update({
+          app_name: brandForm.appName,
+          logo_url: brandForm.logoUrl,
+          brand_color_primary: brandForm.colorPrimary,
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setBrand({
+        appName: brandForm.appName,
+        logoUrl: brandForm.logoUrl,
+        colorPrimary: brandForm.colorPrimary
+      });
+      showToast('Brand settings saved successfully!', 'success');
+    } catch (e) {
+      console.error(e);
+      showToast('Failed to save brand settings.', 'error' as any);
+    }
   };
 
   const handleGenerateReport = async () => {
@@ -283,54 +321,68 @@ export const ParentDashboard: React.FC = () => {
       {/* --- SIDEBAR --- */}
       <div className="w-64 bg-[#05070D] border-r border-slate-800 flex flex-col shrink-0">
         <div className="p-6 border-b border-slate-800">
-            <h2 className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400 uppercase tracking-widest">
+            <h2 className="text-xl font-extrabold text-transparent bg-clip-text uppercase tracking-widest" style={{ backgroundImage: `linear-gradient(to right, ${brand.colorPrimary}, #818cf8)` }}>
                 Principal
             </h2>
             <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Control Panel</p>
         </div>
         
-        <div className="flex-1 py-6 flex flex-col gap-2 px-4">
+        <div className="flex-1 py-6 flex flex-col gap-2 px-4 overflow-y-auto">
             <button 
                 onClick={() => { SoundManager.playClick(); setActiveTab('overview'); }}
-                className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${activeTab === 'overview' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${activeTab === 'overview' ? 'text-white shadow-lg' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                style={activeTab === 'overview' ? { backgroundColor: brand.colorPrimary } : {}}
             >
                 <span>📈</span> Overview
             </button>
             <button 
                 onClick={() => { SoundManager.playClick(); setActiveTab('progress'); }}
-                className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${activeTab === 'progress' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${activeTab === 'progress' ? 'text-white shadow-lg' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                style={activeTab === 'progress' ? { backgroundColor: brand.colorPrimary } : {}}
             >
                 <span>📋</span> Academics & Exams
             </button>
             <button 
                 onClick={() => { SoundManager.playClick(); setActiveTab('assignments'); }}
-                className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${activeTab === 'assignments' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${activeTab === 'assignments' ? 'text-white shadow-lg' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                style={activeTab === 'assignments' ? { backgroundColor: brand.colorPrimary } : {}}
             >
                 <span>📅</span> Scheduling
             </button>
             <button 
                 onClick={() => { SoundManager.playClick(); setActiveTab('enrollment'); }}
-                className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${activeTab === 'enrollment' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${activeTab === 'enrollment' ? 'text-white shadow-lg' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                style={activeTab === 'enrollment' ? { backgroundColor: brand.colorPrimary } : {}}
             >
                 <span>🎓</span> Enrollment
             </button>
             <button 
                 onClick={() => { SoundManager.playClick(); setActiveTab('rewards'); }}
-                className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${activeTab === 'rewards' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${activeTab === 'rewards' ? 'text-white shadow-lg' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                style={activeTab === 'rewards' ? { backgroundColor: brand.colorPrimary } : {}}
             >
                 <span>🏆</span> Rewards Vault
             </button>
             <button 
                 onClick={() => { SoundManager.playClick(); setActiveTab('report-cards'); }}
-                className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${activeTab === 'report-cards' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${activeTab === 'report-cards' ? 'text-white shadow-lg' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                style={activeTab === 'report-cards' ? { backgroundColor: brand.colorPrimary } : {}}
             >
                 <span>📄</span> Report Cards
             </button>
             <button 
                 onClick={() => { SoundManager.playClick(); setActiveTab('users'); }}
-                className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${activeTab === 'users' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${activeTab === 'users' ? 'text-white shadow-lg' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                style={activeTab === 'users' ? { backgroundColor: brand.colorPrimary } : {}}
             >
                 <span>👥</span> Manage Users
+            </button>
+            <button 
+                onClick={() => { SoundManager.playClick(); setActiveTab('settings'); }}
+                className={`text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-3 mt-4 border-t border-slate-800/50 pt-4 ${activeTab === 'settings' ? 'text-white shadow-lg' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                style={activeTab === 'settings' ? { backgroundColor: brand.colorPrimary } : {}}
+            >
+                <span>⚙️</span> Brand Settings
             </button>
         </div>
 
@@ -1002,6 +1054,63 @@ export const ParentDashboard: React.FC = () => {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'settings' && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-2xl">
+                        <h3 className="text-2xl font-black text-white mb-6 tracking-tight">Brand Settings</h3>
+                        <p className="text-slate-400 mb-8">Customize your platform's appearance. These settings will apply to your dashboard and login screen (if using a custom domain).</p>
+                        
+                        <div className="bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-xl space-y-6">
+                            <div>
+                                <label className="block text-slate-400 font-bold uppercase tracking-widest text-xs mb-2">School / Platform Name</label>
+                                <input 
+                                    type="text" 
+                                    value={brandForm.appName}
+                                    onChange={e => setBrandForm({...brandForm, appName: e.target.value})}
+                                    placeholder="e.g. Oakbridge Academy" 
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none transition-colors"
+                                    style={{ focusVisible: { borderColor: brand.colorPrimary } } as any}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-slate-400 font-bold uppercase tracking-widest text-xs mb-2">Logo URL (Optional)</label>
+                                <input 
+                                    type="text" 
+                                    value={brandForm.logoUrl}
+                                    onChange={e => setBrandForm({...brandForm, logoUrl: e.target.value})}
+                                    placeholder="https://example.com/logo.png" 
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none transition-colors"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-slate-400 font-bold uppercase tracking-widest text-xs mb-2">Primary Brand Color (HSL or Hex)</label>
+                                <div className="flex gap-4">
+                                    <input 
+                                        type="text" 
+                                        value={brandForm.colorPrimary}
+                                        onChange={e => setBrandForm({...brandForm, colorPrimary: e.target.value})}
+                                        placeholder="hsl(224, 76%, 58%) or #3b82f6" 
+                                        className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none transition-colors"
+                                    />
+                                    <div 
+                                        className="w-12 h-12 rounded-xl border border-slate-700 shrink-0 shadow-inner"
+                                        style={{ backgroundColor: brandForm.colorPrimary }}
+                                    />
+                                </div>
+                            </div>
+
+                            <button 
+                                onClick={handleSaveBranding}
+                                className="w-full py-4 text-white font-bold rounded-xl transition-all shadow-xl hover:brightness-110 mt-4"
+                                style={{ backgroundColor: brand.colorPrimary }}
+                            >
+                                Save Brand Settings
+                            </button>
                         </div>
                     </div>
                 )}

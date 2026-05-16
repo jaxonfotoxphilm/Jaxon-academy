@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { supabase } from '../utils/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
+import { useBrand } from '../contexts/BrandContext';
 
 export const Pricing: React.FC = () => {
   const { session, signOut } = useAuth();
+  const { brand } = useBrand();
   const [loading, setLoading] = useState(false);
 
   const handleSubscribe = async () => {
@@ -35,35 +37,35 @@ export const Pricing: React.FC = () => {
       <div className="max-w-3xl text-center mb-12 mt-12">
         <h1 className="text-4xl md:text-5xl font-black mb-6 tracking-tight">The Ultimate Homeschool Engine</h1>
         <p className="text-xl text-slate-400">
-          You are paying for the <strong>Jaxon Academy Platform</strong>—our AI tutor, automated tracking, and daily scheduling. 
+          You are paying for the <strong>{brand.appName} Platform</strong>—our AI tutor, automated tracking, and daily scheduling. 
           The built-in CoreKnowledge curriculum is entirely free and open-source.
         </p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8 max-w-5xl w-full">
         {/* Main Platform Plan */}
-        <div className="bg-[hsl(228,40%,6%)] border border-blue-500/50 rounded-3xl p-8 relative overflow-hidden shadow-[0_0_50px_rgba(37,99,235,0.15)] flex flex-col">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-blue-500/10 blur-[50px] pointer-events-none" />
+        <div className="bg-[hsl(228,40%,6%)] border border-blue-500/50 rounded-3xl p-8 relative overflow-hidden shadow-2xl flex flex-col" style={{ borderColor: `${brand.colorPrimary}80` }}>
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 blur-[50px] pointer-events-none opacity-10" style={{ backgroundColor: brand.colorPrimary }} />
           
-          <h2 className="text-2xl font-bold text-blue-400 mb-2">Platform Access</h2>
+          <h2 className="text-2xl font-bold mb-2" style={{ color: brand.colorPrimary }}>Platform Access</h2>
           <div className="text-5xl font-black mb-2">$19<span className="text-xl text-slate-500 font-normal">/mo</span></div>
           <p className="text-sm text-slate-400 mb-6 border-b border-slate-800 pb-6">For the whole family. No per-student hidden fees.</p>
           
           <ul className="text-left space-y-4 mb-8 text-slate-300 flex-grow">
             <li className="flex items-start gap-3">
-                <span className="text-blue-400 mt-1">✓</span> 
+                <span className="mt-1" style={{ color: brand.colorPrimary }}>✓</span> 
                 <div><strong>Unlimited Students:</strong> Create as many profiles as you need.</div>
             </li>
             <li className="flex items-start gap-3">
-                <span className="text-blue-400 mt-1">✓</span> 
+                <span className="mt-1" style={{ color: brand.colorPrimary }}>✓</span> 
                 <div><strong>CoreKnowledge Included:</strong> Pre-K to 8th grade open-source framework mapped automatically.</div>
             </li>
             <li className="flex items-start gap-3">
-                <span className="text-blue-400 mt-1">✓</span> 
+                <span className="mt-1" style={{ color: brand.colorPrimary }}>✓</span> 
                 <div><strong>Professor Grace AI:</strong> Interactive grading, writing labs, and anti-skip comprehension checks.</div>
             </li>
             <li className="flex items-start gap-3">
-                <span className="text-blue-400 mt-1">✓</span> 
+                <span className="mt-1" style={{ color: brand.colorPrimary }}>✓</span> 
                 <div><strong>Admin Dashboard:</strong> Automated report cards and progress tracking.</div>
             </li>
           </ul>
@@ -71,7 +73,8 @@ export const Pricing: React.FC = () => {
           <button 
             onClick={handleSubscribe}
             disabled={loading}
-            className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] disabled:opacity-50"
+            className="w-full py-4 text-white font-bold rounded-xl transition-all shadow-xl disabled:opacity-50 hover:brightness-110"
+            style={{ backgroundColor: brand.colorPrimary }}
           >
             {loading ? 'Preparing Checkout...' : 'Start Homeschooling'}
           </button>
