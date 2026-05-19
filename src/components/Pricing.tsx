@@ -33,7 +33,7 @@ export const Pricing: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[hsl(228,80%,3%)] text-white flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-transparent text-white flex flex-col items-center justify-center p-4">
       <div className="max-w-3xl text-center mb-12 mt-12">
         <h1 className="text-4xl md:text-5xl font-black mb-6 tracking-tight">The Ultimate Homeschool Engine</h1>
         <p className="text-xl text-slate-400">

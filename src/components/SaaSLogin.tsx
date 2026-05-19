@@ -9,7 +9,7 @@ export const SaaSLogin: React.FC = () => {
   const { brand } = useBrand();
 
   return (
-    <div className="min-h-screen w-full bg-[hsl(228,80%,3%)] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen w-full bg-transparent flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background Glow */}
       <div 
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full blur-[120px] pointer-events-none opacity-20" 

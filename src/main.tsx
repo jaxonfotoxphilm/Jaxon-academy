@@ -54,6 +54,17 @@ createRoot(document.getElementById('root')!).render(
     >
       <AuthProvider>
         <BrandProvider>
+          {/* Global Video Background */}
+          <div className="fixed inset-0 z-[-1] pointer-events-none overflow-hidden bg-black">
+              <video 
+                  autoPlay 
+                  loop 
+                  muted 
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-screen"
+                  src="https://videos.pexels.com/video-files/3129671/3129671-hd_1920_1080_30fps.mp4"
+              />
+          </div>
           <App />
         </BrandProvider>
       </AuthProvider>

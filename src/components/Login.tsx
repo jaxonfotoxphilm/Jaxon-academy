@@ -289,7 +289,7 @@ export const Login = ({ onLogin }: { onLogin: (profile: string) => void }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[var(--bg-primary)] text-white overflow-hidden relative grain-overlay">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-transparent text-white overflow-hidden relative grain-overlay">
       {/* Cinematic ambient background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-20%] left-[10%] w-[600px] h-[600px] bg-[hsla(224,76%,58%,0.06)] rounded-full blur-[150px] ambient-glow"></div>
