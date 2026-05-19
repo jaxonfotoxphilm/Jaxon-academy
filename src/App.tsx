@@ -380,8 +380,18 @@ export default function App() {
       </AnimatePresence>
 
       <main className="relative z-10 flex-grow w-full h-full">
-        {/* Cinematic Video Background */}
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        {/* Cinematic Background Effects */}
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+            {/* Global Video Background */}
+            <video 
+                autoPlay 
+                loop 
+                muted 
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-screen"
+                src="https://videos.pexels.com/video-files/3129671/3129671-hd_1920_1080_30fps.mp4"
+            />
+            {/* Ambient Glows */}
             <div className="absolute top-[-10%] left-[5%] w-[700px] h-[700px] bg-[hsla(224,76%,58%,0.05)] rounded-full blur-[160px] ambient-glow"></div>
             <div className="absolute bottom-[-15%] right-[10%] w-[600px] h-[600px] bg-[hsla(280,60%,50%,0.04)] rounded-full blur-[140px] ambient-glow-delay"></div>
             <div className="absolute top-[50%] left-[50%] w-[400px] h-[400px] bg-[hsla(160,60%,45%,0.03)] rounded-full blur-[120px] ambient-glow"></div>
