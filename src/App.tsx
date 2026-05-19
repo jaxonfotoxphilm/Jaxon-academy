@@ -11,6 +11,7 @@ import { useSchoolDay } from './hooks/useSchoolDay';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { DailySchedule } from './components/DailySchedule';
 import { UserManager } from './utils/UserManager';
+import { useVideoBackground, VIDEOS } from './contexts/VideoContext';
 
 /**
  * Code-split heavy view components with React.lazy.
@@ -83,6 +84,24 @@ export default function App() {
   const [audioEnabled, setAudioEnabled] = useState(true);
 
   const { schoolDay, schoolDayLabel } = useSchoolDay();
+
+  const { setVideoUrl } = useVideoBackground();
+
+  // Change background video based on context
+  useEffect(() => {
+      if (currentView === 'lesson' && selectedSubject) {
+          const sub = selectedSubject.toLowerCase();
+          if (sub.includes('sci')) setVideoUrl(VIDEOS.SPACE);
+          else if (sub.includes('hist') || sub.includes('soc')) setVideoUrl(VIDEOS.HISTORY);
+          else if (sub.includes('math')) setVideoUrl(VIDEOS.MATH);
+          else if (sub.includes('art') || sub.includes('music')) setVideoUrl(VIDEOS.ART);
+          else setVideoUrl(VIDEOS.DEFAULT);
+      } else if (currentView === 'exam-runner') {
+          setVideoUrl(VIDEOS.MATH); // Techy focus background for exams
+      } else {
+          setVideoUrl(VIDEOS.DEFAULT); // Default cinematic forest for dashboard/menus
+      }
+  }, [currentView, selectedSubject, setVideoUrl]);
 
   useEffect(() => {
     const unsubscribe = SoundManager.subscribe(() => {
