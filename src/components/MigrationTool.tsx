@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../utils/supabaseClient';
-import { UserManager, type UserProfile } from '../utils/UserManager';
+import { UserManager } from '../utils/UserManager';
 import { ParentManager } from '../utils/ParentManager';
 
 export const MigrationTool: React.FC = () => {
